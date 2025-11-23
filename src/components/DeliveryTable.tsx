@@ -1,5 +1,5 @@
 import React from 'react';
-import { Table, Button } from 'react-bootstrap';
+import { Table, Button, Form } from 'react-bootstrap';
 import { PencilSquare, Trash, CheckCircle, Clock, Truck } from 'react-bootstrap-icons';
 
 interface DeliveryTableProps {
@@ -7,15 +7,37 @@ interface DeliveryTableProps {
   onDelete: (id: string) => void;
   onEdit: (d: any) => void;
   onStatusChange: (id: string, s: string) => void;
+  // Novas props para seleção
+  selectedIds: string[];
+  onSelectItem: (id: string) => void;
+  onSelectAll: (checked: boolean) => void;
 }
 
-export const DeliveryTable: React.FC<DeliveryTableProps> = ({ deliveries, onDelete, onEdit, onStatusChange }) => {
+export const DeliveryTable: React.FC<DeliveryTableProps> = ({ 
+  deliveries, 
+  onDelete, 
+  onEdit, 
+  onStatusChange,
+  selectedIds,
+  onSelectItem,
+  onSelectAll
+}) => {
+  // Verifica se todos os itens visíveis estão selecionados
+  const allSelected = deliveries.length > 0 && deliveries.every(d => selectedIds.includes(d.id));
+
   return (
     <div className="card-modern p-0 overflow-hidden">
       <div className="table-responsive">
         <Table className="table-modern mb-0">
           <thead>
             <tr>
+              <th style={{width: '40px'}} className="text-center">
+                <Form.Check 
+                  type="checkbox" 
+                  checked={allSelected}
+                  onChange={(e) => onSelectAll(e.target.checked)}
+                />
+              </th>
               <th>Status</th>
               <th>Data</th>
               <th>Produto</th>
@@ -27,7 +49,14 @@ export const DeliveryTable: React.FC<DeliveryTableProps> = ({ deliveries, onDele
           </thead>
           <tbody>
             {deliveries.length > 0 ? deliveries.map(d => (
-                <tr key={d.id}>
+                <tr key={d.id} className={selectedIds.includes(d.id) ? 'table-active' : ''}>
+                    <td className="text-center">
+                        <Form.Check 
+                          type="checkbox" 
+                          checked={selectedIds.includes(d.id)}
+                          onChange={() => onSelectItem(d.id)}
+                        />
+                    </td>
                     <td>
                         <span 
                             className={`badge ${d.status === 'Entregue' ? 'bg-success' : 'bg-warning text-dark'}`} 
@@ -38,7 +67,11 @@ export const DeliveryTable: React.FC<DeliveryTableProps> = ({ deliveries, onDele
                             {d.status}
                         </span>
                     </td>
-                    <td>{new Date(d.dataHoraSolicitacao).toLocaleDateString()} <span className="text-muted small">{new Date(d.dataHoraSolicitacao).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span></td>
+                    <td>
+                        {new Date(d.dataHoraSolicitacao).toLocaleDateString()} 
+                        <br/>
+                        <small className="text-muted">{new Date(d.dataHoraSolicitacao).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
+                    </td>
                     <td>
                         <div className="fw-bold text-primary">{d.itemNome}</div>
                         <small className="text-muted">{d.sku}</small>
@@ -60,7 +93,7 @@ export const DeliveryTable: React.FC<DeliveryTableProps> = ({ deliveries, onDele
                     </td>
                 </tr>
             )) : (
-                <tr><td colSpan={7} className="text-center py-5 text-muted">Nenhuma entrega registrada.</td></tr>
+                <tr><td colSpan={8} className="text-center py-5 text-muted">Nenhuma entrega registrada.</td></tr>
             )}
           </tbody>
         </Table>
