@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Form, Button } from 'react-bootstrap';
 import { ClipboardData, CalendarWeek } from 'react-bootstrap-icons'; // Ícones novos
+
+
 import meuLogo from './assets/logo.png';
 import { DeliveryForm } from './components/DeliveryForm';
 import { DeliveryTable } from './components/DeliveryTable';
@@ -46,18 +48,18 @@ export interface Movimentacao {
 
 // Novo Tipo para Entregas
 export interface Entrega {
-  id: UUID;
-  dataHoraSolicitacao: string;
-  localArmazenagem: string;
-  localObra: string;
-  produtoId: UUID;
-  itemNome?: string;
-  sku?: string;
-  itemQuantidade: number;
-  itemUnidadeMedida?: string;
-  responsavelNome?: string;
-  responsavelTelefone?: string;
-  status: string;
+    id: UUID;
+    dataHoraSolicitacao: string;
+    localArmazenagem: string;
+    localObra: string;
+    produtoId: UUID;
+    itemNome?: string;
+    sku?: string;
+    itemQuantidade: number;
+    itemUnidadeMedida?: string;
+    responsavelNome?: string;
+    responsavelTelefone?: string;
+    status: string;
 }
 
 // --- CONSTANTES E HOOKS ---
@@ -750,10 +752,7 @@ function ProdutosTable({
                   <td>{p.estoqueMinimo ?? '-'}</td>
                   <td>{p.localArmazenamento ?? '-'}</td>
                   <td className="text-end">
-                    <div
-                      className="btn-group btn-group-sm action-buttons-group"
-                      role="group"
-                    >
+                    <div className="btn-group btn-group-sm action-buttons-group" role="group">
                       <button
                         type="button"
                         className="btn btn-movimentar"
@@ -854,10 +853,7 @@ function ProdutosTable({
         </ModalComponent>
       )}
       {produtoParaDeletar && (
-        <ModalComponent
-          title="Confirmar Exclusão"
-          onClose={() => setDeleteId(null)}
-        >
+        <ModalComponent title="Confirmar Exclusão" onClose={() => setDeleteId(null)}>
           <p>
             Você tem certeza que deseja excluir o produto{' '}
             <strong>{produtoParaDeletar.nome}</strong>?
@@ -963,9 +959,11 @@ function MovimentacaoForm({
           className="btn btn-secondary me-2"
           onClick={onCancel}
         >
+          <i className="bi bi-x-circle d-none d-lg-inline-block me-1"></i>
           Cancelar
         </button>
         <button type="submit" className="btn btn-primary">
+          <i className="bi bi-check2-circle d-none d-lg-inline-block me-1"></i>
           Salvar Movimentação
         </button>
       </div>
@@ -1248,8 +1246,7 @@ function ConsultaMovimentacoes({
   const filteredMovs = useMemo(() => {
     return movs.filter((mov) => {
       const movDate = new Date(mov.criadoEm);
-      if (dataInicio && movDate < new Date(`${dataInicio}T00:00:00`))
-        return false;
+      if (dataInicio && movDate < new Date(`${dataInicio}T00:00:00`)) return false;
       if (dataFim) {
         const fimDate = new Date(`${dataFim}T00:00:00`);
         fimDate.setHours(23, 59, 59, 999);
@@ -1445,10 +1442,7 @@ function ConsultaMovimentacoes({
         />
       </div>
       {movParaDeletar && (
-        <ModalComponent
-          title="Confirmar Exclusão"
-          onClose={() => setDeleteId(null)}
-        >
+        <ModalComponent title="Confirmar Exclusão" onClose={() => setDeleteId(null)}>
           <p>Você tem certeza que deseja excluir esta movimentação?</p>
           <ul className="list-group mb-3">
             <li className="list-group-item">
@@ -1492,10 +1486,7 @@ function ConsultaMovimentacoes({
         </ModalComponent>
       )}
       {movParaEditar && (
-        <ModalComponent
-          title="Editar Movimentação"
-          onClose={() => setEditId(null)}
-        >
+        <ModalComponent title="Editar Movimentação" onClose={() => setEditId(null)}>
           <MovimentacaoEditForm
             movimentacao={movParaEditar}
             produto={produtoMap.get(movParaEditar.produtoId)}
@@ -1612,12 +1603,10 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [loadingAll, setLoadingAll] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  
   // View atualizada para incluir 'rotas'
-  const [view, setView] = useState<'estoque' | 'movimentacoes' | 'rotas'>(
-    'estoque',
-  );
-
+  const [view, setView] = useState<'estoque' | 'movimentacoes' | 'rotas'>('estoque');
+  
   const [showScroll, setShowScroll] = useState(false);
 
   const [q, setQ] = useState('');
@@ -1626,7 +1615,7 @@ export default function App() {
   const [mostrarPrioritarios, setMostrarPrioritarios] = useState(false);
   const [page, setPage] = useState(1);
 
-  // --- ESTADOS PARA SELEÇÃO E MODAL EM ROTAS ---
+  // --- NOVOS ESTADOS PARA SELEÇÃO E MODAL DE REPROGRAMAÇÃO ---
   const [selectedEntregaIds, setSelectedEntregaIds] = useState<string[]>([]);
   const [showReprogramModal, setShowReprogramModal] = useState(false);
   const [newDeliveryDate, setNewDeliveryDate] = useState('');
@@ -1650,7 +1639,7 @@ export default function App() {
         const [allProdsRes, movsRes, entregasRes] = await Promise.all([
           fetch(`${API_URL}/produtos?_limit=10000`),
           fetch(`${API_URL}/movimentacoes`),
-          fetch(`${API_URL}/entregas`), // Nova rota de entregas
+          fetch(`${API_URL}/entregas`) // Nova rota de entregas
         ]);
 
         if (!allProdsRes.ok || !movsRes.ok || !entregasRes.ok)
@@ -1831,60 +1820,57 @@ export default function App() {
   // --- Ações de Entregas (Integração) ---
   async function addEntrega(data: any) {
     try {
-      const res = await fetch(`${API_URL}/entregas`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error((await res.json()).error);
-      // Recarrega a página para garantir que o saldo de estoque e histórico estejam sincronizados
-      window.location.reload();
+        const res = await fetch(`${API_URL}/entregas`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (!res.ok) throw new Error((await res.json()).error);
+        // Recarrega a página para garantir que o saldo de estoque e histórico estejam sincronizados
+        window.location.reload(); 
     } catch (err: any) {
-      alert(err.message);
+        alert(err.message);
     }
   }
 
   async function deleteEntrega(id: string) {
-    if (
-      !confirm(
-        'Deseja realmente excluir esta entrega? O estoque NÃO será estornado automaticamente.',
-      )
-    )
-      return;
-    try {
-      await fetch(`${API_URL}/entregas/${id}`, { method: 'DELETE' });
-      setEntregas((prev) => prev.filter((e) => e.id !== id));
-      setSelectedEntregaIds((prev) => prev.filter((sid) => sid !== id));
-    } catch (err) {
-      console.error(err);
-    }
+      if(!confirm("Deseja realmente excluir esta entrega? O estoque NÃO será estornado automaticamente.")) return;
+      try {
+          await fetch(`${API_URL}/entregas/${id}`, { method: 'DELETE' });
+          setEntregas(prev => prev.filter(e => e.id !== id));
+          setSelectedEntregaIds(prev => prev.filter(sid => sid !== id));
+      } catch (err) { console.error(err); }
   }
 
   async function updateEntregaStatus(id: string, status: string) {
-    try {
-      await fetch(`${API_URL}/entregas/${id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
-      setEntregas((prev) =>
-        prev.map((e) => (e.id === id ? { ...e, status } : e)),
-      );
-    } catch (err) {
-      console.error(err);
-    }
+      try {
+          await fetch(`${API_URL}/entregas/${id}/status`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status })
+          });
+          setEntregas(prev => prev.map(e => e.id === id ? { ...e, status } : e));
+      } catch (err) { console.error(err); }
   }
 
   // --- FUNCIONALIDADES DE SELEÇÃO E RELATÓRIOS PARA ENTREGAS ---
 
+  const formatPhoneNumber = (value: string) => {
+    if (!value) return "";
+    const cleanedValue = value.replace(/\D/g, '');
+    const match = cleanedValue.match(/^(\d{2})(\d{5})(\d{4})$/);
+    if (match) return `(${match[1]}) ${match[2]}-${match[3]}`;
+    return value;
+  };
+  
   const handleSelectEntrega = (id: string) => {
-    setSelectedEntregaIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    setSelectedEntregaIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
     );
   };
 
   const handleSelectAllEntregas = (isChecked: boolean) => {
-    setSelectedEntregaIds(isChecked ? entregas.map((e) => e.id) : []);
+    setSelectedEntregaIds(isChecked ? entregas.map(e => e.id) : []);
   };
 
   const handleGenerateDeliveryReport = () => {
@@ -1893,62 +1879,78 @@ export default function App() {
       return;
     }
 
+    const selectedDeliveries = entregas
+      .filter(d => selectedEntregaIds.includes(d.id))
+      .sort((a, b) => new Date(a.dataHoraSolicitacao).getTime() - new Date(b.dataHoraSolicitacao).getTime());
+
     // Import dinâmico ou uso direto se já importado
     const { jsPDF } = window.jspdf || { jsPDF: (window as any).jspdf.jsPDF };
-    // Caso esteja usando o import do topo, o objeto jsPDF é a classe
-    // Aqui assumimos que a lib foi carregada corretamente via import ou CDN
     const doc = new jsPDF('l', 'mm', 'a4');
-    const today = new Date().toLocaleDateString('pt-BR');
+
+    // Data para o cabeçalho do relatório
+    const reportDateObj = selectedDeliveries.length > 0 ? new Date(selectedDeliveries[0].dataHoraSolicitacao) : new Date();
+    const reportDate = reportDateObj.toLocaleDateString('pt-BR');
 
     doc.setFontSize(16);
-    doc.text('Relatório de Entrega de Materiais', 14, 15);
+    doc.text('Programação de Caminhões para Entrega de Materiais', 14, 15);
     doc.setFontSize(10);
-    doc.text(`Gerado em: ${today}`, 14, 22);
+    doc.text(`Relatório do Dia: ${reportDate}`, 14, 22);
 
-    const selectedDeliveries = entregas
-      .filter((d) => selectedEntregaIds.includes(d.id))
-      .sort(
-        (a, b) =>
-          new Date(a.dataHoraSolicitacao).getTime() -
-          new Date(b.dataHoraSolicitacao).getTime(),
-      );
-
-    const tableHead = [
-      [
-        'Data',
-        'Hora',
-        'Local Obra',
-        'Material',
-        'Qtd',
-        'Un',
-        'Armazém',
-        'Responsável',
-      ],
-    ];
-    const tableBody = selectedDeliveries.map((d) => [
-      new Date(d.dataHoraSolicitacao).toLocaleDateString('pt-BR'),
-      new Date(d.dataHoraSolicitacao).toLocaleTimeString('pt-BR', {
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
+    const tableHead = [['Nº', 'Entregue', 'Hora', 'Local da Obra', 'Material', 'Qtd', 'Un', 'Armazem', 'Responsável', 'Telefone']];
+    const tableBody = selectedDeliveries.map((d, index) => [
+      index + 1,
+      '', // Coluna para Checkbox
+      new Date(d.dataHoraSolicitacao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
       d.localObra,
       d.itemNome || '-',
       d.itemQuantidade,
       d.itemUnidadeMedida || '-',
       d.localArmazenagem,
       d.responsavelNome || '',
+      formatPhoneNumber(d.responsavelTelefone || '')
     ]);
 
-    // Usando autoTable importado
     (doc as any).autoTable({
       head: tableHead,
       body: tableBody,
       startY: 28,
-      theme: 'grid',
-      headStyles: { fillColor: [41, 128, 185] },
+      theme: 'striped',
+      headStyles: { fillColor: [41, 45, 50] }, // Cor escura conforme modelo antigo
+      didDrawCell: (data: any) => {
+        // Desenha o quadrado na coluna "Entregue" (index 1)
+        if (data.section === 'body' && data.column.index === 1) {
+          doc.setLineWidth(0.3);
+          const cell = data.cell;
+          const squareSize = 4;
+          const x = cell.x + (cell.width - squareSize) / 2;
+          const y = cell.y + (cell.height - squareSize) / 2;
+          doc.rect(x, y, squareSize, squareSize, 'S');
+        }
+      },
     });
 
-    doc.save(`Relatorio_Entregas_${today.replace(/\//g, '-')}.pdf`);
+    // Assinaturas
+    const finalY = (doc as any).lastAutoTable.finalY;
+    const centerX = doc.internal.pageSize.getWidth() / 2;
+    
+    // Verifica se precisa de nova página para assinaturas
+    if (finalY + 40 > doc.internal.pageSize.getHeight()) {
+        doc.addPage();
+        doc.setLineWidth(0.3); // Reset line width just in case
+    }
+
+    // Usar o finalY da tabela ou um topo fixo se nova página foi criada (simplificado aqui para usar finalY + offset)
+    const startSignaturesY = finalY + 20 > doc.internal.pageSize.getHeight() ? 30 : finalY + 20;
+
+    const linhaYMotorista = startSignaturesY;
+    doc.line(centerX - 50, linhaYMotorista, centerX + 50, linhaYMotorista);
+    doc.text('Assinatura do Motorista', centerX, linhaYMotorista + 5, { align: 'center' });
+    
+    const linhaYSolicitante = linhaYMotorista + 25;
+    doc.line(centerX - 50, linhaYSolicitante, centerX + 50, linhaYSolicitante);
+    doc.text('Assinatura do Solicitante', centerX, linhaYSolicitante + 5, { align: 'center' });
+
+    doc.save(`Programacao-Diaria-${reportDate.replace(/\//g, '-')}.pdf`);
   };
 
   const handleReprogramDeliveries = async () => {
@@ -1958,38 +1960,29 @@ export default function App() {
       return;
     }
 
-    // Como o backend padrão de "Entregas" geralmente não tem um endpoint de 'update' genérico exposto
-    // para todos os campos, vamos usar a estratégia de recriar ou, se você implementou o endpoint PUT, usar ele.
-    // Aqui, simularemos a reprogramação chamando o endpoint de atualização se existir, ou alertando.
-    // Para funcionar idealmente, seu backend deve ter uma rota PUT /api/entregas/:id que aceite { dataHoraSolicitacao }.
-
-    // Exemplo de implementação assumindo que o backend suporta UPDATE:
-    /*
+    // Chamada para a rota de atualização (que criamos no backend)
     try {
-       await Promise.all(selectedEntregaIds.map(id => {
-           const entrega = entregas.find(e => e.id === id);
-           if (!entrega) return Promise.resolve();
-           const [oldDate, oldTime] = entrega.dataHoraSolicitacao.split('T');
-           const newDateTime = `${newDeliveryDate}T${oldTime}`;
-           
-           // Se não houver rota PUT, isso falhará. 
-           // Recomenda-se adicionar app.put('/api/entregas/:id') no server.js para suportar isso.
-           return fetch(`${API_URL}/entregas/${id}`, {
-               method: 'PUT', // ou PATCH
-               headers: {'Content-Type': 'application/json'},
-               body: JSON.stringify({ ...entrega, dataHoraSolicitacao: newDateTime })
-           });
-       }));
-       window.location.reload();
-    } catch (e) { console.error(e); }
-    */
-
-    // Por segurança, como não tenho certeza se você adicionou a rota PUT, vou apenas alertar
-    // Mas deixo o código pronto para quando a rota existir:
-    alert(
-      `Funcionalidade de reprogramação acionada para ${selectedEntregaIds.length} itens. Data: ${newDeliveryDate}. \n(Certifique-se que o backend possui rota PUT/PATCH para atualizar a data).`,
-    );
-    setShowReprogramModal(false);
+        await Promise.all(selectedEntregaIds.map(id => {
+            const entrega = entregas.find(e => e.id === id);
+            if (!entrega) return Promise.resolve();
+            // Preserva a hora original, muda apenas a data
+            const timePart = entrega.dataHoraSolicitacao.split('T')[1] || '08:00:00';
+            const newDateTime = `${newDeliveryDate}T${timePart}`;
+            
+            return fetch(`${API_URL}/entregas/${id}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ dataHoraSolicitacao: newDateTime })
+            });
+        }));
+        alert('Entregas reprogramadas com sucesso!');
+        setShowReprogramModal(false);
+        setNewDeliveryDate('');
+        window.location.reload();
+    } catch (e) { 
+        console.error(e);
+        alert('Erro ao reprogramar entregas.');
+    }
   };
 
   // --- Filtros ---
@@ -2067,17 +2060,10 @@ export default function App() {
     <div className="container-fluid bg-light min-vh-100 px-0">
       <header className="main-header d-flex flex-column flex-md-row align-items-center justify-content-between sticky-top bg-white shadow-sm px-4 py-3 mb-4">
         <div className="d-flex align-items-center">
-          <img
-            src={meuLogo}
-            alt="Logo da Empresa"
-            className="app-logo me-3"
-            style={{ height: '50px' }}
-          />
-          <h5 className="m-0 text-secondary d-none d-md-block">
-            Sistema Integrado
-          </h5>
+            <img src={meuLogo} alt="Logo da Empresa" className="app-logo me-3" style={{height: '50px'}} />
+            <h5 className="m-0 text-secondary d-none d-md-block">Sistema Integrado</h5>
         </div>
-
+        
         <ul className="nav nav-pills my-3 my-md-0">
           <li className="nav-item">
             <button
@@ -2108,274 +2094,252 @@ export default function App() {
       </header>
 
       <div className="container pb-5">
-        {view === 'estoque' && (
-          <>
-            <div className="filter-panel card-modern">
-              <div className="row gy-3 align-items-end">
-                <div className="col-12 col-lg-5">
-                  <label htmlFor="search-input" className="form-label fw-bold">
-                    Pesquisar
-                  </label>
-                  <div className="input-group">
-                    <span className="input-group-text">
-                      <i className="bi bi-search"></i>
-                    </span>
-                    <input
-                      id="search-input"
-                      className="form-control"
-                      placeholder={
-                        loadingAll
-                          ? 'Carregando produtos...'
-                          : 'Nome, SKU ou categoria'
-                      }
-                      value={q}
-                      onChange={(e) => setQ(e.target.value)}
-                      disabled={loadingAll}
-                    />
-                    {q && (
-                      <button
-                        className="btn btn-light btn-clear-search"
-                        type="button"
-                        onClick={() => setQ('')}
-                      >
-                        <i className="bi bi-x-lg"></i>
-                      </button>
-                    )}
-                  </div>
-                </div>
-                <div className="col-12 col-md-4 col-lg-3">
-                  <label
-                    htmlFor="category-filter"
-                    className="form-label fw-bold"
-                  >
-                    Categoria
-                  </label>
-                  <select
-                    id="category-filter"
-                    className="form-select"
-                    value={categoriaFilter}
-                    onChange={(e) => setCategoriaFilter(e.target.value)}
-                  >
-                    <option value="">Todas as categorias</option>
-                    {categorias.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="col-12 col-md-8 col-lg-4 d-flex align-items-center justify-content-start">
-                  <div className="d-flex gap-4">
-                    <div className="form-check form-switch">
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        role="switch"
-                        id="abaixoMin"
-                        checked={mostrarAbaixoMin}
-                        onChange={(e) => setMostrarAbaixoMin(e.target.checked)}
-                      />
-                      <label className="form-check-label" htmlFor="abaixoMin">
-                        Abaixo do mínimo
-                      </label>
-                    </div>
-                    <div className="form-check form-switch">
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        role="switch"
-                        id="prioritarios"
-                        checked={mostrarPrioritarios}
-                        onChange={(e) =>
-                          setMostrarPrioritarios(e.target.checked)
-                        }
-                      />
-                      <label
-                        className="form-check-label"
-                        htmlFor="prioritarios"
-                      >
-                        Prioritários
-                      </label>
-                    </div>
-                  </div>
+      {view === 'estoque' && (
+        <>
+          <div className="filter-panel card-modern">
+            <div className="row gy-3 align-items-end">
+              <div className="col-12 col-lg-5">
+                <label htmlFor="search-input" className="form-label fw-bold">
+                  Pesquisar
+                </label>
+                <div className="input-group">
+                  <span className="input-group-text">
+                    <i className="bi bi-search"></i>
+                  </span>
+                  <input
+                    id="search-input"
+                    className="form-control"
+                    placeholder={
+                      loadingAll
+                        ? 'Carregando produtos...'
+                        : 'Nome, SKU ou categoria'
+                    }
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                    disabled={loadingAll}
+                  />
+                  {q && (
+                    <button
+                      className="btn btn-light btn-clear-search"
+                      type="button"
+                      onClick={() => setQ('')}
+                    >
+                      <i className="bi bi-x-lg"></i>
+                    </button>
+                  )}
                 </div>
               </div>
-              <hr />
-              <div className="d-flex justify-content-between align-items-center">
-                <ValorTotalEstoque allProdutos={allProdutos} />
-                <div className="d-flex gap-2">
-                  <Relatorios
-                    produtos={allProdutos}
-                    categoriaSelecionada={categoriaFilter}
-                  />
-                  <BotaoNovoProduto
-                    onCreate={addProduto}
-                    categorias={categorias}
-                    locais={locaisArmazenamento}
-                  />
+              <div className="col-12 col-md-4 col-lg-3">
+                <label htmlFor="category-filter" className="form-label fw-bold">
+                  Categoria
+                </label>
+                <select
+                  id="category-filter"
+                  className="form-select"
+                  value={categoriaFilter}
+                  onChange={(e) => setCategoriaFilter(e.target.value)}
+                >
+                  <option value="">Todas as categorias</option>
+                  {categorias.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-12 col-md-8 col-lg-4 d-flex align-items-center justify-content-start">
+                <div className="d-flex gap-4">
+                  <div className="form-check form-switch">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      role="switch"
+                      id="abaixoMin"
+                      checked={mostrarAbaixoMin}
+                      onChange={(e) => setMostrarAbaixoMin(e.target.checked)}
+                    />
+                    <label className="form-check-label" htmlFor="abaixoMin">
+                      Abaixo do mínimo
+                    </label>
+                  </div>
+                  <div className="form-check form-switch">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      role="switch"
+                      id="prioritarios"
+                      checked={mostrarPrioritarios}
+                      onChange={(e) => setMostrarPrioritarios(e.target.checked)}
+                    />
+                    <label className="form-check-label" htmlFor="prioritarios">
+                      Prioritários
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
-
-            {loading ? (
-              <div className="text-center p-5">
-                <div className="spinner-border" role="status">
-                  <span className="visually-hidden">Loading...</span>
-                </div>
+            <hr />
+            <div className="d-flex justify-content-between align-items-center">
+              <ValorTotalEstoque allProdutos={allProdutos} />
+              <div className="d-flex gap-2">
+                <Relatorios
+                  produtos={allProdutos}
+                  categoriaSelecionada={categoriaFilter}
+                />
+                <BotaoNovoProduto
+                  onCreate={addProduto}
+                  categorias={categorias}
+                  locais={locaisArmazenamento}
+                />
               </div>
-            ) : (
-              <ProdutosTable
-                produtos={paginatedProdutos}
-                onEdit={updateProduto}
-                onDelete={deleteProduto}
-                onAddMov={addMov}
-                onTogglePrioritario={togglePrioritario}
-                categorias={categorias}
-                locais={locaisArmazenamento}
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="text-center p-5">
+              <div className="spinner-border" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          ) : (
+            <ProdutosTable
+              produtos={paginatedProdutos}
+              onEdit={updateProduto}
+              onDelete={deleteProduto}
+              onAddMov={addMov}
+              onTogglePrioritario={togglePrioritario}
+              categorias={categorias}
+              locais={locaisArmazenamento}
+            />
+          )}
+
+          <div className="mt-4 d-flex justify-content-center">
+            {!loading && !loadingAll && (
+              <Paginacao
+                totalItems={filteredProdutos.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                currentPage={page}
+                onPageChange={setPage}
               />
             )}
-
-            <div className="mt-4 d-flex justify-content-center">
-              {!loading && !loadingAll && (
-                <Paginacao
-                  totalItems={filteredProdutos.length}
-                  itemsPerPage={ITEMS_PER_PAGE}
-                  currentPage={page}
-                  onPageChange={setPage}
-                />
-              )}
-            </div>
-
-            <hr className="my-4" />
-            <h5 className="mb-3">Movimentações Recentes</h5>
-            <MovsList movs={movs.slice(0, 10)} produtos={allProdutos} />
-          </>
-        )}
-
-        {view === 'movimentacoes' && (
-          <div className="card-modern">
-            <ConsultaMovimentacoes
-              movs={movs}
-              produtos={allProdutos}
-              onDelete={deleteMov}
-              onEdit={updateMov}
-            />
           </div>
-        )}
 
-        {/* NOVA VIEW: ROTAS */}
-        {view === 'rotas' && (
-          <div className="animate-fade-in">
+          <hr className="my-4" />
+          <h5 className="mb-3">Movimentações Recentes</h5>
+          <MovsList movs={movs.slice(0, 10)} produtos={allProdutos} />
+        </>
+      )}
+
+      {view === 'movimentacoes' && (
+        <div className="card-modern">
+            <ConsultaMovimentacoes
+            movs={movs}
+            produtos={allProdutos}
+            onDelete={deleteMov}
+            onEdit={updateMov}
+            />
+        </div>
+      )}
+
+      {/* NOVA VIEW: ROTAS */}
+      {view === 'rotas' && (
+        <div className="animate-fade-in">
             <div className="row g-4">
-              {/* Coluna Esquerda: Formulário */}
-              <div className="col-lg-4">
-                <DeliveryForm
-                  onSave={addEntrega}
-                  produtosDisponiveis={allProdutos}
-                  deliveryToEdit={editingEntrega}
-                  onCancelEdit={() => setEditingEntrega(null)}
-                />
-              </div>
-
-              {/* Coluna Direita: Tabela e Ações em Massa */}
-              <div className="col-lg-8">
-                <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                  <h4 className="text-primary fw-bold mb-0">Cronograma</h4>
-
-                  {/* Botões de Ação em Massa */}
-                  <div className="d-flex gap-2">
-                    <Button
-                      variant="outline-secondary"
-                      size="sm"
-                      disabled={selectedEntregaIds.length === 0}
-                      onClick={handleGenerateDeliveryReport}
-                    >
-                      <ClipboardData className="me-1" /> Relatório PDF
-                    </Button>
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
-                      disabled={selectedEntregaIds.length === 0}
-                      onClick={() => setShowReprogramModal(true)}
-                    >
-                      <CalendarWeek className="me-1" /> Reprogramar
-                    </Button>
-                  </div>
+                {/* Coluna Esquerda: Formulário */}
+                <div className="col-lg-4">
+                    <DeliveryForm 
+                        onSave={addEntrega}
+                        produtosDisponiveis={allProdutos}
+                        deliveryToEdit={editingEntrega}
+                        onCancelEdit={() => setEditingEntrega(null)}
+                    />
                 </div>
 
-                <DeliveryTable
-                  deliveries={entregas}
-                  onDelete={deleteEntrega}
-                  onEdit={setEditingEntrega}
-                  onStatusChange={updateEntregaStatus}
-                  // Props de seleção
-                  selectedIds={selectedEntregaIds}
-                  onSelectItem={handleSelectEntrega}
-                  onSelectAll={handleSelectAllEntregas}
-                />
-              </div>
-            </div>
-          </div>
-        )}
+                {/* Coluna Direita: Tabela e Ações em Massa */}
+                <div className="col-lg-8">
+                    <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <h4 className="text-primary fw-bold mb-0">Cronograma</h4>
+                        
+                        {/* Botões de Ação em Massa */}
+                        <div className="d-flex gap-2">
+                            <Button 
+                                variant="outline-secondary" 
+                                size="sm"
+                                disabled={selectedEntregaIds.length === 0}
+                                onClick={handleGenerateDeliveryReport}
+                            >
+                                <ClipboardData className="me-1"/> Relatório PDF
+                            </Button>
+                            <Button 
+                                variant="outline-primary" 
+                                size="sm"
+                                disabled={selectedEntregaIds.length === 0}
+                                onClick={() => setShowReprogramModal(true)}
+                            >
+                                <CalendarWeek className="me-1"/> Reprogramar
+                            </Button>
+                        </div>
+                    </div>
 
-        {showScroll && (
-          <button
-            className="btn btn-primary rounded-circle shadow-lg"
-            onClick={scrollTop}
-            style={{
-              position: 'fixed',
-              bottom: '20px',
-              right: '20px',
-              width: '45px',
-              height: '45px',
-              zIndex: 1000,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 0,
-            }}
-          >
-            <i className="bi bi-arrow-up fs-4"></i>
-          </button>
-        )}
+                    <DeliveryTable 
+                        deliveries={entregas}
+                        onDelete={deleteEntrega}
+                        onEdit={setEditingEntrega}
+                        onStatusChange={updateEntregaStatus}
+                        // Props de seleção
+                        selectedIds={selectedEntregaIds}
+                        onSelectItem={handleSelectEntrega}
+                        onSelectAll={handleSelectAllEntregas}
+                    />
+                </div>
+            </div>
+        </div>
+      )}
+
+      {showScroll && (
+        <button
+          className="btn btn-primary rounded-circle shadow-lg"
+          onClick={scrollTop}
+          style={{
+            position: 'fixed',
+            bottom: '20px',
+            right: '20px',
+            width: '45px',
+            height: '45px',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 0,
+          }}
+        >
+          <i className="bi bi-arrow-up fs-4"></i>
+        </button>
+      )}
       </div>
 
       {/* Modal de Reprogramação */}
-      {/* Modal de Reprogramação */}
-      {showReprogramModal && (
-        <ModalComponent
-          title={`Reprogramar ${selectedEntregaIds.length} entrega(s)`}
-          onClose={() => setShowReprogramModal(false)}
-        >
-          <div className="p-2">
-            <p>
-              Você selecionou <strong>{selectedEntregaIds.length}</strong>{' '}
-              entrega(s) para reprogramar.
-            </p>
+      <ModalComponent title="Reprogramar Entregas" onClose={() => setShowReprogramModal(false)}>
+        {showReprogramModal && (
+        <div className="p-2">
+            <p>Você selecionou <strong>{selectedEntregaIds.length}</strong> entrega(s) para reprogramar.</p>
             <Form.Group>
-              <Form.Label>Nova Data de Entrega</Form.Label>
-              <Form.Control
-                type="date"
-                value={newDeliveryDate}
-                onChange={(e) => setNewDeliveryDate(e.target.value)}
-                className="mb-3"
-              />
+                <Form.Label>Nova Data de Entrega</Form.Label>
+                <Form.Control 
+                    type="date" 
+                    value={newDeliveryDate} 
+                    onChange={(e) => setNewDeliveryDate(e.target.value)} 
+                    className="mb-3"
+                />
             </Form.Group>
             <div className="text-end">
-              <Button
-                variant="secondary"
-                onClick={() => setShowReprogramModal(false)}
-                className="me-2"
-              >
-                Cancelar
-              </Button>
-              <Button variant="primary" onClick={handleReprogramDeliveries}>
-                Confirmar
-              </Button>
+                <Button variant="secondary" onClick={() => setShowReprogramModal(false)} className="me-2">Cancelar</Button>
+                <Button variant="primary" onClick={handleReprogramDeliveries}>Confirmar</Button>
             </div>
-          </div>
-        </ModalComponent>
-      )}
+        </div>
+        )}
+      </ModalComponent>
+
     </div>
   );
 }
