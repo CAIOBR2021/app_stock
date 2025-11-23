@@ -61,7 +61,7 @@ export interface Entrega {
 }
 
 // --- CONSTANTES E HOOKS ---
-const API_URL = '/api';
+const API_URL = "https://app-stock-back.onrender.com/api";
 const ITEMS_PER_PAGE = 30;
 
 function useDebounce<T>(value: T, delay: number): T {
