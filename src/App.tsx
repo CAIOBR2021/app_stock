@@ -59,7 +59,7 @@ export interface Entrega {
 }
 
 // --- CONSTANTES E HOOKS ---
-const API_URL = '/api';
+const API_URL = import.meta.env.VITE_API_URL;
 const ITEMS_PER_PAGE = 30;
 
 function useDebounce<T>(value: T, delay: number): T {
