@@ -1,0 +1,55 @@
+/* Botão sem estilo, apenas para ícones clicáveis como a bandeira */
+.btn-icon {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+  color: inherit;
+}
+
+/* Estilos para os botões de ação (Editar/Excluir) */
+.btn-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; /* Largura fixa */
+  height: 32px; /* Altura fixa */
+  background-color: #fff;
+  border: 1px solid #dee2e6; /* Borda cinza claro */
+  color: #6c757d; /* Cor do ícone */
+  margin: 0 2px;
+  font-size: 1rem;
+  line-height: 1;
+  border-radius: 0.375rem; /* Bordas arredondadas */
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+/* Efeito ao passar o mouse para o botão padrão (Movimentar) */
+.btn-action:hover:not(:disabled) {
+  background-color: #e9ecef; /* Fundo levemente acinzentado */
+  color: #212529;
+  border-color: #adb5bd;
+}
+
+/* Estilo específico para o botão de Editar no hover */
+.btn-action-edit:hover:not(:disabled) {
+  background-color: #cfe2ff; /* Fundo azul claro */
+  color: #0a58ca; /* Ícone azul escuro */
+  border-color: #9ec5fe;
+}
+
+/* Estilo específico para o botão de Excluir no hover */
+.btn-action-delete:hover:not(:disabled) {
+  background-color: #f8d7da; /* Fundo vermelho claro */
+  color: #842029; /* Ícone vermelho escuro */
+  border-color: #f5c2c7;
+}
+
+/* Estilo para botões desabilitados */
+.btn-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #e9ecef;
+}

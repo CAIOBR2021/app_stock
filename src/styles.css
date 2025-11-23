@@ -1,0 +1,196 @@
+/* src/styles.css */
+
+/* Estilo geral e melhorias no cabeçalho */
+body {
+  background-color: #f8f9fa; /* Um cinza muito claro para o fundo */
+}
+
+.main-header {
+  border-bottom: 1px solid #dee2e6;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.app-logo {
+  height: 70px; 
+  mix-blend-mode: multiply;
+}
+
+.main-header .nav-pills .nav-link {
+  font-weight: 500;
+}
+.main-header .nav-pills .nav-link.active {
+  background-color: #0d6efd;
+  color: white;
+  box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3);
+}
+
+/* Melhorias no painel de filtros */
+.filter-panel {
+  padding: 1.5rem;
+  background-color: #ffffff;
+  border: 1px solid #dee2e6;
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.input-group .btn-clear-search {
+  border-left: 0;
+  color: #6c757d;
+}
+.input-group .form-control:focus + .btn-clear-search {
+  border-color: #86b7fe;
+  box-shadow: none;
+}
+
+
+/* Estilos da Tabela Principal */
+.products-table {
+  background-color: #ffffff;
+  border-radius: 0.75rem;
+  overflow: hidden; 
+  border: 1px solid #dee2e6;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.products-table th, .products-table td {
+    padding: 0.75rem; 
+    vertical-align: middle;
+    font-size: 0.875rem;
+}
+
+.products-table th {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+  font-weight: bold;
+  color: #495057;
+  font-size: 0.75rem; 
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.products-table .table-hover > tbody > tr:hover {
+  background-color: #f8f9fa; /* Um hover bem sutil na linha */
+}
+
+.products-table .sku {
+  font-family: 'Courier New', Courier, monospace;
+  color: #6c757d;
+  font-size: 0.8rem;
+}
+
+.products-table .product-name {
+  font-weight: 500;
+}
+
+.products-table .priority-flag {
+  opacity: 0.3;
+  transition: opacity 0.2s ease-in-out, color 0.2s ease-in-out;
+  cursor: pointer;
+}
+.products-table .priority-flag:hover {
+  opacity: 0.7;
+}
+.products-table .priority-flag.is-priority {
+  opacity: 1;
+  color: var(--bs-danger);
+}
+
+/* Card de Produto para Mobile */
+.product-card {
+  border: 1px solid #dee2e6;
+  border-radius: 0.5rem;
+  transition: box-shadow 0.2s ease-in-out, border-color 0.2s ease-in-out;
+  background-color: #fff;
+}
+.product-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  border-color: #cde2fe;
+}
+
+.product-card.border-warning {
+   border-left: 4px solid var(--bs-warning);
+}
+
+.card-title-clamp {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2; 
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+}
+.card-info-grid strong {
+  color: #6c757d;
+  display: block;
+}
+
+.card-indicators {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+}
+
+/* --- ESTILOS PARA BOTÕES DE AÇÃO (VERSÃO MONOCROMÁTICA COM HOVER VERDE) --- */
+
+/* Contêiner do grupo de botões */
+.action-buttons-group {
+    background-color: #fff; /* Fundo branco */
+    border-radius: 0.5rem; /* Bordas arredondadas */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    border: 1px solid #e9ecef; /* Borda bem sutil */
+    display: inline-flex;
+    overflow: hidden;
+}
+
+/* Estilo base para todos os botões no grupo */
+.action-buttons-group .btn {
+    border: none;
+    background-color: transparent;
+    padding: 0.4rem 0.7rem;
+    color: #6c757d; /* Cor única e neutra para todos os ícones */
+    transition: all 0.2s ease-in-out;
+    border-radius: 0;
+    border-left: 1px solid #e9ecef; /* Divisor vertical sutil */
+}
+
+/* Remove o divisor do primeiro botão */
+.action-buttons-group .btn:first-child {
+    border-left: none;
+}
+
+.action-buttons-group .btn:focus {
+    box-shadow: none !important;
+    outline: none;
+}
+
+.action-buttons-group .btn i {
+    font-size: 1.1rem;
+}
+
+/* Efeito de HOVER para cada botão */
+.action-buttons-group .btn-movimentar:hover {
+    background-color: #d4edda; /* Verde claro */
+    color: #155724; /* Verde escuro */
+}
+
+.action-buttons-group .btn-editar:hover {
+    background-color: #e0f3ff; /* Azul bem claro */
+    color: #007bff; /* Azul primário */
+}
+
+.action-buttons-group .btn-excluir:hover {
+    background-color: #ffe0e3; /* Vermelho bem claro */
+    color: #dc3545; /* Vermelho perigo */
+}
