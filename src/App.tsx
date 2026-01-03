@@ -1,14 +1,13 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Form, Button } from 'react-bootstrap';
-import { ClipboardData, CalendarWeek } from 'react-bootstrap-icons'; // Ícones novos
-
+import { ClipboardData, CalendarWeek } from 'react-bootstrap-icons'; 
 
 import meuLogo from './assets/logo.png';
 import { DeliveryForm } from './components/DeliveryForm';
 import { DeliveryTable } from './components/DeliveryTable';
 import './styles.css';
 
-// Adiciona jspdf ao objeto window para o TypeScript, pois é carregado via CDN (fallback) ou import
+// Adiciona jspdf ao objeto window para o TypeScript
 declare global {
   interface Window {
     jspdf: any;
@@ -46,7 +45,6 @@ export interface Movimentacao {
   criadoEm: string;
 }
 
-// Novo Tipo para Entregas
 export interface Entrega {
     id: UUID;
     dataHoraSolicitacao: string;
@@ -350,11 +348,9 @@ function ProdutoForm({
     produto?.valorUnitario ?? undefined,
   );
 
-  // --- LÓGICA DE CÁLCULO DO VALOR TOTAL (AJUSTADA) ---
   let valorTotalDisplay = '---';
   const quantidadeParaCalculo = produto ? produto.quantidade : quantidade;
 
-  // Garante que o valor unitário seja tratado como número para o cálculo
   const valorUnitarioNumerico =
     valorUnitario != null && !isNaN(parseFloat(String(valorUnitario)))
       ? parseFloat(String(valorUnitario))
@@ -370,7 +366,6 @@ function ProdutoForm({
       maximumFractionDigits: 2,
     });
   }
-  // --- FIM DA LÓGICA ---
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -1891,10 +1886,16 @@ export default function App() {
     const reportDateObj = selectedDeliveries.length > 0 ? new Date(selectedDeliveries[0].dataHoraSolicitacao) : new Date();
     const reportDate = reportDateObj.toLocaleDateString('pt-BR');
 
-    doc.setFontSize(16);
-    doc.text('Programação de Caminhões para Entrega de Materiais', 14, 15);
-    doc.setFontSize(10);
-    doc.text(`Relatório do Dia: ${reportDate}`, 14, 22);
+    // --- Cabeçalho com estilo melhorado ---
+    doc.setFontSize(18);
+    doc.setTextColor(40);
+    doc.text('Programação de Caminhões para Entrega de Materiais', 14, 20);
+    
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Relatório do Dia: ${reportDate}`, 14, 28);
+    doc.setDrawColor(200);
+    doc.line(14, 32, doc.internal.pageSize.getWidth() - 14, 32); // Linha separadora
 
     const tableHead = [['Nº', 'Entregue', 'Hora', 'Local da Obra', 'Material', 'Qtd', 'Un', 'Armazem', 'Responsável', 'Telefone']];
     const tableBody = selectedDeliveries.map((d, index) => [
@@ -1913,42 +1914,59 @@ export default function App() {
     (doc as any).autoTable({
       head: tableHead,
       body: tableBody,
-      startY: 28,
-      theme: 'striped',
-      headStyles: { fillColor: [41, 45, 50] }, // Cor escura conforme modelo antigo
+      startY: 40,
+      theme: 'grid', // Mudado para 'grid' para um visual mais limpo
+      headStyles: { 
+          fillColor: [37, 99, 235], // Azul do nosso novo tema
+          textColor: 255,
+          fontStyle: 'bold'
+      }, 
+      styles: {
+          fontSize: 9,
+          cellPadding: 3,
+      },
+      alternateRowStyles: { fillColor: [241, 245, 249] }, // Cinza muito claro alternado
       didDrawCell: (data: any) => {
         // Desenha o quadrado na coluna "Entregue" (index 1)
         if (data.section === 'body' && data.column.index === 1) {
-          doc.setLineWidth(0.3);
+          doc.setDrawColor(150);
+          doc.setLineWidth(0.1);
           const cell = data.cell;
           const squareSize = 4;
           const x = cell.x + (cell.width - squareSize) / 2;
           const y = cell.y + (cell.height - squareSize) / 2;
-          doc.rect(x, y, squareSize, squareSize, 'S');
+          doc.rect(x, y, squareSize, squareSize); // 'S' removido para ser apenas contorno
         }
       },
     });
 
-    // Assinaturas
+    // --- Assinaturas lado a lado ---
     const finalY = (doc as any).lastAutoTable.finalY;
-    const centerX = doc.internal.pageSize.getWidth() / 2;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
     
-    // Verifica se precisa de nova página para assinaturas
-    if (finalY + 40 > doc.internal.pageSize.getHeight()) {
+    // Define a posição Y das assinaturas (garante espaço ou nova página)
+    let signatureY = finalY + 35;
+    if (signatureY + 20 > pageHeight) {
         doc.addPage();
-        doc.setLineWidth(0.3); // Reset line width just in case
+        signatureY = 40;
     }
 
-    // Usar o finalY da tabela ou um topo fixo se nova página foi criada (simplificado aqui para usar finalY + offset)
-    const startSignaturesY = finalY + 20 > doc.internal.pageSize.getHeight() ? 30 : finalY + 20;
+    doc.setLineWidth(0.3);
+    doc.setDrawColor(0); doc.setTextColor(0); doc.setFontSize(10);
 
-    const linhaYMotorista = startSignaturesY;
-    doc.line(centerX - 50, linhaYMotorista, centerX + 50, linhaYMotorista);
-    doc.text('Assinatura do Motorista', centerX, linhaYMotorista + 5, { align: 'center' });
+    // Cálculos para posicionamento lado a lado
+    const leftCenterX = pageWidth / 4;       // Centro da metade esquerda
+    const rightCenterX = (pageWidth / 4) * 3; // Centro da metade direita
+    const lineLength = 80; // Comprimento da linha de assinatura
+
+    // Assinatura Esquerda (Motorista)
+    doc.line(leftCenterX - (lineLength/2), signatureY, leftCenterX + (lineLength/2), signatureY);
+    doc.text('Assinatura do Motorista', leftCenterX, signatureY + 5, { align: 'center' });
     
-    const linhaYSolicitante = linhaYMotorista + 25;
-    doc.line(centerX - 50, linhaYSolicitante, centerX + 50, linhaYSolicitante);
-    doc.text('Assinatura do Solicitante', centerX, linhaYSolicitante + 5, { align: 'center' });
+    // Assinatura Direita (Solicitante) - Usa o MESMO signatureY
+    doc.line(rightCenterX - (lineLength/2), signatureY, rightCenterX + (lineLength/2), signatureY);
+    doc.text('Assinatura do Solicitante', rightCenterX, signatureY + 5, { align: 'center' });
 
     doc.save(`Programacao-Diaria-${reportDate.replace(/\//g, '-')}.pdf`);
   };
