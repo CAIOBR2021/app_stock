@@ -62,9 +62,9 @@ export interface Entrega {
 }
 
 // --- CONSTANTES E HOOKS ---
-// URL da API: Ajuste conforme necessário (localhost vs Render)
-// const API_URL = "https://app-stock-back.onrender.com/api"; 
+// URL da API (Local para testes)
 const API_URL = "https://app-stock-back.onrender.com/api";
+
 
 const ITEMS_PER_PAGE = 30;
 
@@ -1877,22 +1877,13 @@ export default function App() {
   };
   
   const handleSelectEntrega = (id: string) => {
-    // CORREÇÃO: Não permitir selecionar se já estiver "Entregue"
-    const target = entregas.find(e => e.id === id);
-    if (target && target.status === 'Entregue') return;
-
     setSelectedEntregaIds(prev => 
       prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
     );
   };
 
   const handleSelectAllEntregas = (isChecked: boolean) => {
-    // CORREÇÃO: Só seleciona itens que NÃO estão "Entregue"
-    const selectableIds = entregas
-        .filter(e => e.status !== 'Entregue')
-        .map(e => e.id);
-
-    setSelectedEntregaIds(isChecked ? selectableIds : []);
+    setSelectedEntregaIds(isChecked ? entregas.map(e => e.id) : []);
   };
 
   const handleGenerateDeliveryReport = () => {
@@ -2115,6 +2106,7 @@ export default function App() {
               <i className="bi bi-clipboard-data"></i> Movimentações
             </button>
           </li>
+          {/* Botão Novo: Rotas */}
           <li className="nav-item">
             <button
               className={`nav-link d-flex align-items-center gap-2 ${view === 'rotas' ? 'active' : ''}`}

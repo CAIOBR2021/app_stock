@@ -22,7 +22,6 @@ export function DeliveryTable({
   onSelectAll
 }: DeliveryTableProps) {
 
-  // Filtra itens não entregues para o "Selecionar Todos"
   const selectableDeliveries = deliveries.filter(d => d.status !== 'Entregue');
   const isAllSelected = selectableDeliveries.length > 0 && 
                         selectableDeliveries.every(d => selectedIds.includes(d.id));
@@ -40,7 +39,8 @@ export function DeliveryTable({
                 disabled={selectableDeliveries.length === 0}
               />
             </th>
-            <th className="py-3 text-secondary text-uppercase small fw-bold">Data / Hora</th>
+            <th className="py-3 text-secondary text-uppercase small fw-bold">Data</th>
+            <th className="py-3 text-secondary text-uppercase small fw-bold">Hora</th>
             <th className="py-3 text-secondary text-uppercase small fw-bold">Local / Obra</th>
             <th className="py-3 text-secondary text-uppercase small fw-bold">Produto</th>
             <th className="py-3 text-secondary text-uppercase small fw-bold text-center">Qtd.</th>
@@ -51,7 +51,7 @@ export function DeliveryTable({
         <tbody>
           {deliveries.length === 0 ? (
             <tr>
-              <td colSpan={7} className="text-center py-5 text-muted">
+              <td colSpan={8} className="text-center py-5 text-muted">
                 Nenhuma entrega programada.
               </td>
             </tr>
@@ -59,7 +59,7 @@ export function DeliveryTable({
             deliveries.map((delivery) => {
               const isDelivered = delivery.status === 'Entregue';
               
-              // Estilo para linha entregue (mais claro e texto cinza)
+              // Linha cinza claro se entregue
               const rowClass = isDelivered ? 'bg-light text-muted' : '';
 
               return (
@@ -72,47 +72,51 @@ export function DeliveryTable({
                       disabled={isDelivered}
                     />
                   </td>
-                  {/* Data e Hora lado a lado ou levemente separadas, mas simples */}
-                  <td>
-                    <span className="fw-medium">
-                        {new Date(delivery.dataHoraSolicitacao).toLocaleDateString('pt-BR')}
-                    </span>
-                    <span className="ms-2 text-muted small">
-                        {new Date(delivery.dataHoraSolicitacao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
+                  
+                  <td className="fw-medium">
+                    {new Date(delivery.dataHoraSolicitacao).toLocaleDateString('pt-BR')}
                   </td>
                   <td>
-                    <div className="d-flex flex-column">
-                        <span className="fw-medium">{delivery.localObra}</span>
-                        <small className="text-muted">{delivery.localArmazenagem || delivery.localArmazenamento}</small>
-                    </div>
+                    {new Date(delivery.dataHoraSolicitacao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                   </td>
+
                   <td>
-                    <span>{delivery.itemNome || 'Produto Indefinido'}</span>
-                    {delivery.sku && <span className="text-muted ms-1 small">({delivery.sku})</span>}
+                    <div className="fw-medium">{delivery.localObra}</div>
+                    <small className="text-muted" style={{ fontSize: '0.85em' }}>
+                        {delivery.localArmazenagem || delivery.localArmazenamento || '-'}
+                    </small>
                   </td>
+
+                  <td>
+                    <span>{delivery.itemNome || 'Produto não encontrado'}</span>
+                    {delivery.sku && <div className="text-muted small" style={{ fontSize: '0.75em' }}>{delivery.sku}</div>}
+                  </td>
+
                   <td className="text-center">
                     <span className={`badge ${isDelivered ? 'bg-secondary' : 'bg-light text-dark border'}`}>
                       {delivery.itemQuantidade} {delivery.itemUnidadeMedida}
                     </span>
                   </td>
-                  <td className="text-center">
+
+                  {/* CAMPO STATUS CORRIGIDO */}
+                  <td className="text-center" style={{ width: '140px' }}>
                     <select 
-                        className={`form-select form-select-sm border-0 fw-bold text-center ${
+                        className={`form-select form-select-sm border-0 shadow-none fw-bold text-center ${
                             isDelivered ? 'text-success' : 'text-warning'
                         }`}
-                        style={{width: 'auto', margin: '0 auto', backgroundColor: 'transparent', cursor: 'pointer'}}
+                        style={{ width: 'auto', margin: '0 auto', backgroundColor: 'transparent', cursor: 'pointer' }}
                         value={delivery.status}
                         onChange={(e) => onStatusChange(delivery.id, e.target.value)}
                     >
-                        <option value="Pendente">Pendente</option>
-                        <option value="Entregue">Entregue</option>
+                        <option value="Pendente" className="text-dark">Pendente</option>
+                        <option value="Entregue" className="text-dark">Entregue</option>
                     </select>
                   </td>
+
                   <td className="text-end">
                     <div className="d-flex justify-content-end gap-2">
                         <button 
-                            className="btn btn-sm text-primary p-0 border-0" 
+                            className="btn btn-sm btn-link text-decoration-none p-0" 
                             onClick={() => onEdit(delivery)}
                             disabled={isDelivered}
                             style={{ opacity: isDelivered ? 0.5 : 1 }}
@@ -122,7 +126,7 @@ export function DeliveryTable({
                         </button>
                         
                         <button 
-                            className="btn btn-sm text-danger p-0 border-0" 
+                            className="btn btn-sm btn-link text-danger text-decoration-none p-0" 
                             onClick={() => onDelete(delivery.id)}
                             title="Excluir"
                         >
