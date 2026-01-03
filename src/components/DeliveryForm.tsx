@@ -47,12 +47,12 @@ const DeliveryForm: React.FC = () => {
     const fetchDados = async () => {
       try {
         // A. Busca Produtos
-        const resProd = await fetch('http://localhost:10000/api/produtos');
+        const resProd = await fetch('/api/produtos');
         const produtos: Produto[] = await resProd.json();
         setListaProdutos(produtos);
 
         // B. Busca Histórico de Entregas para montar sugestões
-        const resEntregas = await fetch('http://localhost:10000/api/entregas');
+        const resEntregas = await fetch('/api/entregas');
         const entregas: EntregaHistorico[] = await resEntregas.json();
 
         // Extrai Destinos Únicos
@@ -140,7 +140,7 @@ const DeliveryForm: React.FC = () => {
     };
 
     try {
-      const response = await fetch('http://localhost:10000/api/entregas', {
+      const response = await fetch('/api/entregas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
