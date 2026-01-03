@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Form, Row, Col, Button, FloatingLabel } from 'react-bootstrap';
 import { CalendarEventFill, Save, XCircle } from 'react-bootstrap-icons';
-import Select from 'react-select';
+import Select, { StylesConfig } from 'react-select';
 
 // Interface para as propriedades recebidas
 interface DeliveryFormProps {
@@ -35,11 +35,54 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
     return produtosDisponiveis.map(p => ({
       value: p.id,
       label: `${p.nome} (Saldo: ${p.quantidade} ${p.unidade} | SKU: ${p.sku})`,
-      nomeProduto: p.nome, // Guardamos o nome puro para salvar no histórico se precisar
+      nomeProduto: p.nome, 
       unidade: p.unidade,
       quantidade: p.quantidade
     }));
   }, [produtosDisponiveis]);
+
+  // --- ESTILOS CUSTOMIZADOS PARA O REACT-SELECT ---
+  // Isso faz o componente ficar idêntico aos inputs do Bootstrap (FloatingLabel)
+  const customStyles: StylesConfig = {
+    control: (provided, state) => ({
+      ...provided,
+      backgroundColor: '#fff',
+      borderColor: state.isFocused ? '#86b7fe' : '#dee2e6', // Cor da borda do Bootstrap
+      minHeight: '58px', // Mesma altura do FloatingLabel
+      height: '58px',
+      borderRadius: '0.375rem',
+      boxShadow: state.isFocused ? '0 0 0 0.25rem rgba(13, 110, 253, 0.25)' : 'none', // Glow azul do Bootstrap
+      '&:hover': {
+        borderColor: state.isFocused ? '#86b7fe' : '#dee2e6'
+      }
+    }),
+    valueContainer: (provided) => ({
+      ...provided,
+      height: '58px',
+      padding: '0 12px',
+      alignContent: 'center'
+    }),
+    input: (provided) => ({
+      ...provided,
+      margin: '0',
+      padding: '0'
+    }),
+    singleValue: (provided) => ({
+        ...provided,
+        color: '#212529', // Cor de texto padrão do Bootstrap
+    }),
+    menu: (provided) => ({
+        ...provided,
+        zIndex: 9999, // Garante que o menu abra por cima de tudo
+        boxShadow: '0 0.5rem 1rem rgba(0, 0, 0, 0.15)', // Sombra do Bootstrap
+        borderRadius: '0.375rem',
+        marginTop: '2px'
+    }),
+    placeholder: (provided) => ({
+        ...provided,
+        color: '#6c757d', // Cor de placeholder do Bootstrap
+    })
+  };
 
   // Carrega os dados se for edição
   useEffect(() => {
@@ -58,7 +101,6 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
             responsavelTelefone: deliveryToEdit.responsavelTelefone || ''
         });
 
-        // Encontra e define a opção selecionada no Select
         const foundOption = options.find(opt => opt.value === deliveryToEdit.produtoId);
         setSelectedOption(foundOption || null);
     }
@@ -67,13 +109,11 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validação: Garante que um produto foi selecionado via Select
     if (!formData.produtoId || !selectedOption) {
         alert("Por favor, selecione um produto da lista.");
         return;
     }
 
-    // Validação extra de estoque (opcional, mas recomendada)
     if (selectedOption.quantidade < formData.itemQuantidade) {
        if(!window.confirm(`Atenção: A quantidade solicitada (${formData.itemQuantidade}) é maior que o saldo atual (${selectedOption.quantidade}). Deseja continuar e deixar o estoque negativo?`)) {
            return;
@@ -82,12 +122,11 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
     
     onSave({
         ...formData,
-        produtoId: selectedOption.value, // Garante que o ID vem do objeto selecionado
+        produtoId: selectedOption.value,
         itemNome: selectedOption.nomeProduto,
         dataHoraSolicitacao: `${data}T${hora}:00`
     });
     
-    // Limpa o formulário se for uma nova entrega
     if (!deliveryToEdit) {
         setFormData({ 
             localArmazenagem: '',
@@ -99,7 +138,6 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
             responsavelTelefone: ''
         });
         setSelectedOption(null);
-        // Mantém a data atual por conveniência
     }
   };
 
@@ -107,7 +145,6 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
       setFormData({ ...formData, [field]: e.target.value });
   };
 
-  // Manipulador de mudança específico para o React-Select
   const handleSelectChange = (option: any) => {
       setSelectedOption(option);
       if (option) {
@@ -157,25 +194,38 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
 
       <Row className="g-2 mb-3">
         <Col md={8}>
-            <Form.Group>
-                <Form.Label className="small text-muted mb-1">Produto</Form.Label>
+            {/* Removemos o FloatingLabel daqui pois o React-Select não suporta bem.
+               Em vez disso, usamos um layout que simula o visual, mas com um label fixo pequeno acima 
+               ou apenas o placeholder inteligente.
+            */}
+            <div style={{ position: 'relative' }}>
+                <Form.Label className="d-none">Produto</Form.Label> {/* Apenas para acessibilidade */}
                 <Select
                     value={selectedOption}
                     onChange={handleSelectChange}
                     options={options}
-                    placeholder="Selecione ou digite o produto..."
+                    placeholder="Selecione o Produto..."
                     isClearable
                     required
                     noOptionsMessage={() => "Nenhum produto encontrado"}
-                    styles={{
-                        control: (base) => ({
-                            ...base,
-                            borderColor: '#dee2e6', // Combina com as bordas do Bootstrap
-                            minHeight: '58px', // Altura similar ao FloatingLabel
-                        })
-                    }}
+                    styles={customStyles} // APLICAÇÃO DOS ESTILOS
+                    aria-label="Produto"
                 />
-            </Form.Group>
+                {/* Dica visual pequena se quiser imitar o label flutuante (opcional) */}
+                {!selectedOption && (
+                   <span style={{
+                       position: 'absolute',
+                       left: '12px',
+                       top: '50%',
+                       transform: 'translateY(-50%)',
+                       color: '#6c757d',
+                       pointerEvents: 'none',
+                       fontSize: '1rem',
+                       zIndex: 1
+                   }}>
+                   </span>
+                )}
+            </div>
         </Col>
         <Col md={4}>
             <FloatingLabel label="Quantidade">
