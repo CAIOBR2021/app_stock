@@ -1,8 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  /* --- Cores & Gradientes --- */
-  --primary-color: #0d6efd;
+  /* Cores & Gradientes Originais */
   --primary-gradient: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   --secondary-gradient: linear-gradient(135deg, #64748b 0%, #475569 100%);
   --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
@@ -13,10 +12,6 @@
   
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  
-  --border-radius-sm: 0.375rem;
-  --border-radius-md: 0.5rem;
   --border-radius-lg: 0.75rem;
 }
 
@@ -26,10 +21,9 @@ body {
   color: #1e293b;
 }
 
-/* --- Header e Navegação --- */
+/* Header */
 .main-header {
   background: var(--primary-gradient) !important;
-  border-bottom: none !important;
   box-shadow: var(--shadow-md) !important;
   padding-top: 1rem !important;
   padding-bottom: 1rem !important;
@@ -38,23 +32,21 @@ body {
 .main-header h5 {
     color: white !important;
     font-weight: 600;
-    letter-spacing: 0.5px;
 }
 
 .app-logo {
     filter: brightness(0) invert(1);
 }
 
+/* Navegação */
 .nav-pills .nav-link {
   color: rgba(255, 255, 255, 0.8) !important;
   font-weight: 500;
-  padding: 0.6rem 1.2rem;
   transition: all 0.2s ease;
-  border-radius: var(--border-radius-md);
-  /* Flexbox para alinhar ícone e texto */
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+  /* Alinhamento flex para ícones */
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .nav-pills .nav-link:hover {
@@ -68,7 +60,7 @@ body {
   box-shadow: var(--shadow-sm);
 }
 
-/* --- Cartões e Containers --- */
+/* Cartões */
 .card-modern {
   background: var(--bg-card);
   border-radius: var(--border-radius-lg);
@@ -82,154 +74,49 @@ body {
   border: none !important;
   border-radius: var(--border-radius-lg) !important;
   box-shadow: var(--shadow-sm);
-  transition: all 0.3s ease-in-out;
   background: var(--bg-card);
-  overflow: hidden;
+  transition: transform 0.2s;
 }
+.product-card:hover { transform: translateY(-5px); }
 
-.product-card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--shadow-lg);
-}
-
-.card-title-clamp {
-    font-size: 1.1rem;
-    color: #0f172a;
-}
-
-/* --- Botões e Ícones de Ação --- */
+/* Botões */
 .btn-primary {
     background: var(--primary-gradient);
     border: none;
     box-shadow: var(--shadow-sm);
-    font-weight: 500;
 }
-
 .btn-primary:hover {
     background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-    box-shadow: var(--shadow-md);
 }
 
 .btn-outline-primary {
     color: #2563eb;
     border-color: #2563eb;
 }
-
 .btn-outline-primary:hover {
     background: var(--primary-gradient);
     border-color: transparent;
     color: white;
 }
 
-/* Ícones Circulares */
-.btn-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 6px;
-    border-radius: 50%;
-    transition: background-color 0.2s, transform 0.2s;
-    background: none;
-    border: none;
-}
-
-.btn-icon:hover:not(:disabled) {
-    background-color: rgba(0,0,0,0.05);
-    transform: scale(1.1);
-}
-
-.btn-icon:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-}
-
-/* Bandeira (Priority Flag) */
-.priority-flag {
-    color: #94a3b8; /* Cinza */
-    transition: color 0.3s ease, filter 0.3s ease;
-}
-
-.priority-flag.is-priority {
-    color: #dc2626; /* VERMELHO */
-    filter: drop-shadow(0 2px 4px rgba(220, 38, 38, 0.2));
-}
-
-.btn-action {
-    background: none;
-    border: none;
-    padding: 0 0.5rem;
-    cursor: pointer;
-    font-size: 1.1rem;
-    transition: opacity 0.2s;
-}
-.btn-action:hover {
-    opacity: 0.7;
-}
-
-.total-value-badge {
-  background: var(--secondary-gradient) !important;
-  color: white !important;
-  font-size: 1rem;
-  padding: 0.75rem 1.25rem !important;
-  border-radius: var(--border-radius-md) !important;
-  box-shadow: var(--shadow-sm);
-}
-
-/* --- Tabelas Gerais --- */
-.table-hover tbody tr:hover {
-    background-color: #f8fafc;
-}
-
-.table thead th {
-    background-color: #f1f5f9;
-    color: #475569;
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 0.85rem;
-    letter-spacing: 0.5px;
-    border-bottom: 2px solid #e2e8f0;
-}
-
-/* --- Estilos Específicos para Linha ENTREGUE --- */
-.table-secondary.opacity-75 {
-    background-color: #f8fafc !important;
-    color: #94a3b8;
-}
-.table-secondary.opacity-75 .fw-bold,
-.table-secondary.opacity-75 .fw-medium {
-    color: #94a3b8 !important;
-    text-decoration: line-through; /* Risca o texto */
-}
-
-/* Dropdown de Status (Sem borda) */
-.form-select.shadow-none:focus {
-    box-shadow: none;
-    outline: none;
-}
-
-/* --- Badges de Status --- */
-.badge {
-    padding: 0.5em 0.75em;
-    font-weight: 500;
-    letter-spacing: 0.3px;
-}
+/* Tabela e Badges */
 .badge.bg-success { background: var(--success-gradient) !important; }
 .badge.bg-danger { background: var(--danger-gradient) !important; }
 .badge.bg-warning { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important; color: white !important;}
 
-/* --- Modais --- */
+/* Fix para Dropdown parecer texto simples na tabela */
+.form-select:focus {
+    box-shadow: none;
+    outline: none;
+}
+
+/* Modal */
 .modal-content {
     border-radius: var(--border-radius-lg);
     border: none;
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-md);
 }
 .modal-header {
     background: #f8fafc;
     border-bottom: 1px solid #e2e8f0;
-    border-top-left-radius: var(--border-radius-lg);
-    border-top-right-radius: var(--border-radius-lg);
-}
-.modal-title {
-    font-weight: 600;
-    color: #1e293b;
 }

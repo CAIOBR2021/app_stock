@@ -62,9 +62,9 @@ export interface Entrega {
 }
 
 // --- CONSTANTES E HOOKS ---
-// ATENÇÃO: Use localhost para testar as mudanças do server.js localmente.
+// URL da API: Ajuste conforme necessário (localhost vs Render)
 // const API_URL = "https://app-stock-back.onrender.com/api"; 
-const API_URL = "https://app-stock-back.onrender.com/api";
+const API_URL = "http://localhost:10000/api";
 
 const ITEMS_PER_PAGE = 30;
 
@@ -1835,7 +1835,6 @@ export default function App() {
     }
   }
 
-  // --- FUNÇÃO DE EXCLUSÃO ATUALIZADA (COM AVISO DE ESTORNO) ---
   async function deleteEntrega(id: string) {
       if(!confirm("Deseja realmente excluir esta entrega? O estoque será DEVOLVIDO automaticamente ao produto.")) return;
       
