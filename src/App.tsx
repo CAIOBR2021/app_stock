@@ -2319,26 +2319,26 @@ export default function App() {
       </div>
 
       {/* Modal de Reprogramação */}
-      <ModalComponent title="Reprogramar Entregas" onClose={() => setShowReprogramModal(false)}>
-        {showReprogramModal && (
-        <div className="p-2">
-            <p>Você selecionou <strong>{selectedEntregaIds.length}</strong> entrega(s) para reprogramar.</p>
-            <Form.Group>
-                <Form.Label>Nova Data de Entrega</Form.Label>
-                <Form.Control 
-                    type="date" 
-                    value={newDeliveryDate} 
-                    onChange={(e) => setNewDeliveryDate(e.target.value)} 
-                    className="mb-3"
-                />
-            </Form.Group>
-            <div className="text-end">
-                <Button variant="secondary" onClick={() => setShowReprogramModal(false)} className="me-2">Cancelar</Button>
-                <Button variant="primary" onClick={handleReprogramDeliveries}>Confirmar</Button>
+      {showReprogramModal && (
+        <ModalComponent title="Reprogramar Entregas" onClose={() => setShowReprogramModal(false)}>
+            <div className="p-2">
+                <p>Você selecionou <strong>{selectedEntregaIds.length}</strong> entrega(s) para reprogramar.</p>
+                <Form.Group>
+                    <Form.Label>Nova Data de Entrega</Form.Label>
+                    <Form.Control 
+                        type="date" 
+                        value={newDeliveryDate} 
+                        onChange={(e) => setNewDeliveryDate(e.target.value)} 
+                        className="mb-3"
+                    />
+                </Form.Group>
+                <div className="text-end">
+                    <Button variant="secondary" onClick={() => setShowReprogramModal(false)} className="me-2">Cancelar</Button>
+                    <Button variant="primary" onClick={handleReprogramDeliveries}>Confirmar</Button>
+                </div>
             </div>
-        </div>
-        )}
-      </ModalComponent>
+        </ModalComponent>
+      )}
 
     </div>
   );
