@@ -48,8 +48,8 @@ export interface Movimentacao {
 export interface Entrega {
     id: UUID;
     dataHoraSolicitacao: string;
-    localArmazenagem: string; // Usado no frontend
-    localArmazenamento?: string; // Pode vir do backend assim
+    localArmazenagem: string; 
+    localArmazenamento?: string; 
     localObra: string;
     produtoId: UUID;
     itemNome?: string;
@@ -1832,13 +1832,25 @@ export default function App() {
     }
   }
 
+  // --- FUNÇÃO DE EXCLUSÃO ATUALIZADA (COM AVISO DE ESTORNO) ---
   async function deleteEntrega(id: string) {
-      if(!confirm("Deseja realmente excluir esta entrega? O estoque NÃO será estornado automaticamente.")) return;
+      if(!confirm("Deseja realmente excluir esta entrega? O estoque será DEVOLVIDO automaticamente ao produto.")) return;
+      
       try {
-          await fetch(`${API_URL}/entregas/${id}`, { method: 'DELETE' });
-          setEntregas(prev => prev.filter(e => e.id !== id));
-          setSelectedEntregaIds(prev => prev.filter(sid => sid !== id));
-      } catch (err) { console.error(err); }
+          const res = await fetch(`${API_URL}/entregas/${id}`, { method: 'DELETE' });
+          if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || 'Erro ao excluir');
+          }
+          
+          alert('Entrega excluída e estoque estornado com sucesso!');
+          
+          // Recarrega a página para atualizar a tabela de produtos e movimentações com o novo saldo
+          window.location.reload();
+      } catch (err: any) { 
+          console.error(err);
+          alert(err.message);
+      }
   }
 
   async function updateEntregaStatus(id: string, status: string) {
