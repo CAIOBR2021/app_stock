@@ -24,8 +24,10 @@ const DeliveryForm: React.FC = () => {
   // --- ESTADOS DO FORMULÁRIO ---
   const [nomeProduto, setNomeProduto] = useState('');
   const [codigo, setCodigo] = useState(''); // SKU
-  const [produtoSelecionado, setProdutoSelecionado] = useState<Produto | null>(null);
-  
+  const [produtoSelecionado, setProdutoSelecionado] = useState<Produto | null>(
+    null,
+  );
+
   const [destino, setDestino] = useState('');
   const [responsavel, setResponsavel] = useState('');
   const [telefone, setTelefone] = useState('');
@@ -35,7 +37,9 @@ const DeliveryForm: React.FC = () => {
   // --- ESTADOS DE DADOS (Vindos da API) ---
   const [listaProdutos, setListaProdutos] = useState<Produto[]>([]);
   const [listaDestinos, setListaDestinos] = useState<string[]>([]);
-  const [listaResponsaveis, setListaResponsaveis] = useState<ResponsavelInfo[]>([]);
+  const [listaResponsaveis, setListaResponsaveis] = useState<ResponsavelInfo[]>(
+    [],
+  );
   const [carregando, setCarregando] = useState(true);
 
   // --- 1. BUSCAR DADOS AO INICIAR ---
@@ -52,25 +56,28 @@ const DeliveryForm: React.FC = () => {
         const entregas: EntregaHistorico[] = await resEntregas.json();
 
         // Extrai Destinos Únicos
-        const destinosUnicos = Array.from(new Set(entregas.map(e => e.localObra).filter(Boolean)));
+        const destinosUnicos = Array.from(
+          new Set(entregas.map((e) => e.localObra).filter(Boolean)),
+        );
         setListaDestinos(destinosUnicos);
 
         // Extrai Responsáveis Únicos (Map para evitar duplicatas de nome)
         const mapResponsaveis = new Map<string, string>();
-        entregas.forEach(e => {
+        entregas.forEach((e) => {
           if (e.responsavelNome && e.responsavelTelefone) {
             mapResponsaveis.set(e.responsavelNome, e.responsavelTelefone);
           }
         });
-        
-        const responsaveisUnicos: ResponsavelInfo[] = Array.from(mapResponsaveis).map(([nome, telefone]) => ({
+
+        const responsaveisUnicos: ResponsavelInfo[] = Array.from(
+          mapResponsaveis,
+        ).map(([nome, telefone]) => ({
           nome,
-          telefone
+          telefone,
         }));
         setListaResponsaveis(responsaveisUnicos);
-
       } catch (error) {
-        console.error("Erro ao carregar dados do banco:", error);
+        console.error('Erro ao carregar dados do banco:', error);
       } finally {
         setCarregando(false);
       }
@@ -85,8 +92,10 @@ const DeliveryForm: React.FC = () => {
     setNomeProduto(novoNome);
 
     // Busca exata ou parcial no array carregado
-    const produto = listaProdutos.find(p => p.nome.toLowerCase() === novoNome.toLowerCase());
-    
+    const produto = listaProdutos.find(
+      (p) => p.nome.toLowerCase() === novoNome.toLowerCase(),
+    );
+
     if (produto) {
       setCodigo(produto.sku);
       setProdutoSelecionado(produto);
@@ -101,7 +110,9 @@ const DeliveryForm: React.FC = () => {
     const novoResponsavel = e.target.value;
     setResponsavel(novoResponsavel);
 
-    const info = listaResponsaveis.find(r => r.nome.toLowerCase() === novoResponsavel.toLowerCase());
+    const info = listaResponsaveis.find(
+      (r) => r.nome.toLowerCase() === novoResponsavel.toLowerCase(),
+    );
     if (info) {
       setTelefone(info.telefone);
     }
@@ -112,7 +123,7 @@ const DeliveryForm: React.FC = () => {
     e.preventDefault();
 
     if (!produtoSelecionado) {
-      alert("Por favor, selecione um produto válido da lista.");
+      alert('Por favor, selecione um produto válido da lista.');
       return;
     }
 
@@ -124,7 +135,8 @@ const DeliveryForm: React.FC = () => {
       responsavelTelefone: telefone,
       dataHoraSolicitacao: new Date().toISOString(),
       // O backend exige localArmazenamento, usamos o padrão do produto ou um genérico
-      localArmazenamento: produtoSelecionado.localArmazenamento || 'Estoque Central', 
+      localArmazenamento:
+        produtoSelecionado.localArmazenamento || 'Estoque Central',
     };
 
     try {
@@ -135,7 +147,7 @@ const DeliveryForm: React.FC = () => {
       });
 
       if (response.ok) {
-        alert("Pedido registrado com sucesso!");
+        alert('Pedido registrado com sucesso!');
         // Limpar form
         setNomeProduto('');
         setCodigo('');
@@ -150,23 +162,28 @@ const DeliveryForm: React.FC = () => {
         alert(`Erro ao registrar: ${erro.error}`);
       }
     } catch (error) {
-      console.error("Erro de conexão:", error);
-      alert("Erro ao conectar com o servidor.");
+      console.error('Erro de conexão:', error);
+      alert('Erro ao conectar com o servidor.');
     }
   };
 
   return (
     <div className="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-4 text-gray-800">Solicitação de Material</h2>
-      
-      {carregando && <p className="text-blue-600 mb-4">Carregando dados do estoque...</p>}
+      <h2 className="text-2xl font-bold mb-4 text-gray-800">
+        Solicitação de Material
+      </h2>
+
+      {carregando && (
+        <p className="text-blue-600 mb-4">Carregando dados do estoque...</p>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        
         {/* GRUPO: PRODUTO */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700">Nome do Produto</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Nome do Produto
+            </label>
             <input
               list="lista-produtos"
               type="text"
@@ -185,7 +202,9 @@ const DeliveryForm: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Código</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Código
+            </label>
             <input
               type="text"
               readOnly
@@ -198,7 +217,9 @@ const DeliveryForm: React.FC = () => {
 
         {/* GRUPO: DESTINO */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">Destino (Obra)</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Destino (Obra)
+          </label>
           <input
             list="lista-destinos"
             type="text"
@@ -219,7 +240,9 @@ const DeliveryForm: React.FC = () => {
         {/* GRUPO: RESPONSÁVEL E TELEFONE */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Responsável</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Responsável
+            </label>
             <input
               list="lista-responsaveis"
               type="text"
@@ -238,7 +261,9 @@ const DeliveryForm: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Telefone</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Telefone
+            </label>
             <input
               type="tel"
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
@@ -251,7 +276,9 @@ const DeliveryForm: React.FC = () => {
 
         {/* OUTROS CAMPOS */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">Quantidade</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Quantidade
+          </label>
           <input
             type="number"
             required
@@ -263,14 +290,16 @@ const DeliveryForm: React.FC = () => {
         </div>
 
         <div>
-            <label className="block text-sm font-medium text-gray-700">Observação</label>
-            <textarea
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
-                rows={3}
-                value={observacao}
-                onChange={(e) => setObservacao(e.target.value)}
-                placeholder="Detalhes adicionais (opcional)"
-            />
+          <label className="block text-sm font-medium text-gray-700">
+            Observação
+          </label>
+          <textarea
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
+            rows={3}
+            value={observacao}
+            onChange={(e) => setObservacao(e.target.value)}
+            placeholder="Detalhes adicionais (opcional)"
+          />
         </div>
 
         <button
@@ -280,7 +309,6 @@ const DeliveryForm: React.FC = () => {
         >
           {carregando ? 'Carregando...' : 'Registrar Entrega'}
         </button>
-
       </form>
     </div>
   );
