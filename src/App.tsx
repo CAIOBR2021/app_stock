@@ -62,7 +62,10 @@ export interface Entrega {
 }
 
 // --- CONSTANTES E HOOKS ---
-const API_URL = "https://app-stock-back.onrender.com/api";
+// ATENÇÃO: Use localhost para testar as mudanças do server.js localmente.
+// const API_URL = "https://app-stock-back.onrender.com/api"; 
+const API_URL = "http://localhost:10000/api";
+
 const ITEMS_PER_PAGE = 30;
 
 function useDebounce<T>(value: T, delay: number): T {
@@ -1875,13 +1878,22 @@ export default function App() {
   };
   
   const handleSelectEntrega = (id: string) => {
+    // CORREÇÃO: Não permitir selecionar se já estiver "Entregue"
+    const target = entregas.find(e => e.id === id);
+    if (target && target.status === 'Entregue') return;
+
     setSelectedEntregaIds(prev => 
       prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
     );
   };
 
   const handleSelectAllEntregas = (isChecked: boolean) => {
-    setSelectedEntregaIds(isChecked ? entregas.map(e => e.id) : []);
+    // CORREÇÃO: Só seleciona itens que NÃO estão "Entregue"
+    const selectableIds = entregas
+        .filter(e => e.status !== 'Entregue')
+        .map(e => e.id);
+
+    setSelectedEntregaIds(isChecked ? selectableIds : []);
   };
 
   const handleGenerateDeliveryReport = () => {
@@ -1919,7 +1931,7 @@ export default function App() {
       d.itemNome || '-',
       d.itemQuantidade,
       d.itemUnidadeMedida || '-',
-      d.localArmazenagem || '-', // Agora vai aparecer corretamente!
+      d.localArmazenagem || '-', 
       d.responsavelNome || '',
       formatPhoneNumber(d.responsavelTelefone || '')
     ]);
@@ -1930,7 +1942,7 @@ export default function App() {
       startY: 40,
       theme: 'grid', 
       headStyles: { 
-          fillColor: [41, 45, 50], // CORRIGIDO: Cinza escuro original
+          fillColor: [41, 45, 50], 
           textColor: 255,
           fontStyle: 'bold'
       }, 

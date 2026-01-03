@@ -1,103 +1,160 @@
-import React from 'react';
-import { Table, Button, Form } from 'react-bootstrap';
-import { PencilSquare, Trash, CheckCircle, Clock, Truck } from 'react-bootstrap-icons';
+import type { Entrega } from '../App';
+import { Form } from 'react-bootstrap';
+import { Trash, PencilSquare, Clock, GeoAlt, BoxSeam } from 'react-bootstrap-icons';
 
 interface DeliveryTableProps {
-  deliveries: any[];
+  deliveries: Entrega[];
   onDelete: (id: string) => void;
-  onEdit: (d: any) => void;
-  onStatusChange: (id: string, s: string) => void;
-  // Novas props para seleção
+  onEdit: (entrega: Entrega) => void;
+  onStatusChange: (id: string, status: string) => void;
   selectedIds: string[];
   onSelectItem: (id: string) => void;
-  onSelectAll: (checked: boolean) => void;
+  onSelectAll: (isChecked: boolean) => void;
 }
 
-export const DeliveryTable: React.FC<DeliveryTableProps> = ({ 
-  deliveries, 
-  onDelete, 
-  onEdit, 
+export function DeliveryTable({
+  deliveries,
+  onDelete,
+  onEdit,
   onStatusChange,
   selectedIds,
   onSelectItem,
   onSelectAll
-}) => {
-  // Verifica se todos os itens visíveis estão selecionados
-  const allSelected = deliveries.length > 0 && deliveries.every(d => selectedIds.includes(d.id));
+}: DeliveryTableProps) {
+
+  // Filtra apenas os itens que PODEM ser selecionados (não entregues)
+  // Isto serve para o checkbox "Selecionar Todos"
+  const selectableDeliveries = deliveries.filter(d => d.status !== 'Entregue');
+  
+  // Verifica se todos os itens SELECIONÁVEIS estão selecionados
+  const isAllSelected = selectableDeliveries.length > 0 && 
+                        selectableDeliveries.every(d => selectedIds.includes(d.id));
 
   return (
-    <div className="card-modern p-0 overflow-hidden">
-      <div className="table-responsive">
-        <Table className="table-modern mb-0">
-          <thead>
+    <div className="table-responsive shadow-sm rounded border-0 bg-white">
+      <table className="table table-hover align-middle mb-0">
+        <thead className="bg-light">
+          <tr>
+            <th style={{ width: '50px' }} className="text-center py-3">
+              <Form.Check 
+                type="checkbox"
+                checked={isAllSelected}
+                onChange={(e) => onSelectAll(e.target.checked)}
+                disabled={selectableDeliveries.length === 0}
+                style={{ cursor: 'pointer' }}
+              />
+            </th>
+            <th className="py-3 text-muted fw-bold text-uppercase small">Data/Hora</th>
+            <th className="py-3 text-muted fw-bold text-uppercase small">Local / Obra</th>
+            <th className="py-3 text-muted fw-bold text-uppercase small">Produto</th>
+            <th className="py-3 text-muted fw-bold text-uppercase small text-center">Qtd.</th>
+            <th className="py-3 text-muted fw-bold text-uppercase small text-center">Status</th>
+            <th className="py-3 text-muted fw-bold text-uppercase small text-end">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {deliveries.length === 0 ? (
             <tr>
-              <th style={{width: '40px'}} className="text-center">
-                <Form.Check 
-                  type="checkbox" 
-                  checked={allSelected}
-                  onChange={(e) => onSelectAll(e.target.checked)}
-                />
-              </th>
-              <th>Status</th>
-              <th>Data</th>
-              <th>Produto</th>
-              <th>Qtd</th>
-              <th>Destino</th>
-              <th>Resp.</th>
-              <th className="text-end">Ações</th>
+              <td colSpan={7} className="text-center py-5 text-muted">
+                <div className="d-flex flex-column align-items-center">
+                    <BoxSeam size={32} className="mb-2 opacity-50"/>
+                    <span>Nenhuma entrega programada.</span>
+                </div>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {deliveries.length > 0 ? deliveries.map(d => (
-                <tr key={d.id} className={selectedIds.includes(d.id) ? 'table-active' : ''}>
-                    <td className="text-center">
-                        <Form.Check 
-                          type="checkbox" 
-                          checked={selectedIds.includes(d.id)}
-                          onChange={() => onSelectItem(d.id)}
-                        />
-                    </td>
-                    <td>
-                        <span 
-                            className={`badge ${d.status === 'Entregue' ? 'bg-success' : 'bg-warning text-dark'}`} 
-                            style={{cursor: 'pointer'}}
-                            onClick={() => onStatusChange(d.id, d.status === 'Entregue' ? 'Pendente' : 'Entregue')}
-                        >
-                            {d.status === 'Entregue' ? <CheckCircle className="me-1"/> : <Clock className="me-1"/>}
-                            {d.status}
+          ) : (
+            deliveries.map((delivery) => {
+              const isDelivered = delivery.status === 'Entregue';
+              
+              return (
+                <tr key={delivery.id} className={isDelivered ? 'table-secondary opacity-75' : ''}>
+                  <td className="text-center">
+                    <Form.Check 
+                      type="checkbox"
+                      checked={selectedIds.includes(delivery.id)}
+                      onChange={() => onSelectItem(delivery.id)}
+                      disabled={isDelivered} // BLOQUEIA SE JÁ FOI ENTREGUE
+                      style={{ cursor: isDelivered ? 'not-allowed' : 'pointer' }}
+                    />
+                  </td>
+                  <td>
+                    <div className="d-flex flex-column">
+                      <span className={`fw-bold ${isDelivered ? 'text-decoration-line-through' : 'text-dark'}`}>
+                        {new Date(delivery.dataHoraSolicitacao).toLocaleDateString('pt-BR')}
+                      </span>
+                      <small className="text-muted d-flex align-items-center gap-1">
+                        <Clock size={10}/>
+                        {new Date(delivery.dataHoraSolicitacao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      </small>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="d-flex flex-column">
+                        <span className={`fw-medium ${isDelivered ? 'text-decoration-line-through' : ''}`}>
+                            {delivery.localObra}
                         </span>
-                    </td>
-                    <td>
-                        {new Date(d.dataHoraSolicitacao).toLocaleDateString()} 
-                        <br/>
-                        <small className="text-muted">{new Date(d.dataHoraSolicitacao).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
-                    </td>
-                    <td>
-                        <div className="fw-bold text-primary">{d.itemNome}</div>
-                        <small className="text-muted">{d.sku}</small>
-                    </td>
-                    <td className="fw-bold">{d.itemQuantidade} {d.itemUnidadeMedida}</td>
-                    <td>
-                        <div className="d-flex align-items-center">
-                            <Truck className="text-secondary me-2" size={14} />
-                            {d.localObra}
-                        </div>
-                    </td>
-                    <td>
-                        <div>{d.responsavelNome}</div>
-                        <small className="text-muted">{d.responsavelTelefone}</small>
-                    </td>
-                    <td className="text-end">
-                        <Button variant="link" className="text-secondary p-0 me-3" onClick={() => onEdit(d)}><PencilSquare/></Button>
-                        <Button variant="link" className="text-danger p-0" onClick={() => onDelete(d.id)}><Trash/></Button>
-                    </td>
+                        <small className="text-muted d-flex align-items-center gap-1 text-truncate" style={{maxWidth: '180px'}}>
+                            <GeoAlt size={10}/>
+                            {delivery.localArmazenagem || delivery.localArmazenamento}
+                        </small>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="d-flex flex-column">
+                      <span className={`fw-medium ${isDelivered ? 'text-decoration-line-through' : ''}`}>
+                          {delivery.itemNome || 'Produto Indefinido'}
+                      </span>
+                      <small className="text-muted text-uppercase" style={{fontSize: '0.7rem'}}>
+                        SKU: {delivery.sku}
+                      </small>
+                    </div>
+                  </td>
+                  <td className="text-center">
+                    <span className={`badge ${isDelivered ? 'bg-secondary' : 'bg-light text-dark border'}`}>
+                      {delivery.itemQuantidade} {delivery.itemUnidadeMedida}
+                    </span>
+                  </td>
+                  <td className="text-center">
+                    <select 
+                        className={`form-select form-select-sm border-0 shadow-none fw-bold text-center ${
+                            isDelivered ? 'text-success' : 'text-warning'
+                        }`}
+                        style={{width: 'auto', margin: '0 auto', background: 'transparent', cursor: 'pointer'}}
+                        value={delivery.status}
+                        onChange={(e) => onStatusChange(delivery.id, e.target.value)}
+                    >
+                        <option value="Pendente">Pendente</option>
+                        <option value="Entregue">Entregue</option>
+                    </select>
+                  </td>
+                  <td className="text-end">
+                    <div className="d-flex justify-content-end gap-2">
+                        {/* Botão Editar (Desabilita se entregue) */}
+                        <button 
+                            className="btn btn-icon text-primary" 
+                            onClick={() => onEdit(delivery)}
+                            disabled={isDelivered}
+                            title={isDelivered ? "Item já entregue" : "Editar Entrega"}
+                        >
+                            <PencilSquare size={16} />
+                        </button>
+                        
+                        {/* Botão Excluir */}
+                        <button 
+                            className="btn btn-icon text-danger" 
+                            onClick={() => onDelete(delivery.id)}
+                            title="Excluir Entrega"
+                        >
+                            <Trash size={16} />
+                        </button>
+                    </div>
+                  </td>
                 </tr>
-            )) : (
-                <tr><td colSpan={8} className="text-center py-5 text-muted">Nenhuma entrega registrada.</td></tr>
-            )}
-          </tbody>
-        </Table>
-      </div>
+              );
+            })
+          )}
+        </tbody>
+      </table>
     </div>
   );
-};
+}
