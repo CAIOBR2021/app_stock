@@ -64,7 +64,7 @@ export interface Entrega {
 // --- CONSTANTES E HOOKS ---
 // ATENÇÃO: Use localhost para testar as mudanças do server.js localmente.
 // const API_URL = "https://app-stock-back.onrender.com/api"; 
-const API_URL = "http://localhost:10000/api";
+const API_URL = "https://app-stock-back.onrender.com/api";
 
 const ITEMS_PER_PAGE = 30;
 
