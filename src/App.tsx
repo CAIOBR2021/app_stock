@@ -48,7 +48,8 @@ export interface Movimentacao {
 export interface Entrega {
     id: UUID;
     dataHoraSolicitacao: string;
-    localArmazenagem: string;
+    localArmazenagem: string; // Usado no frontend
+    localArmazenamento?: string; // Pode vir do backend assim
     localObra: string;
     produtoId: UUID;
     itemNome?: string;
@@ -296,8 +297,8 @@ function BotaoNovoProduto({
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button className="btn btn-primary" onClick={() => setOpen(true)}>
-        <i className="bi bi-plus-lg me-1"></i>
+      <button className="btn btn-primary d-flex align-items-center gap-2" onClick={() => setOpen(true)}>
+        <i className="bi bi-plus-lg"></i>
         Novo Produto
       </button>
       {open && (
@@ -1090,11 +1091,11 @@ function Relatorios({
   };
   return (
     <button
-      className="btn btn-outline-secondary"
+      className="btn btn-outline-secondary d-flex align-items-center gap-2"
       onClick={handleGenerate}
       disabled={loading}
     >
-      <i className="bi bi-file-earmark-arrow-down me-1"></i>
+      <i className="bi bi-file-earmark-arrow-down"></i>
       Gerar Relatório
     </button>
   );
@@ -1591,7 +1592,6 @@ export default function App() {
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [allProdutos, setAllProdutos] = useState<Produto[]>([]);
   const [movs, setMovs] = useState<Movimentacao[]>([]);
-  // Estados de Entregas (Integração)
   const [entregas, setEntregas] = useState<Entrega[]>([]);
   const [editingEntrega, setEditingEntrega] = useState<Entrega | null>(null);
 
@@ -1599,7 +1599,6 @@ export default function App() {
   const [loadingAll, setLoadingAll] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // View atualizada para incluir 'rotas'
   const [view, setView] = useState<'estoque' | 'movimentacoes' | 'rotas'>('estoque');
   
   const [showScroll, setShowScroll] = useState(false);
@@ -1610,7 +1609,6 @@ export default function App() {
   const [mostrarPrioritarios, setMostrarPrioritarios] = useState(false);
   const [page, setPage] = useState(1);
 
-  // --- NOVOS ESTADOS PARA SELEÇÃO E MODAL DE REPROGRAMAÇÃO ---
   const [selectedEntregaIds, setSelectedEntregaIds] = useState<string[]>([]);
   const [showReprogramModal, setShowReprogramModal] = useState(false);
   const [newDeliveryDate, setNewDeliveryDate] = useState('');
@@ -1624,17 +1622,15 @@ export default function App() {
         const firstPageRes = await fetch(
           `${API_URL}/produtos?_page=1&_limit=${ITEMS_PER_PAGE}`,
         );
-        if (!firstPageRes.ok)
-          throw new Error('Falha ao buscar dados iniciais.');
+        if (!firstPageRes.ok) throw new Error('Falha ao buscar dados iniciais.');
         const firstPageData = await firstPageRes.json();
         setProdutos(firstPageData);
         setLoading(false);
 
-        // Busca completa (Produtos, Movimentações e Entregas)
         const [allProdsRes, movsRes, entregasRes] = await Promise.all([
           fetch(`${API_URL}/produtos?_limit=10000`),
           fetch(`${API_URL}/movimentacoes`),
-          fetch(`${API_URL}/entregas`) // Nova rota de entregas
+          fetch(`${API_URL}/entregas`)
         ]);
 
         if (!allProdsRes.ok || !movsRes.ok || !entregasRes.ok)
@@ -1646,7 +1642,16 @@ export default function App() {
 
         setAllProdutos(allProdsData);
         setMovs(movsData);
-        setEntregas(entregasData);
+        
+        // CORREÇÃO CRÍTICA PARA O RELATÓRIO:
+        // O backend envia 'localArmazenamento', mas o frontend espera 'localArmazenagem'.
+        // Mapeamos aqui para garantir que o dado existe.
+        const fixedEntregas = entregasData.map((e: any) => ({
+            ...e,
+            localArmazenagem: e.localArmazenamento || e.localArmazenagem || '' 
+        }));
+        setEntregas(fixedEntregas);
+
       } catch (err: any) {
         console.error('Falha ao buscar dados:', err);
         setError('Não foi possível conectar ao servidor. Verifique o backend.');
@@ -1821,7 +1826,6 @@ export default function App() {
             body: JSON.stringify(data)
         });
         if (!res.ok) throw new Error((await res.json()).error);
-        // Recarrega a página para garantir que o saldo de estoque e histórico estejam sincronizados
         window.location.reload(); 
     } catch (err: any) {
         alert(err.message);
@@ -1878,15 +1882,12 @@ export default function App() {
       .filter(d => selectedEntregaIds.includes(d.id))
       .sort((a, b) => new Date(a.dataHoraSolicitacao).getTime() - new Date(b.dataHoraSolicitacao).getTime());
 
-    // Import dinâmico ou uso direto se já importado
     const { jsPDF } = window.jspdf || { jsPDF: (window as any).jspdf.jsPDF };
     const doc = new jsPDF('l', 'mm', 'a4');
 
-    // Data para o cabeçalho do relatório
     const reportDateObj = selectedDeliveries.length > 0 ? new Date(selectedDeliveries[0].dataHoraSolicitacao) : new Date();
     const reportDate = reportDateObj.toLocaleDateString('pt-BR');
 
-    // --- Cabeçalho com estilo melhorado ---
     doc.setFontSize(18);
     doc.setTextColor(40);
     doc.text('Programação de Caminhões para Entrega de Materiais', 14, 20);
@@ -1895,18 +1896,18 @@ export default function App() {
     doc.setTextColor(100);
     doc.text(`Relatório do Dia: ${reportDate}`, 14, 28);
     doc.setDrawColor(200);
-    doc.line(14, 32, doc.internal.pageSize.getWidth() - 14, 32); // Linha separadora
+    doc.line(14, 32, doc.internal.pageSize.getWidth() - 14, 32);
 
     const tableHead = [['Nº', 'Entregue', 'Hora', 'Local da Obra', 'Material', 'Qtd', 'Un', 'Armazem', 'Responsável', 'Telefone']];
     const tableBody = selectedDeliveries.map((d, index) => [
       index + 1,
-      '', // Coluna para Checkbox
+      '', 
       new Date(d.dataHoraSolicitacao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
       d.localObra,
       d.itemNome || '-',
       d.itemQuantidade,
       d.itemUnidadeMedida || '-',
-      d.localArmazenagem,
+      d.localArmazenagem || '-', // Agora vai aparecer corretamente!
       d.responsavelNome || '',
       formatPhoneNumber(d.responsavelTelefone || '')
     ]);
@@ -1915,9 +1916,9 @@ export default function App() {
       head: tableHead,
       body: tableBody,
       startY: 40,
-      theme: 'grid', // Mudado para 'grid' para um visual mais limpo
+      theme: 'grid', 
       headStyles: { 
-          fillColor: [37, 99, 235], // Azul do nosso novo tema
+          fillColor: [41, 45, 50], // CORRIGIDO: Cinza escuro original
           textColor: 255,
           fontStyle: 'bold'
       }, 
@@ -1925,9 +1926,8 @@ export default function App() {
           fontSize: 9,
           cellPadding: 3,
       },
-      alternateRowStyles: { fillColor: [241, 245, 249] }, // Cinza muito claro alternado
+      alternateRowStyles: { fillColor: [245, 245, 245] },
       didDrawCell: (data: any) => {
-        // Desenha o quadrado na coluna "Entregue" (index 1)
         if (data.section === 'body' && data.column.index === 1) {
           doc.setDrawColor(150);
           doc.setLineWidth(0.1);
@@ -1935,17 +1935,15 @@ export default function App() {
           const squareSize = 4;
           const x = cell.x + (cell.width - squareSize) / 2;
           const y = cell.y + (cell.height - squareSize) / 2;
-          doc.rect(x, y, squareSize, squareSize); // 'S' removido para ser apenas contorno
+          doc.rect(x, y, squareSize, squareSize);
         }
       },
     });
 
-    // --- Assinaturas lado a lado ---
     const finalY = (doc as any).lastAutoTable.finalY;
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     
-    // Define a posição Y das assinaturas (garante espaço ou nova página)
     let signatureY = finalY + 35;
     if (signatureY + 20 > pageHeight) {
         doc.addPage();
@@ -1955,16 +1953,13 @@ export default function App() {
     doc.setLineWidth(0.3);
     doc.setDrawColor(0); doc.setTextColor(0); doc.setFontSize(10);
 
-    // Cálculos para posicionamento lado a lado
-    const leftCenterX = pageWidth / 4;       // Centro da metade esquerda
-    const rightCenterX = (pageWidth / 4) * 3; // Centro da metade direita
-    const lineLength = 80; // Comprimento da linha de assinatura
+    const leftCenterX = pageWidth / 4;       
+    const rightCenterX = (pageWidth / 4) * 3;
+    const lineLength = 80; 
 
-    // Assinatura Esquerda (Motorista)
     doc.line(leftCenterX - (lineLength/2), signatureY, leftCenterX + (lineLength/2), signatureY);
     doc.text('Assinatura do Motorista', leftCenterX, signatureY + 5, { align: 'center' });
     
-    // Assinatura Direita (Solicitante) - Usa o MESMO signatureY
     doc.line(rightCenterX - (lineLength/2), signatureY, rightCenterX + (lineLength/2), signatureY);
     doc.text('Assinatura do Solicitante', rightCenterX, signatureY + 5, { align: 'center' });
 
@@ -1978,12 +1973,10 @@ export default function App() {
       return;
     }
 
-    // Chamada para a rota de atualização (que criamos no backend)
     try {
         await Promise.all(selectedEntregaIds.map(id => {
             const entrega = entregas.find(e => e.id === id);
             if (!entrega) return Promise.resolve();
-            // Preserva a hora original, muda apenas a data
             const timePart = entrega.dataHoraSolicitacao.split('T')[1] || '08:00:00';
             const newDateTime = `${newDeliveryDate}T${timePart}`;
             
@@ -2082,30 +2075,29 @@ export default function App() {
             <h5 className="m-0 text-secondary d-none d-md-block">Sistema Integrado</h5>
         </div>
         
-        <ul className="nav nav-pills my-3 my-md-0">
+        <ul className="nav nav-pills my-3 my-md-0 gap-3">
           <li className="nav-item">
             <button
-              className={`nav-link ${view === 'estoque' ? 'active' : ''}`}
+              className={`nav-link d-flex align-items-center gap-2 ${view === 'estoque' ? 'active' : ''}`}
               onClick={() => setView('estoque')}
             >
-              <i className="bi bi-box-seam me-1"></i> Estoque
+              <i className="bi bi-box-seam"></i> Estoque
             </button>
           </li>
           <li className="nav-item">
             <button
-              className={`nav-link ${view === 'movimentacoes' ? 'active' : ''}`}
+              className={`nav-link d-flex align-items-center gap-2 ${view === 'movimentacoes' ? 'active' : ''}`}
               onClick={() => setView('movimentacoes')}
             >
-              <i className="bi bi-clipboard-data me-1"></i> Movimentações
+              <i className="bi bi-clipboard-data"></i> Movimentações
             </button>
           </li>
-          {/* Botão Novo: Rotas */}
           <li className="nav-item">
             <button
-              className={`nav-link ${view === 'rotas' ? 'active' : ''}`}
+              className={`nav-link d-flex align-items-center gap-2 ${view === 'rotas' ? 'active' : ''}`}
               onClick={() => setView('rotas')}
             >
-              <i className="bi bi-truck me-1"></i> Rotas & Entregas
+              <i className="bi bi-truck"></i> Rotas & Entregas
             </button>
           </li>
         </ul>
@@ -2259,11 +2251,10 @@ export default function App() {
         </div>
       )}
 
-      {/* NOVA VIEW: ROTAS */}
+      {/* VIEW: ROTAS */}
       {view === 'rotas' && (
         <div className="animate-fade-in">
             <div className="row g-4">
-                {/* Coluna Esquerda: Formulário */}
                 <div className="col-lg-4">
                     <DeliveryForm 
                         onSave={addEntrega}
@@ -2273,28 +2264,28 @@ export default function App() {
                     />
                 </div>
 
-                {/* Coluna Direita: Tabela e Ações em Massa */}
                 <div className="col-lg-8">
                     <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                         <h4 className="text-primary fw-bold mb-0">Cronograma</h4>
                         
-                        {/* Botões de Ação em Massa */}
-                        <div className="d-flex gap-2">
+                        <div className="d-flex gap-3">
                             <Button 
                                 variant="outline-secondary" 
                                 size="sm"
                                 disabled={selectedEntregaIds.length === 0}
                                 onClick={handleGenerateDeliveryReport}
+                                className="d-flex align-items-center gap-2"
                             >
-                                <ClipboardData className="me-1"/> Relatório PDF
+                                <ClipboardData /> Relatório PDF
                             </Button>
                             <Button 
                                 variant="outline-primary" 
                                 size="sm"
                                 disabled={selectedEntregaIds.length === 0}
                                 onClick={() => setShowReprogramModal(true)}
+                                className="d-flex align-items-center gap-2"
                             >
-                                <CalendarWeek className="me-1"/> Reprogramar
+                                <CalendarWeek /> Reprogramar
                             </Button>
                         </div>
                     </div>
@@ -2304,7 +2295,6 @@ export default function App() {
                         onDelete={deleteEntrega}
                         onEdit={setEditingEntrega}
                         onStatusChange={updateEntregaStatus}
-                        // Props de seleção
                         selectedIds={selectedEntregaIds}
                         onSelectItem={handleSelectEntrega}
                         onSelectAll={handleSelectAllEntregas}
@@ -2316,7 +2306,7 @@ export default function App() {
 
       {showScroll && (
         <button
-          className="btn btn-primary rounded-circle shadow-lg"
+          className="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center"
           onClick={scrollTop}
           style={{
             position: 'fixed',
@@ -2325,9 +2315,6 @@ export default function App() {
             width: '45px',
             height: '45px',
             zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
             padding: 0,
           }}
         >
@@ -2336,7 +2323,6 @@ export default function App() {
       )}
       </div>
 
-      {/* Modal de Reprogramação */}
       {showReprogramModal && (
         <ModalComponent title="Reprogramar Entregas" onClose={() => setShowReprogramModal(false)}>
             <div className="p-2">
