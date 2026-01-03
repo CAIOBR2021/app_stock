@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Form, Row, Col, Button, FloatingLabel } from 'react-bootstrap';
 import { CalendarEventFill, Save, XCircle } from 'react-bootstrap-icons';
-// Se tiver problemas com importação de tipos do App, defina localmente ou importe se exportado
-// import type { Entrega } from '../App'; 
+import Select from 'react-select';
 
+// Interface para as propriedades recebidas
 interface DeliveryFormProps {
   onSave: (data: any) => void;
   onCancelEdit?: () => void;
@@ -12,6 +12,7 @@ interface DeliveryFormProps {
 }
 
 export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, deliveryToEdit }: DeliveryFormProps) {
+  // Estado do formulário
   const [formData, setFormData] = useState({
     localArmazenagem: '',
     localObra: '',
@@ -21,52 +22,72 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
     responsavelNome: '',
     responsavelTelefone: ''
   });
+  
+  // Estados para data e hora
   const [data, setData] = useState(new Date().toISOString().split('T')[0]);
   const [hora, setHora] = useState('08:00');
 
+  // Estado para controlar a seleção do React-Select
+  const [selectedOption, setSelectedOption] = useState<any>(null);
+
+  // Prepara as opções para o React-Select baseado na lista de produtos
+  const options = useMemo(() => {
+    return produtosDisponiveis.map(p => ({
+      value: p.id,
+      label: `${p.nome} (Saldo: ${p.quantidade} ${p.unidade} | SKU: ${p.sku})`,
+      nomeProduto: p.nome, // Guardamos o nome puro para salvar no histórico se precisar
+      unidade: p.unidade,
+      quantidade: p.quantidade
+    }));
+  }, [produtosDisponiveis]);
+
+  // Carrega os dados se for edição
   useEffect(() => {
     if (deliveryToEdit) {
         const [datePart, timePart] = deliveryToEdit.dataHoraSolicitacao.split('T');
         setData(datePart);
-        setHora(timePart.substring(0, 5));
+        setHora(timePart ? timePart.substring(0, 5) : '08:00');
+        
         setFormData({
-            localArmazenagem: deliveryToEdit.localArmazenagem,
-            localObra: deliveryToEdit.localObra,
+            localArmazenagem: deliveryToEdit.localArmazenagem || '',
+            localObra: deliveryToEdit.localObra || '',
             produtoId: deliveryToEdit.produtoId,
-            itemNome: deliveryToEdit.itemNome,
+            itemNome: deliveryToEdit.itemNome || '',
             itemQuantidade: deliveryToEdit.itemQuantidade,
             responsavelNome: deliveryToEdit.responsavelNome || '',
             responsavelTelefone: deliveryToEdit.responsavelTelefone || ''
         });
+
+        // Encontra e define a opção selecionada no Select
+        const foundOption = options.find(opt => opt.value === deliveryToEdit.produtoId);
+        setSelectedOption(foundOption || null);
     }
-  }, [deliveryToEdit]);
+  }, [deliveryToEdit, options]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    let prodId = formData.produtoId;
-    
-    // Tenta encontrar pelo nome caso o usuario tenha digitado
-    if (!prodId) {
-        const prod = produtosDisponiveis.find(p => p.nome === formData.itemNome);
-        if (prod) {
-            prodId = prod.id;
-        }
+    // Validação: Garante que um produto foi selecionado via Select
+    if (!formData.produtoId || !selectedOption) {
+        alert("Por favor, selecione um produto da lista.");
+        return;
     }
 
-    // Validação
-    if (!prodId) {
-        alert("Por favor, selecione um produto válido da lista de estoque.");
-        return;
+    // Validação extra de estoque (opcional, mas recomendada)
+    if (selectedOption.quantidade < formData.itemQuantidade) {
+       if(!window.confirm(`Atenção: A quantidade solicitada (${formData.itemQuantidade}) é maior que o saldo atual (${selectedOption.quantidade}). Deseja continuar e deixar o estoque negativo?`)) {
+           return;
+       }
     }
     
     onSave({
         ...formData,
-        produtoId: prodId,
+        produtoId: selectedOption.value, // Garante que o ID vem do objeto selecionado
+        itemNome: selectedOption.nomeProduto,
         dataHoraSolicitacao: `${data}T${hora}:00`
     });
     
-    // Limpa form se não for edição
+    // Limpa o formulário se for uma nova entrega
     if (!deliveryToEdit) {
         setFormData({ 
             localArmazenagem: '',
@@ -77,17 +98,36 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
             responsavelNome: '',
             responsavelTelefone: ''
         });
+        setSelectedOption(null);
+        // Mantém a data atual por conveniência
     }
   };
 
-  // Tipagem explícita para resolver o erro "Parameter 'e' implicitly has an 'any' type"
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>, field: string) => {
       setFormData({ ...formData, [field]: e.target.value });
   };
 
+  // Manipulador de mudança específico para o React-Select
+  const handleSelectChange = (option: any) => {
+      setSelectedOption(option);
+      if (option) {
+          setFormData({
+              ...formData,
+              produtoId: option.value,
+              itemNome: option.nomeProduto
+          });
+      } else {
+          setFormData({
+              ...formData,
+              produtoId: '',
+              itemNome: ''
+          });
+      }
+  };
+
   return (
-    <Form onSubmit={handleSubmit} className="p-4 border rounded bg-white shadow-sm">
-      <h5 className="mb-3 border-bottom pb-2 text-primary">
+    <Form onSubmit={handleSubmit} className="p-4 border rounded bg-white shadow-sm h-100 d-flex flex-column">
+      <h5 className="mb-3 border-bottom pb-2 text-primary d-flex align-items-center">
         <CalendarEventFill className="me-2" />
         {deliveryToEdit ? 'Editar Entrega' : 'Agendar Nova Entrega'}
       </h5>
@@ -117,32 +157,25 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
 
       <Row className="g-2 mb-3">
         <Col md={8}>
-            <FloatingLabel label="Produto (Busca no Estoque)">
-                <Form.Control 
-                    type="text" 
-                    list="produtos-list" 
-                    value={formData.itemNome}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        const nome = e.target.value;
-                        const prod = produtosDisponiveis.find(p => p.nome === nome);
-                        setFormData({
-                            ...formData, 
-                            itemNome: nome, 
-                            produtoId: prod ? prod.id : '' 
-                        });
-                    }}
-                    placeholder="Digite para buscar..." 
+            <Form.Group>
+                <Form.Label className="small text-muted mb-1">Produto</Form.Label>
+                <Select
+                    value={selectedOption}
+                    onChange={handleSelectChange}
+                    options={options}
+                    placeholder="Selecione ou digite o produto..."
+                    isClearable
                     required
-                    autoComplete="off"
+                    noOptionsMessage={() => "Nenhum produto encontrado"}
+                    styles={{
+                        control: (base) => ({
+                            ...base,
+                            borderColor: '#dee2e6', // Combina com as bordas do Bootstrap
+                            minHeight: '58px', // Altura similar ao FloatingLabel
+                        })
+                    }}
                 />
-                <datalist id="produtos-list">
-                    {produtosDisponiveis.map(p => (
-                        <option key={p.id} value={p.nome}>
-                            Saldo: {p.quantidade} {p.unidade} | SKU: {p.sku}
-                        </option>
-                    ))}
-                </datalist>
-            </FloatingLabel>
+            </Form.Group>
         </Col>
         <Col md={4}>
             <FloatingLabel label="Quantidade">
@@ -166,10 +199,12 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange(e, 'localArmazenagem')} 
                     required 
                     list="origens-list"
+                    placeholder="Selecione..."
                 />
                 <datalist id="origens-list">
                     <option value="Almoxarifado Central" />
                     <option value="Pátio 04" />
+                    <option value="Galpão Externo" />
                 </datalist>
             </FloatingLabel>
           </Col>
@@ -179,6 +214,7 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
                     value={formData.localObra} 
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange(e, 'localObra')} 
                     required 
+                    placeholder="Ex: Bloco A"
                 />
             </FloatingLabel>
           </Col>
@@ -190,6 +226,7 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
                 <Form.Control 
                     value={formData.responsavelNome} 
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange(e, 'responsavelNome')} 
+                    placeholder="Nome de quem retirou"
                 />
             </FloatingLabel>
           </Col>
@@ -198,19 +235,20 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
                 <Form.Control 
                     value={formData.responsavelTelefone} 
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange(e, 'responsavelTelefone')} 
+                    placeholder="(XX) XXXXX-XXXX"
                 />
             </FloatingLabel>
           </Col>
       </Row>
 
-      <div className="d-flex justify-content-end gap-2">
+      <div className="d-flex justify-content-end gap-2 mt-auto pt-3">
         {onCancelEdit && (
             <Button variant="outline-secondary" onClick={onCancelEdit}>
                 <XCircle className="me-1"/> Cancelar
             </Button>
         )}
         <Button type="submit" variant="primary">
-            <Save className="me-1"/> {deliveryToEdit ? 'Salvar Alterações' : 'Agendar'}
+            <Save className="me-1"/> {deliveryToEdit ? 'Salvar Alterações' : 'Agendar Entrega'}
         </Button>
       </div>
     </Form>
