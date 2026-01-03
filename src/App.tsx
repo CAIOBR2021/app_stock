@@ -62,7 +62,7 @@ export interface Entrega {
 }
 
 // --- CONSTANTES E HOOKS ---
-// URL da API (Local para testes)
+// URL da API (Local para testes ou Produção)
 const API_URL = "https://app-stock-back.onrender.com/api";
 
 
@@ -1840,6 +1840,7 @@ export default function App() {
       
       try {
           const res = await fetch(`${API_URL}/entregas/${id}`, { method: 'DELETE' });
+          
           if (!res.ok) {
             const data = await res.json();
             throw new Error(data.error || 'Erro ao excluir');
@@ -1847,8 +1848,25 @@ export default function App() {
           
           alert('Entrega excluída e estoque estornado com sucesso!');
           
-          // Recarrega a página para atualizar a tabela de produtos e movimentações com o novo saldo
-          window.location.reload();
+          // 1. Atualizar visualmente a lista de entregas (removendo o item excluído)
+          setEntregas(prev => prev.filter(e => e.id !== id));
+          
+          // 2. Remover da seleção se estiver selecionado
+          setSelectedEntregaIds(prev => prev.filter(selId => selId !== id));
+
+          // 3. Atualizar os produtos e movimentações em segundo plano
+          const [prodsRes, movsRes] = await Promise.all([
+            fetch(`${API_URL}/produtos?_limit=10000`),
+            fetch(`${API_URL}/movimentacoes`)
+          ]);
+          
+          if(prodsRes.ok && movsRes.ok) {
+            const newProds = await prodsRes.json();
+            const newMovs = await movsRes.json();
+            setAllProdutos(newProds);
+            setMovs(newMovs);
+          }
+
       } catch (err: any) { 
           console.error(err);
           alert(err.message);
