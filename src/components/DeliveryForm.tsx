@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Form, Row, Col, Button, FloatingLabel } from 'react-bootstrap';
 import { CalendarEventFill, Save, XCircle } from 'react-bootstrap-icons';
-import Select, { StylesConfig } from 'react-select';
+import Select from 'react-select';
+import type { StylesConfig } from 'react-select';
 
 // Interface para as propriedades recebidas
 interface DeliveryFormProps {
