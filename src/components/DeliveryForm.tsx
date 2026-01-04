@@ -10,7 +10,7 @@ interface DeliveryFormProps {
   onCancelEdit?: () => void;
   deliveryToEdit?: any;
   produtosDisponiveis: any[];
-  historicoEntregas?: any[]; // Nova prop para receber o histórico
+  historicoEntregas?: any[];
 }
 
 export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, deliveryToEdit, historicoEntregas = [] }: DeliveryFormProps) {
@@ -32,9 +32,24 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
   // Estado para controlar a seleção do React-Select
   const [selectedOption, setSelectedOption] = useState<any>(null);
 
-  // --- LOGICA DE DATALISTS E AUTO-PREENCHIMENTO ---
-  
-  // 1. Extrai listas únicas do histórico para preencher os Datalists
+  // --- FUNÇÃO DE MÁSCARA DE TELEFONE ---
+  const formatPhone = (value: string) => {
+    if (!value) return "";
+    
+    // Remove tudo que não é número
+    let v = value.replace(/\D/g, "");
+    
+    // Limita a 11 dígitos (DDD + 9 números)
+    v = v.substring(0, 11);
+
+    // Aplica a máscara (XX) XXXXX-XXXX
+    v = v.replace(/^(\d{2})(\d)/g, "($1) $2"); // Coloca parênteses em volta dos dois primeiros dígitos
+    v = v.replace(/(\d)(\d{4})$/, "$1-$2");    // Coloca hífen entre o quinto e o quarto dígitos
+
+    return v;
+  };
+
+  // --- LÓGICA DE DATALISTS E AUTO-PREENCHIMENTO ---
   const sugestoes = useMemo(() => {
     const destinos = new Set<string>();
     const responsaveis = new Set<string>();
@@ -47,10 +62,11 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
         if (entrega.localObra) destinos.add(entrega.localObra);
         if (entrega.responsavelNome) {
             responsaveis.add(entrega.responsavelNome);
-            // Salva/Sobrescreve o telefone associado a este nome
             if (entrega.responsavelTelefone) {
-                mapaTelefonePorNome[entrega.responsavelNome.toLowerCase()] = entrega.responsavelTelefone;
-                telefones.add(entrega.responsavelTelefone);
+                // Guarda o telefone já formatado no mapa para facilitar o preenchimento
+                const telFormatado = formatPhone(entrega.responsavelTelefone);
+                mapaTelefonePorNome[entrega.responsavelNome.toLowerCase()] = telFormatado;
+                telefones.add(telFormatado);
             }
         }
     });
@@ -63,9 +79,7 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
     };
   }, [historicoEntregas]);
 
-  // --- FIM DA LOGICA DE PREPARAÇÃO ---
-
-  // Prepara as opções para o React-Select baseado na lista de produtos
+  // Prepara as opções para o React-Select
   const options = useMemo(() => {
     return produtosDisponiveis.map(p => ({
       value: p.id,
@@ -76,49 +90,25 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
     }));
   }, [produtosDisponiveis]);
 
-  // --- ESTILOS CUSTOMIZADOS PARA O REACT-SELECT ---
+  // Estilos do React Select
   const customStyles: StylesConfig = {
     control: (provided, state) => ({
       ...provided,
       backgroundColor: '#fff',
-      borderColor: state.isFocused ? '#86b7fe' : '#dee2e6', // Cor da borda do Bootstrap
-      minHeight: '58px', // Mesma altura do FloatingLabel
+      borderColor: state.isFocused ? '#86b7fe' : '#dee2e6',
+      minHeight: '58px',
       height: '58px',
       borderRadius: '0.375rem',
-      boxShadow: state.isFocused ? '0 0 0 0.25rem rgba(13, 110, 253, 0.25)' : 'none', // Glow azul do Bootstrap
-      '&:hover': {
-        borderColor: state.isFocused ? '#86b7fe' : '#dee2e6'
-      }
+      boxShadow: state.isFocused ? '0 0 0 0.25rem rgba(13, 110, 253, 0.25)' : 'none',
+      '&:hover': { borderColor: state.isFocused ? '#86b7fe' : '#dee2e6' }
     }),
-    valueContainer: (provided) => ({
-      ...provided,
-      height: '58px',
-      padding: '0 12px',
-      alignContent: 'center'
-    }),
-    input: (provided) => ({
-      ...provided,
-      margin: '0',
-      padding: '0'
-    }),
-    singleValue: (provided) => ({
-        ...provided,
-        color: '#212529', // Cor de texto padrão do Bootstrap
-    }),
-    menu: (provided) => ({
-        ...provided,
-        zIndex: 9999, // Garante que o menu abra por cima de tudo
-        boxShadow: '0 0.5rem 1rem rgba(0, 0, 0, 0.15)', // Sombra do Bootstrap
-        borderRadius: '0.375rem',
-        marginTop: '2px'
-    }),
-    placeholder: (provided) => ({
-        ...provided,
-        color: '#6c757d', // Cor de placeholder do Bootstrap
-    })
+    valueContainer: (provided) => ({ ...provided, height: '58px', padding: '0 12px', alignContent: 'center' }),
+    input: (provided) => ({ ...provided, margin: '0', padding: '0' }),
+    singleValue: (provided) => ({ ...provided, color: '#212529' }),
+    menu: (provided) => ({ ...provided, zIndex: 9999, boxShadow: '0 0.5rem 1rem rgba(0, 0, 0, 0.15)', borderRadius: '0.375rem', marginTop: '2px' }),
+    placeholder: (provided) => ({ ...provided, color: '#6c757d' })
   };
 
-  // Carrega os dados se for edição
   useEffect(() => {
     if (deliveryToEdit) {
         const [datePart, timePart] = deliveryToEdit.dataHoraSolicitacao.split('T');
@@ -132,7 +122,7 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
             itemNome: deliveryToEdit.itemNome || '',
             itemQuantidade: deliveryToEdit.itemQuantidade,
             responsavelNome: deliveryToEdit.responsavelNome || '',
-            responsavelTelefone: deliveryToEdit.responsavelTelefone || ''
+            responsavelTelefone: formatPhone(deliveryToEdit.responsavelTelefone || '') // Formata ao carregar edição
         });
 
         const foundOption = options.find(opt => opt.value === deliveryToEdit.produtoId);
@@ -176,18 +166,23 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>, field: string) => {
-      setFormData({ ...formData, [field]: e.target.value });
+      let valor = e.target.value;
+      
+      // Se for o campo telefone, aplica a máscara
+      if (field === 'responsavelTelefone') {
+          valor = formatPhone(valor);
+      }
+
+      setFormData({ ...formData, [field]: valor });
   };
 
-  // Função específica para o Responsável que dispara o Auto-Fill do telefone
   const handleResponsavelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const nomeDigitado = e.target.value;
       let telefoneSugerido = formData.responsavelTelefone;
 
-      // Se o nome existir no mapa (case insensitive), puxa o telefone
       const telefoneEncontrado = sugestoes.mapaTelefonePorNome[nomeDigitado.toLowerCase()];
       if (telefoneEncontrado) {
-          telefoneSugerido = telefoneEncontrado;
+          telefoneSugerido = telefoneEncontrado; // Já vem formatado do useMemo
       }
 
       setFormData({ 
@@ -206,11 +201,7 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
               itemNome: option.nomeProduto
           });
       } else {
-          setFormData({
-              ...formData,
-              produtoId: '',
-              itemNome: ''
-          });
+          setFormData({ ...formData, produtoId: '', itemNome: '' });
       }
   };
 
@@ -246,12 +237,8 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
 
       <Row className="g-2 mb-3">
         <Col md={8}>
-            {/* Removemos o FloatingLabel daqui pois o React-Select não suporta bem.
-               Em vez disso, usamos um layout que simula o visual, mas com um label fixo pequeno acima 
-               ou apenas o placeholder inteligente.
-            */}
             <div style={{ position: 'relative' }}>
-                <Form.Label className="d-none">Produto</Form.Label> {/* Apenas para acessibilidade */}
+                <Form.Label className="d-none">Produto</Form.Label>
                 <Select
                     value={selectedOption}
                     onChange={handleSelectChange}
@@ -260,7 +247,7 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
                     isClearable
                     required
                     noOptionsMessage={() => "Nenhum produto encontrado"}
-                    styles={customStyles} // APLICAÇÃO DOS ESTILOS
+                    styles={customStyles}
                     aria-label="Produto"
                 />
             </div>
@@ -302,11 +289,10 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
                     value={formData.localObra} 
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange(e, 'localObra')} 
                     required 
-                    list="destinos-list" // Adicionado o ID da lista
+                    list="destinos-list"
                     placeholder="Ex: Bloco A"
                     autoComplete="off"
                 />
-                {/* Datalist dinâmico de Destinos */}
                 <datalist id="destinos-list">
                     {sugestoes.destinos.map((destino, index) => (
                         <option key={index} value={destino} />
@@ -321,12 +307,11 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
             <FloatingLabel label="Responsável">
                 <Form.Control 
                     value={formData.responsavelNome} 
-                    onChange={handleResponsavelChange} // Usa o handler específico
-                    list="responsaveis-list" // Adicionado o ID da lista
+                    onChange={handleResponsavelChange}
+                    list="responsaveis-list"
                     placeholder="Nome de quem retirou"
                     autoComplete="off"
                 />
-                {/* Datalist dinâmico de Responsáveis */}
                 <datalist id="responsaveis-list">
                      {sugestoes.responsaveis.map((resp, index) => (
                         <option key={index} value={resp} />
@@ -339,11 +324,11 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
                 <Form.Control 
                     value={formData.responsavelTelefone} 
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange(e, 'responsavelTelefone')} 
-                    list="telefones-list" // Adicionado o ID da lista
-                    placeholder="(XX) XXXXX-XXXX"
+                    list="telefones-list"
+                    placeholder="(27) 99999-9999"
                     autoComplete="off"
+                    maxLength={15} // Limite de caracteres para evitar erros
                 />
-                {/* Datalist dinâmico de Telefones */}
                 <datalist id="telefones-list">
                     {sugestoes.telefones.map((tel, index) => (
                         <option key={index} value={tel} />

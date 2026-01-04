@@ -1870,9 +1870,16 @@ export default function App() {
 
   const formatPhoneNumber = (value: string) => {
     if (!value) return "";
-    const cleanedValue = value.replace(/\D/g, '');
-    const match = cleanedValue.match(/^(\d{2})(\d{5})(\d{4})$/);
-    if (match) return `(${match[1]}) ${match[2]}-${match[3]}`;
+    const v = value.replace(/\D/g, ''); // Limpa
+    
+    // Tenta casar com celular (11 dígitos)
+    const matchCel = v.match(/^(\d{2})(\d{5})(\d{4})$/);
+    if (matchCel) return `(${matchCel[1]}) ${matchCel[2]}-${matchCel[3]}`;
+
+    // Tenta casar com fixo (10 dígitos)
+    const matchFixo = v.match(/^(\d{2})(\d{4})(\d{4})$/);
+    if (matchFixo) return `(${matchFixo[1]}) ${matchFixo[2]}-${matchFixo[3]}`;
+
     return value;
   };
   
