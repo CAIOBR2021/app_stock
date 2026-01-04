@@ -2181,7 +2181,6 @@ export default function App() {
       <header className="main-header d-flex flex-column flex-md-row align-items-center justify-content-between sticky-top px-4 py-3 mb-4">
         <div className="brand-section">
             <img src={meuLogo} alt="Logo da Empresa" className="app-logo" style={{height: '45px'}} />
-            <h5 className="brand-title d-none d-md-block">Sistema Integrado</h5>
         </div>
           
         <ul className="nav nav-pills nav-pills-custom my-3 my-md-0 gap-2">
