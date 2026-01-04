@@ -28,10 +28,12 @@ export function DeliveryTable({
 
   return (
     <div className="table-responsive shadow-sm rounded bg-white">
-      <table className="table table-hover align-middle mb-0">
+      {/* Classe table-sm adicionada para reduzir padding das células */}
+      <table className="table table-hover table-sm align-middle mb-0">
         <thead className="table-light">
           <tr>
-            <th style={{ width: '40px' }} className="text-center py-3">
+            {/* Padding vertical reduzido de py-3 para py-2 */}
+            <th style={{ width: '40px' }} className="text-center py-2">
               <Form.Check 
                 type="checkbox"
                 checked={isAllSelected}
@@ -39,27 +41,26 @@ export function DeliveryTable({
                 disabled={selectableDeliveries.length === 0}
               />
             </th>
-            <th className="py-3 text-secondary text-uppercase small fw-bold">Data</th>
-            <th className="py-3 text-secondary text-uppercase small fw-bold">Hora</th>
-            <th className="py-3 text-secondary text-uppercase small fw-bold">Local / Obra</th>
-            <th className="py-3 text-secondary text-uppercase small fw-bold">Produto</th>
-            <th className="py-3 text-secondary text-uppercase small fw-bold text-center">Qtd.</th>
-            <th className="py-3 text-secondary text-uppercase small fw-bold text-center">Status</th>
-            <th className="py-3 text-secondary text-uppercase small fw-bold text-end">Ações</th>
+            <th className="py-2 text-secondary text-uppercase small fw-bold">Data</th>
+            <th className="py-2 text-secondary text-uppercase small fw-bold">Hora</th>
+            <th className="py-2 text-secondary text-uppercase small fw-bold">Local / Obra</th>
+            <th className="py-2 text-secondary text-uppercase small fw-bold">Produto</th>
+            <th className="py-2 text-secondary text-uppercase small fw-bold text-center">Qtd.</th>
+            <th className="py-2 text-secondary text-uppercase small fw-bold text-center">Status</th>
+            <th className="py-2 text-secondary text-uppercase small fw-bold text-end">Ações</th>
           </tr>
         </thead>
         <tbody>
           {deliveries.length === 0 ? (
             <tr>
-              <td colSpan={8} className="text-center py-5 text-muted">
+              {/* Espaçamento reduzido de py-5 para py-4 */}
+              <td colSpan={8} className="text-center py-4 text-muted">
                 Nenhuma entrega programada.
               </td>
             </tr>
           ) : (
             deliveries.map((delivery) => {
               const isDelivered = delivery.status === 'Entregue';
-              
-              // Linha cinza claro se entregue
               const rowClass = isDelivered ? 'bg-light text-muted' : '';
 
               return (
@@ -98,13 +99,21 @@ export function DeliveryTable({
                     </span>
                   </td>
 
-                  {/* CAMPO STATUS CORRIGIDO */}
-                  <td className="text-center" style={{ width: '140px' }}>
+                  {/* Largura levemente ajustada para 130px */}
+                  <td className="text-center" style={{ width: '130px' }}>
                     <select 
                         className={`form-select form-select-sm border-0 shadow-none fw-bold text-center ${
                             isDelivered ? 'text-success' : 'text-warning'
                         }`}
-                        style={{ width: 'auto', margin: '0 auto', backgroundColor: 'transparent', cursor: 'pointer' }}
+                        // Paddings zerados no style inline para evitar altura excessiva
+                        style={{ 
+                          width: 'auto', 
+                          margin: '0 auto', 
+                          backgroundColor: 'transparent', 
+                          cursor: 'pointer',
+                          paddingTop: 0,
+                          paddingBottom: 0
+                        }}
                         value={delivery.status}
                         onChange={(e) => onStatusChange(delivery.id, e.target.value)}
                     >
@@ -114,7 +123,8 @@ export function DeliveryTable({
                   </td>
 
                   <td className="text-end">
-                    <div className="d-flex justify-content-end gap-2">
+                    {/* Gap reduzido para 1 */}
+                    <div className="d-flex justify-content-end gap-1">
                         <button 
                             className="btn btn-sm btn-link text-decoration-none p-0" 
                             onClick={() => onEdit(delivery)}
@@ -122,7 +132,8 @@ export function DeliveryTable({
                             style={{ opacity: isDelivered ? 0.5 : 1 }}
                             title="Editar"
                         >
-                            <PencilSquare size={18} />
+                            {/* Ícone reduzido para 16px */}
+                            <PencilSquare size={16} />
                         </button>
                         
                         <button 
@@ -130,7 +141,8 @@ export function DeliveryTable({
                             onClick={() => onDelete(delivery.id)}
                             title="Excluir"
                         >
-                            <Trash size={18} />
+                            {/* Ícone reduzido para 16px */}
+                            <Trash size={16} />
                         </button>
                     </div>
                   </td>
