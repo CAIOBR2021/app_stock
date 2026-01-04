@@ -1,6 +1,6 @@
 import type { Entrega } from '../App';
 import { Form } from 'react-bootstrap';
-import { Trash, PencilSquare } from 'react-bootstrap-icons';
+import { Trash, PencilSquare, Clock } from 'react-bootstrap-icons'; // Importando Clock
 
 interface DeliveryTableProps {
   deliveries: Entrega[];
@@ -22,23 +22,28 @@ export function DeliveryTable({
   onSelectAll
 }: DeliveryTableProps) {
 
-  // Função auxiliar robusta para verificar status
+  // Função auxiliar para verificar status
   const isDelivered = (status: string | undefined) => {
     return status?.trim().toLowerCase() === 'entregue';
   };
 
-  // Filtra itens selecionáveis (ignora entregues)
   const selectableDeliveries = deliveries.filter(d => !isDelivered(d.status));
   const isAllSelected = selectableDeliveries.length > 0 && 
                         selectableDeliveries.every(d => selectedIds.includes(d.id));
 
   return (
     <div className="table-responsive shadow-sm rounded bg-white">
-      {/* Estilo para garantir ocultação na impressão do navegador */}
       <style>
         {`
           @media print {
             .print-hidden { display: none !important; }
+          }
+          /* Efeito hover suave no badge para indicar que é clicável */
+          .status-badge {
+            transition: opacity 0.2s;
+          }
+          .status-badge:hover {
+            opacity: 0.8;
           }
         `}
       </style>
@@ -74,10 +79,8 @@ export function DeliveryTable({
             deliveries.map((delivery) => {
               const delivered = isDelivered(delivery.status);
               
-              // Se estiver entregue:
-              // - print-hidden: some na impressão
-              // - d-print-none: classe bootstrap auxiliar
-              // - opacity-50: visual desabilitado na tela
+              // Define o estilo da linha
+              // Nota: Removemos pointer-events:none global para permitir clicar no Badge
               const rowClass = delivered 
                 ? 'bg-light text-muted opacity-50 d-print-none print-hidden' 
                 : '';
@@ -118,41 +121,42 @@ export function DeliveryTable({
                     </span>
                   </td>
 
-                  <td className="text-center" style={{ width: '130px' }}>
-                    <select 
-                        className={`form-select form-select-sm border-0 shadow-none fw-bold text-center ${
-                            delivered ? 'text-success' : 'text-warning'
-                        }`}
+                  {/* CÉLULA DE STATUS ATUALIZADA */}
+                  <td className="text-center" style={{ width: '140px' }}>
+                    <span 
+                        className={`badge status-badge ${delivered ? 'bg-success' : 'bg-warning text-dark'}`}
                         style={{ 
-                          width: 'auto', 
-                          margin: '0 auto', 
-                          backgroundColor: 'transparent', 
-                          cursor: delivered ? 'default' : 'pointer',
-                          paddingTop: 0, 
-                          paddingBottom: 0
+                            cursor: 'pointer', 
+                            userSelect: 'none',
+                            fontSize: '0.85em',
+                            padding: '0.5em 0.8em'
                         }}
-                        value={delivery.status}
-                        onChange={(e) => onStatusChange(delivery.id, e.target.value)}
+                        // Ao clicar, inverte o status
+                        onClick={() => onStatusChange(delivery.id, delivered ? 'Pendente' : 'Entregue')}
+                        title={delivered ? "Clique para marcar como Pendente" : "Clique para marcar como Entregue"}
                     >
-                        <option value="Pendente" className="text-dark">Pendente</option>
-                        <option value="Entregue" className="text-dark">Entregue</option>
-                    </select>
+                        <Clock className="me-2" style={{ fontSize: '1em' }} />
+                        {delivered ? 'ENTREGUE' : 'PENDENTE'}
+                    </span>
                   </td>
 
                   <td className="text-end">
                     <div className="d-flex justify-content-end gap-1">
-                        {/* Se estiver entregue, o botão de editar NÃO é renderizado */}
-                        {!delivered && (
-                          <button 
-                              className="btn btn-sm btn-link text-decoration-none p-0" 
-                              onClick={() => onEdit(delivery)}
-                              title="Editar"
-                          >
-                              <PencilSquare size={16} />
-                          </button>
-                        )}
+                        {/* Ações desabilitadas/ocultas se entregue */}
+                        <button 
+                            className="btn btn-sm btn-link text-decoration-none p-0" 
+                            onClick={() => !delivered && onEdit(delivery)}
+                            disabled={delivered}
+                            style={{ 
+                              opacity: delivered ? 0 : 1, 
+                              pointerEvents: delivered ? 'none' : 'auto',
+                              cursor: delivered ? 'default' : 'pointer'
+                            }}
+                            title="Editar"
+                        >
+                            <PencilSquare size={16} />
+                        </button>
                         
-                        {/* Se preferir bloquear o excluir também, envolva com !delivered && (...) */}
                         <button 
                             className="btn btn-sm btn-link text-danger text-decoration-none p-0" 
                             onClick={() => onDelete(delivery.id)}
