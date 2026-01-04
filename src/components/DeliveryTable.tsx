@@ -1,6 +1,6 @@
 import type { Entrega } from '../App';
 import { Form } from 'react-bootstrap';
-import { Trash, PencilSquare, Clock } from 'react-bootstrap-icons'; // Importando Clock
+import { Trash, PencilSquare, Clock } from 'react-bootstrap-icons';
 
 interface DeliveryTableProps {
   deliveries: Entrega[];
@@ -40,10 +40,14 @@ export function DeliveryTable({
           }
           /* Efeito hover suave no badge para indicar que é clicável */
           .status-badge {
-            transition: opacity 0.2s;
+            transition: opacity 0.2s, transform 0.1s;
           }
           .status-badge:hover {
-            opacity: 0.8;
+            opacity: 0.85;
+            transform: scale(1.02);
+          }
+          .status-badge:active {
+            transform: scale(0.98);
           }
         `}
       </style>
@@ -79,8 +83,6 @@ export function DeliveryTable({
             deliveries.map((delivery) => {
               const delivered = isDelivered(delivery.status);
               
-              // Define o estilo da linha
-              // Nota: Removemos pointer-events:none global para permitir clicar no Badge
               const rowClass = delivered 
                 ? 'bg-light text-muted opacity-50 d-print-none print-hidden' 
                 : '';
@@ -121,28 +123,28 @@ export function DeliveryTable({
                     </span>
                   </td>
 
-                  {/* CÉLULA DE STATUS ATUALIZADA */}
-                  <td className="text-center" style={{ width: '140px' }}>
+                  {/* CÉLULA DE STATUS (Mais Discreta) */}
+                  <td className="text-center" style={{ width: '130px' }}>
                     <span 
                         className={`badge status-badge ${delivered ? 'bg-success' : 'bg-warning text-dark'}`}
                         style={{ 
                             cursor: 'pointer', 
                             userSelect: 'none',
-                            fontSize: '0.85em',
-                            padding: '0.5em 0.8em'
+                            fontSize: '0.75em',      // Reduzi o tamanho da fonte
+                            padding: '0.35em 0.6em', // Reduzi o espaçamento interno
+                            fontWeight: 600          // Peso da fonte levemente reduzido
                         }}
-                        // Ao clicar, inverte o status
                         onClick={() => onStatusChange(delivery.id, delivered ? 'Pendente' : 'Entregue')}
                         title={delivered ? "Clique para marcar como Pendente" : "Clique para marcar como Entregue"}
                     >
-                        <Clock className="me-2" style={{ fontSize: '1em' }} />
+                        {/* Ícone menor e com margem ajustada */}
+                        <Clock className="me-1" style={{ fontSize: '0.9em', marginBottom: '1px' }} />
                         {delivered ? 'ENTREGUE' : 'PENDENTE'}
                     </span>
                   </td>
 
                   <td className="text-end">
                     <div className="d-flex justify-content-end gap-1">
-                        {/* Ações desabilitadas/ocultas se entregue */}
                         <button 
                             className="btn btn-sm btn-link text-decoration-none p-0" 
                             onClick={() => !delivered && onEdit(delivery)}
