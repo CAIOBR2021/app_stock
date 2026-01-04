@@ -22,13 +22,27 @@ export function DeliveryTable({
   onSelectAll
 }: DeliveryTableProps) {
 
-  // Filtra apenas os itens não entregues para a lógica de "Selecionar Tudo"
-  const selectableDeliveries = deliveries.filter(d => d.status !== 'Entregue');
+  // 1. Função auxiliar para normalizar a verificação (ignora maiúsculas e espaços)
+  const isDelivered = (status: string | undefined) => {
+    return status?.trim().toLowerCase() === 'entregue';
+  };
+
+  // Filtra itens para o "Selecionar Tudo", ignorando os entregues
+  const selectableDeliveries = deliveries.filter(d => !isDelivered(d.status));
   const isAllSelected = selectableDeliveries.length > 0 && 
                         selectableDeliveries.every(d => selectedIds.includes(d.id));
 
   return (
     <div className="table-responsive shadow-sm rounded bg-white">
+      {/* Estilo forçado para garantir que d-print-none funcione mesmo se o Bootstrap falhar */}
+      <style>
+        {`
+          @media print {
+            .print-hidden { display: none !important; }
+          }
+        `}
+      </style>
+
       <table className="table table-hover table-sm align-middle mb-0">
         <thead className="table-light">
           <tr>
@@ -58,12 +72,15 @@ export function DeliveryTable({
             </tr>
           ) : (
             deliveries.map((delivery) => {
-              const isDelivered = delivery.status === 'Entregue';
+              // Verifica se está entregue usando a função robusta
+              const delivered = isDelivered(delivery.status);
               
-              // Define as classes da linha:
-              // - bg-light text-muted opacity-50: Aspecto visual de desabilitado
-              // - d-print-none: ESCONDE o item na impressão (Relatório Gerado)
-              const rowClass = isDelivered ? 'bg-light text-muted opacity-50 d-print-none' : '';
+              // Classes:
+              // - d-print-none e print-hidden: Garante que NÃO saia no relatório (impressão)
+              // - opacity-50: Visual de desabilitado
+              const rowClass = delivered 
+                ? 'bg-light text-muted opacity-50 d-print-none print-hidden' 
+                : '';
 
               return (
                 <tr key={delivery.id} className={rowClass}>
@@ -72,8 +89,7 @@ export function DeliveryTable({
                       type="checkbox"
                       checked={selectedIds.includes(delivery.id)}
                       onChange={() => onSelectItem(delivery.id)}
-                      // Checkbox desabilitado se entregue
-                      disabled={isDelivered}
+                      disabled={delivered} // Bloqueia seleção
                     />
                   </td>
                   
@@ -97,7 +113,7 @@ export function DeliveryTable({
                   </td>
 
                   <td className="text-center">
-                    <span className={`badge ${isDelivered ? 'bg-secondary' : 'bg-light text-dark border'}`}>
+                    <span className={`badge ${delivered ? 'bg-secondary' : 'bg-light text-dark border'}`}>
                       {delivery.itemQuantidade} {delivery.itemUnidadeMedida}
                     </span>
                   </td>
@@ -105,20 +121,20 @@ export function DeliveryTable({
                   <td className="text-center" style={{ width: '130px' }}>
                     <select 
                         className={`form-select form-select-sm border-0 shadow-none fw-bold text-center ${
-                            isDelivered ? 'text-success' : 'text-warning'
+                            delivered ? 'text-success' : 'text-warning'
                         }`}
                         style={{ 
                           width: 'auto', 
                           margin: '0 auto', 
                           backgroundColor: 'transparent', 
-                          cursor: isDelivered ? 'default' : 'pointer', // Cursor padrão se entregue
+                          cursor: delivered ? 'default' : 'pointer',
                           paddingTop: 0, 
                           paddingBottom: 0
                         }}
                         value={delivery.status}
                         onChange={(e) => onStatusChange(delivery.id, e.target.value)}
-                        // Desabilita mudança de status se necessário (opcional, remova se quiser permitir reabrir)
-                        // disabled={isDelivered} 
+                        // Se quiser impedir que voltem para "Pendente", descomente a linha abaixo:
+                        // disabled={delivered} 
                     >
                         <option value="Pendente" className="text-dark">Pendente</option>
                         <option value="Entregue" className="text-dark">Entregue</option>
@@ -127,13 +143,20 @@ export function DeliveryTable({
 
                   <td className="text-end">
                     <div className="d-flex justify-content-end gap-1">
+                        {/* BOTÃO REPROGRAMAR / EDITAR */}
                         <button 
                             className="btn btn-sm btn-link text-decoration-none p-0" 
-                            onClick={() => onEdit(delivery)}
-                            // Botão de Editar (Reprogramar Rota) indisponível se entregue
-                            disabled={isDelivered}
-                            style={{ opacity: isDelivered ? 0 : 1, pointerEvents: isDelivered ? 'none' : 'auto' }} // Oculta visualmente ou desabilita totalmente
-                            title={isDelivered ? "Item entregue não pode ser editado" : "Editar"}
+                            // Trava Lógica: Impede a execução da função se estiver entregue
+                            onClick={() => !delivered && onEdit(delivery)}
+                            // Trava de UI: Desabilita o botão
+                            disabled={delivered}
+                            style={{ 
+                              opacity: delivered ? 0 : 1, 
+                              pointerEvents: delivered ? 'none' : 'auto',
+                              cursor: delivered ? 'not-allowed' : 'pointer'
+                            }}
+                            title={delivered ? "Item entregue não pode ser editado" : "Editar"}
+                            aria-disabled={delivered}
                         >
                             <PencilSquare size={16} />
                         </button>
@@ -142,7 +165,6 @@ export function DeliveryTable({
                             className="btn btn-sm btn-link text-danger text-decoration-none p-0" 
                             onClick={() => onDelete(delivery.id)}
                             title="Excluir"
-                            // Mantivemos Excluir ativo, mas você pode desabilitar se quiser: disabled={isDelivered}
                         >
                             <Trash size={16} />
                         </button>
