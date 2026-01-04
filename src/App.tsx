@@ -1272,6 +1272,14 @@ function ConsultaMovimentacoes({
     [produtos],
   );
 
+  // --- NOVA LÓGICA: Calcula motivos únicos para o datalist ---
+  const motivosUnicos = useMemo(() => {
+    const motivos = movs
+      .map((m) => m.motivo)
+      .filter((m) => m && m.trim().length > 0) as string[];
+    return Array.from(new Set(motivos)).sort();
+  }, [movs]);
+
   const filteredMovs = useMemo(() => {
     return movs.filter((mov) => {
       const movDate = new Date(mov.criadoEm);
@@ -1524,6 +1532,7 @@ function ConsultaMovimentacoes({
               onEdit(editId!, patch);
               setEditId(null);
             }}
+            motivosDisponiveis={motivosUnicos} // --- PASSANDO A PROP NOVA ---
           />
         </ModalComponent>
       )}
@@ -1536,11 +1545,13 @@ function MovimentacaoEditForm({
   produto,
   onCancel,
   onSave,
+  motivosDisponiveis = [] // --- RECEBENDO A PROP NOVA COM VALOR PADRÃO ---
 }: {
   movimentacao: Movimentacao;
   produto?: Produto;
   onCancel: () => void;
   onSave: (patch: { quantidade: number; motivo?: string }) => void;
+  motivosDisponiveis?: string[];
 }) {
   const [quantidade, setQuantidade] = useState(movimentacao.quantidade);
   const [motivo, setMotivo] = useState(movimentacao.motivo ?? '');
@@ -1599,7 +1610,15 @@ function MovimentacaoEditForm({
             className="form-control"
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
+            list="edit-motivos-list" // --- VÍNCULO COM DATALIST ---
+            autoComplete="off"
           />
+          {/* --- DATALIST IMPLEMENTADO --- */}
+          <datalist id="edit-motivos-list">
+             {motivosDisponiveis.map((m, i) => (
+                 <option key={i} value={m} />
+             ))}
+          </datalist>
         </div>
       </div>
       <div className="text-end mt-4">
