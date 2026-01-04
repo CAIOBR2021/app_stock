@@ -1615,6 +1615,9 @@ export default function App() {
   const [entregas, setEntregas] = useState<Entrega[]>([]);
   const [editingEntrega, setEditingEntrega] = useState<Entrega | null>(null);
 
+  // NOVO ESTADO: ID da entrega para o modal de exclusão
+  const [entregaToDeleteId, setEntregaToDeleteId] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [loadingAll, setLoadingAll] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1861,17 +1864,14 @@ export default function App() {
     }
   }
 
-  async function deleteEntrega(id: string) {
-      if(!confirm("Deseja realmente excluir esta entrega? O estoque será DEVOLVIDO automaticamente ao produto.")) return;
-      
+  // FUNÇÃO RENOMEADA: Agora chamada pelo modal para confirmar a exclusão
+  async function confirmDeleteEntrega(id: string) {
       try {
           const res = await fetch(`${API_URL}/entregas/${id}`, { method: 'DELETE' });
           if (!res.ok) {
             const data = await res.json();
             throw new Error(data.error || 'Erro ao excluir');
           }
-          
-          alert('Entrega excluída e estoque estornado com sucesso!');
           
           // Recarrega lista e normaliza
           const entregasRes = await fetch(`${API_URL}/entregas`);
@@ -1880,6 +1880,9 @@ export default function App() {
 
           const prodsRes = await fetch(`${API_URL}/produtos?_limit=10000`);
           setAllProdutos(await prodsRes.json());
+          
+          // Fecha o modal limpando o ID
+          setEntregaToDeleteId(null);
 
       } catch (err: any) { 
           console.error(err);
@@ -2184,8 +2187,7 @@ export default function App() {
     <div className="container-fluid bg-light min-vh-100 px-0">
       <header className="main-header d-flex flex-column flex-md-row align-items-center justify-content-between sticky-top px-4 py-3 mb-4">
         <div className="brand-section">
-            <img src={meuLogo} alt="Logo da Empresa" className="app-logo" style={{height: '58px'}} />
-            <h5 className="brand-title d-none d-md-block">Sistema Integrado</h5>
+            <img src={meuLogo} alt="Logo da Empresa" className="app-logo" style={{height: '60px'}} />
         </div>
           
         <ul className="nav nav-pills nav-pills-custom my-3 my-md-0 gap-2">
@@ -2438,7 +2440,9 @@ export default function App() {
 
                     <DeliveryTable 
                         deliveries={filteredDeliveries} // Passando a lista filtrada
-                        onDelete={deleteEntrega}
+                        
+                        // ALTERADO: Ao clicar em excluir, define o ID no estado para abrir o modal
+                        onDelete={(id) => setEntregaToDeleteId(id)}
                         
                         // CORREÇÃO CRÍTICA: Bloqueia abertura de edição para itens entregues
                         onEdit={(item: any) => {
@@ -2497,6 +2501,41 @@ export default function App() {
                     <Button variant="primary" onClick={handleReprogramDeliveries}>Confirmar</Button>
                 </div>
             </div>
+        </ModalComponent>
+      )}
+
+      {/* NOVO: MODAL DE CONFIRMAÇÃO DE EXCLUSÃO DE ENTREGA */}
+      {entregaToDeleteId && (
+        <ModalComponent title="Confirmar Exclusão" onClose={() => setEntregaToDeleteId(null)}>
+            {(() => {
+                const ent = entregas.find(e => e.id === entregaToDeleteId);
+                if (!ent) return null;
+                return (
+                    <div>
+                        <p>Você tem certeza que deseja excluir esta entrega do cronograma?</p>
+                        <div className="card mb-3 bg-light border-0">
+                            <div className="card-body py-2">
+                                <ul className="list-unstyled mb-0 small">
+                                    <li className="mb-1"><strong>Local:</strong> {ent.localObra}</li>
+                                    <li className="mb-1"><strong>Produto:</strong> {ent.itemNome}</li>
+                                    <li className="mb-1"><strong>Qtd:</strong> {ent.itemQuantidade} {ent.itemUnidadeMedida}</li>
+                                    <li><strong>Data:</strong> {new Date(ent.dataHoraSolicitacao).toLocaleString('pt-BR')}</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <p className="text-danger small fw-bold mb-0">
+                            <i className="bi bi-exclamation-triangle-fill me-1"></i>
+                            Atenção: O estoque será devolvido automaticamente ao produto.
+                        </p>
+                        <div className="text-end mt-4">
+                            <button className="btn btn-secondary me-2" onClick={() => setEntregaToDeleteId(null)}>Cancelar</button>
+                            <button className="btn btn-danger" onClick={() => confirmDeleteEntrega(entregaToDeleteId)}>
+                                <i className="bi bi-trash me-1"></i>Confirmar Exclusão
+                            </button>
+                        </div>
+                    </div>
+                )
+            })()}
         </ModalComponent>
       )}
 

@@ -50,17 +50,6 @@ body {
   gap: 16px;
 }
 
-.brand-title {
-  font-weight: 800 !important; /* Mais bold */
-  letter-spacing: -0.5px !important;
-  background: linear-gradient(135deg, #0f172a 0%, #3b82f6 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin: 0 !important;
-  font-size: 1.35rem;
-}
-
 .app-logo {
   filter: none !important; 
 }
