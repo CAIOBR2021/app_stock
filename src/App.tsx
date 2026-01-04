@@ -66,6 +66,11 @@ const API_URL = "https://app-stock-back.onrender.com/api";
 
 const ITEMS_PER_PAGE = 30;
 
+// Função auxiliar para verificar se está entregue (Normalização de string)
+const isDelivered = (status: string | undefined) => {
+    return status?.trim().toLowerCase() === 'entregue';
+};
+
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
   useEffect(() => {
@@ -1612,9 +1617,9 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [loadingAll, setLoadingAll] = useState(true);
   const [error, setError] = useState<string | null>(null);
-   
+    
   const [view, setView] = useState<'estoque' | 'movimentacoes' | 'rotas'>('estoque');
-   
+    
   const [showScroll, setShowScroll] = useState(false);
 
   const [q, setQ] = useState('');
@@ -1894,7 +1899,7 @@ export default function App() {
   const formatPhoneNumber = (value: string) => {
     if (!value) return "";
     const v = value.replace(/\D/g, ''); // Limpa
-     
+      
     // Tenta casar com celular (11 dígitos)
     const matchCel = v.match(/^(\d{2})(\d{5})(\d{4})$/);
     if (matchCel) return `(${matchCel[1]}) ${matchCel[2]}-${matchCel[3]}`;
@@ -1905,15 +1910,25 @@ export default function App() {
 
     return value;
   };
-   
+    
   const handleSelectEntrega = (id: string) => {
+    // Ao selecionar um individualmente, verificamos se ele NÃO está entregue para permitir (via UI)
+    // Mas a lógica da tabela já deve desabilitar o checkbox.
     setSelectedEntregaIds(prev => 
       prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
     );
   };
 
   const handleSelectAllEntregas = (isChecked: boolean) => {
-    setSelectedEntregaIds(isChecked ? entregas.map(e => e.id) : []);
+    // FILTRAGEM: Apenas seleciona itens que NÃO estão entregues
+    if (isChecked) {
+        const activeIds = entregas
+            .filter(e => !isDelivered(e.status))
+            .map(e => e.id);
+        setSelectedEntregaIds(activeIds);
+    } else {
+        setSelectedEntregaIds([]);
+    }
   };
 
   const handleGenerateDeliveryReport = () => {
@@ -1922,9 +1937,16 @@ export default function App() {
       return;
     }
 
+    // FILTRAGEM DE SEGURANÇA: Remove itens entregues da geração do PDF
     const selectedDeliveries = entregas
       .filter(d => selectedEntregaIds.includes(d.id))
+      .filter(d => !isDelivered(d.status)) // Garante que entregues não entrem
       .sort((a, b) => new Date(a.dataHoraSolicitacao).getTime() - new Date(b.dataHoraSolicitacao).getTime());
+
+    if (selectedDeliveries.length === 0) {
+        alert("Nenhum item válido para o relatório (itens entregues são ignorados).");
+        return;
+    }
 
     const { jsPDF } = window.jspdf || { jsPDF: (window as any).jspdf.jsPDF };
     const doc = new jsPDF('l', 'mm', 'a4');
@@ -1935,7 +1957,7 @@ export default function App() {
     doc.setFontSize(18);
     doc.setTextColor(40);
     doc.text('Programação de Caminhões para Entrega de Materiais', 14, 20);
-     
+      
     doc.setFontSize(11);
     doc.setTextColor(100);
     doc.text(`Relatório do Dia: ${reportDate}`, 14, 28);
@@ -1987,7 +2009,7 @@ export default function App() {
     const finalY = (doc as any).lastAutoTable.finalY;
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-     
+      
     let signatureY = finalY + 35;
     if (signatureY + 20 > pageHeight) {
         doc.addPage();
@@ -2003,7 +2025,7 @@ export default function App() {
 
     doc.line(leftCenterX - (lineLength/2), signatureY, leftCenterX + (lineLength/2), signatureY);
     doc.text('Assinatura do Motorista', leftCenterX, signatureY + 5, { align: 'center' });
-     
+      
     doc.line(rightCenterX - (lineLength/2), signatureY, rightCenterX + (lineLength/2), signatureY);
     doc.text('Assinatura do Solicitante', rightCenterX, signatureY + 5, { align: 'center' });
 
@@ -2017,20 +2039,32 @@ export default function App() {
       return;
     }
 
+    // FILTRAGEM DE SEGURANÇA: Garante que apenas IDs válidos (não entregues) sejam processados
+    const validIdsToReprogram = selectedEntregaIds.filter(id => {
+        const delivery = entregas.find(e => e.id === id);
+        return delivery && !isDelivered(delivery.status);
+    });
+
+    if (validIdsToReprogram.length === 0) {
+        alert("Nenhum item selecionado pode ser reprogramado (itens entregues não permitem edição).");
+        setShowReprogramModal(false);
+        return;
+    }
+
     try {
-        await Promise.all(selectedEntregaIds.map(id => {
+        await Promise.all(validIdsToReprogram.map(id => {
             const entrega = entregas.find(e => e.id === id);
             if (!entrega) return Promise.resolve();
             const timePart = entrega.dataHoraSolicitacao.split('T')[1] || '08:00:00';
             const newDateTime = `${newDeliveryDate}T${timePart}`;
-             
+              
             return fetch(`${API_URL}/entregas/${id}`, {
                 method: 'PUT',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ dataHoraSolicitacao: newDateTime })
             });
         }));
-        alert('Entregas reprogramadas com sucesso!');
+        alert(`${validIdsToReprogram.length} entrega(s) reprogramada(s) com sucesso!`);
         setShowReprogramModal(false);
         setNewDeliveryDate('');
         
@@ -2123,7 +2157,7 @@ export default function App() {
             <img src={meuLogo} alt="Logo da Empresa" className="app-logo me-3" style={{height: '50px'}} />
             <h5 className="m-0 text-secondary d-none d-md-block">Sistema Integrado</h5>
         </div>
-         
+          
         <ul className="nav nav-pills my-3 my-md-0 gap-3">
           <li className="nav-item">
             <button
@@ -2318,7 +2352,7 @@ export default function App() {
                 <div className="col-lg-8">
                     <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                         <h4 className="text-primary fw-bold mb-0">Cronograma</h4>
-                         
+                          
                         <div className="d-flex gap-3">
                             <Button 
                                 variant="outline-secondary" 
@@ -2345,8 +2379,15 @@ export default function App() {
                         deliveries={entregas}
                         onDelete={deleteEntrega}
                         
-                        // CORREÇÃO CRÍTICA: Normaliza antes de editar
-                        onEdit={(item: any) => setEditingEntrega(normalizeEntrega(item))}
+                        // CORREÇÃO CRÍTICA: Bloqueia abertura de edição para itens entregues
+                        onEdit={(item: any) => {
+                             const ent = normalizeEntrega(item);
+                             if(!isDelivered(ent.status)) {
+                                 setEditingEntrega(ent);
+                             } else {
+                                 alert("Itens entregues não podem ser editados.");
+                             }
+                        }}
                         
                         onStatusChange={updateEntregaStatus}
                         selectedIds={selectedEntregaIds}
