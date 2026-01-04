@@ -88,8 +88,11 @@ function useDebounce<T>(value: T, delay: number): T {
 const normalizeEntrega = (e: any): Entrega => {
   return {
     ...e,
+    // Garante produtoId CamelCase
     produtoId: e.produtoId || e.produtoid || '',
+    // Garante campo de armazenamento
     localArmazenagem: e.localArmazenagem || e.localArmazenamento || '',
+    // Garante data string
     dataHoraSolicitacao: e.dataHoraSolicitacao || new Date().toISOString()
   };
 };
@@ -117,7 +120,7 @@ function ModalComponent({
   return (
     <div
       className="modal"
-      style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050 }}
+      style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1050 }}
       onClick={onClose}
     >
       <div
@@ -125,8 +128,8 @@ function ModalComponent({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-content shadow-lg border-0">
-          <div className="modal-header bg-light">
-            <h5 className="modal-title fw-bold text-primary">{title}</h5>
+          <div className="modal-header">
+            <h5 className="modal-title">{title}</h5>
             <button
               type="button"
               className="btn-close"
@@ -811,7 +814,8 @@ function ProdutosTable({
       <div className="d-lg-none">
         <div className="row g-3">
           {produtos.map((p) => (
-            <div key={p.id} className="col-12 col-sm-6">
+            /* AQUI ESTÁ A MUDANÇA PRINCIPAL DA GRADE */
+            <div key={p.id} className="col-12 col-md-6">
               <ProdutoCard
                 produto={p}
                 onMovimentar={() => setMovProdId(p.id)}
@@ -2177,10 +2181,11 @@ export default function App() {
   }
 
   return (
-    <div className="container-fluid min-vh-100 px-0">
+    <div className="container-fluid bg-light min-vh-100 px-0">
       <header className="main-header d-flex flex-column flex-md-row align-items-center justify-content-between sticky-top px-4 py-3 mb-4">
         <div className="brand-section">
             <img src={meuLogo} alt="Logo da Empresa" className="app-logo" style={{height: '58px'}} />
+            <h5 className="brand-title d-none d-md-block">Sistema Integrado</h5>
         </div>
           
         <ul className="nav nav-pills nav-pills-custom my-3 my-md-0 gap-2">
