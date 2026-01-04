@@ -62,7 +62,9 @@ export interface Entrega {
 }
 
 // --- CONSTANTES E HOOKS ---
+// URL da API (Local para testes)
 const API_URL = "https://app-stock-back.onrender.com/api";
+
 
 const ITEMS_PER_PAGE = 30;
 
@@ -78,19 +80,6 @@ function useDebounce<T>(value: T, delay: number): T {
   }, [value, delay]);
   return debouncedValue;
 }
-
-// --- FUNÇÃO AUXILIAR PARA NORMALIZAR DADOS DA API ---
-const normalizeEntrega = (e: any): Entrega => {
-  return {
-    ...e,
-    // Garante produtoId CamelCase
-    produtoId: e.produtoId || e.produtoid || '',
-    // Garante campo de armazenamento
-    localArmazenagem: e.localArmazenagem || e.localArmazenamento || '',
-    // Garante data string
-    dataHoraSolicitacao: e.dataHoraSolicitacao || new Date().toISOString()
-  };
-};
 
 // --- COMPONENTES REUTILIZÁVEIS ---
 
@@ -1612,9 +1601,9 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [loadingAll, setLoadingAll] = useState(true);
   const [error, setError] = useState<string | null>(null);
-   
+  
   const [view, setView] = useState<'estoque' | 'movimentacoes' | 'rotas'>('estoque');
-   
+  
   const [showScroll, setShowScroll] = useState(false);
 
   const [q, setQ] = useState('');
@@ -1656,8 +1645,15 @@ export default function App() {
 
         setAllProdutos(allProdsData);
         setMovs(movsData);
-        // APLICAÇÃO DA NORMALIZAÇÃO NA CARGA INICIAL
-        setEntregas(entregasData.map(normalizeEntrega));
+        
+        // CORREÇÃO CRÍTICA PARA O RELATÓRIO:
+        // O backend envia 'localArmazenamento', mas o frontend espera 'localArmazenagem'.
+        // Mapeamos aqui para garantir que o dado existe.
+        const fixedEntregas = entregasData.map((e: any) => ({
+            ...e,
+            localArmazenagem: e.localArmazenamento || e.localArmazenagem || '' 
+        }));
+        setEntregas(fixedEntregas);
 
       } catch (err: any) {
         console.error('Falha ao buscar dados:', err);
@@ -1833,20 +1829,7 @@ export default function App() {
             body: JSON.stringify(data)
         });
         if (!res.ok) throw new Error((await res.json()).error);
-        
-        // CORREÇÃO: Atualizar estados e normalizar
-        const entregasRes = await fetch(`${API_URL}/entregas`);
-        const entregasData = await entregasRes.json();
-        setEntregas(entregasData.map(normalizeEntrega));
-
-        const prodsRes = await fetch(`${API_URL}/produtos?_limit=10000`);
-        const prodsData = await prodsRes.json();
-        setAllProdutos(prodsData);
-
-        const movsRes = await fetch(`${API_URL}/movimentacoes`);
-        const movsData = await movsRes.json();
-        setMovs(movsData);
-
+        window.location.reload(); 
     } catch (err: any) {
         alert(err.message);
     }
@@ -1864,14 +1847,8 @@ export default function App() {
           
           alert('Entrega excluída e estoque estornado com sucesso!');
           
-          // Recarrega lista e normaliza
-          const entregasRes = await fetch(`${API_URL}/entregas`);
-          const entregasData = await entregasRes.json();
-          setEntregas(entregasData.map(normalizeEntrega));
-
-          const prodsRes = await fetch(`${API_URL}/produtos?_limit=10000`);
-          setAllProdutos(await prodsRes.json());
-
+          // Recarrega a página para atualizar a tabela de produtos e movimentações com o novo saldo
+          window.location.reload();
       } catch (err: any) { 
           console.error(err);
           alert(err.message);
@@ -1893,19 +1870,12 @@ export default function App() {
 
   const formatPhoneNumber = (value: string) => {
     if (!value) return "";
-    const v = value.replace(/\D/g, ''); // Limpa
-     
-    // Tenta casar com celular (11 dígitos)
-    const matchCel = v.match(/^(\d{2})(\d{5})(\d{4})$/);
-    if (matchCel) return `(${matchCel[1]}) ${matchCel[2]}-${matchCel[3]}`;
-
-    // Tenta casar com fixo (10 dígitos)
-    const matchFixo = v.match(/^(\d{2})(\d{4})(\d{4})$/);
-    if (matchFixo) return `(${matchFixo[1]}) ${matchFixo[2]}-${matchFixo[3]}`;
-
+    const cleanedValue = value.replace(/\D/g, '');
+    const match = cleanedValue.match(/^(\d{2})(\d{5})(\d{4})$/);
+    if (match) return `(${match[1]}) ${match[2]}-${match[3]}`;
     return value;
   };
-   
+  
   const handleSelectEntrega = (id: string) => {
     setSelectedEntregaIds(prev => 
       prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
@@ -1935,7 +1905,7 @@ export default function App() {
     doc.setFontSize(18);
     doc.setTextColor(40);
     doc.text('Programação de Caminhões para Entrega de Materiais', 14, 20);
-     
+    
     doc.setFontSize(11);
     doc.setTextColor(100);
     doc.text(`Relatório do Dia: ${reportDate}`, 14, 28);
@@ -1987,7 +1957,7 @@ export default function App() {
     const finalY = (doc as any).lastAutoTable.finalY;
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-     
+    
     let signatureY = finalY + 35;
     if (signatureY + 20 > pageHeight) {
         doc.addPage();
@@ -1997,13 +1967,13 @@ export default function App() {
     doc.setLineWidth(0.3);
     doc.setDrawColor(0); doc.setTextColor(0); doc.setFontSize(10);
 
-    const leftCenterX = pageWidth / 4;        
+    const leftCenterX = pageWidth / 4;       
     const rightCenterX = (pageWidth / 4) * 3;
     const lineLength = 80; 
 
     doc.line(leftCenterX - (lineLength/2), signatureY, leftCenterX + (lineLength/2), signatureY);
     doc.text('Assinatura do Motorista', leftCenterX, signatureY + 5, { align: 'center' });
-     
+    
     doc.line(rightCenterX - (lineLength/2), signatureY, rightCenterX + (lineLength/2), signatureY);
     doc.text('Assinatura do Solicitante', rightCenterX, signatureY + 5, { align: 'center' });
 
@@ -2023,7 +1993,7 @@ export default function App() {
             if (!entrega) return Promise.resolve();
             const timePart = entrega.dataHoraSolicitacao.split('T')[1] || '08:00:00';
             const newDateTime = `${newDeliveryDate}T${timePart}`;
-             
+            
             return fetch(`${API_URL}/entregas/${id}`, {
                 method: 'PUT',
                 headers: {'Content-Type': 'application/json'},
@@ -2033,12 +2003,7 @@ export default function App() {
         alert('Entregas reprogramadas com sucesso!');
         setShowReprogramModal(false);
         setNewDeliveryDate('');
-        
-        // Recarrega sem refresh e normaliza
-        const entregasRes = await fetch(`${API_URL}/entregas`);
-        const entregasData = await entregasRes.json();
-        setEntregas(entregasData.map(normalizeEntrega));
-
+        window.location.reload();
     } catch (e) { 
         console.error(e);
         alert('Erro ao reprogramar entregas.');
@@ -2123,7 +2088,7 @@ export default function App() {
             <img src={meuLogo} alt="Logo da Empresa" className="app-logo me-3" style={{height: '50px'}} />
             <h5 className="m-0 text-secondary d-none d-md-block">Sistema Integrado</h5>
         </div>
-         
+        
         <ul className="nav nav-pills my-3 my-md-0 gap-3">
           <li className="nav-item">
             <button
@@ -2311,14 +2276,13 @@ export default function App() {
                         produtosDisponiveis={allProdutos}
                         deliveryToEdit={editingEntrega}
                         onCancelEdit={() => setEditingEntrega(null)}
-                        historicoEntregas={entregas}
                     />
                 </div>
 
                 <div className="col-lg-8">
                     <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                         <h4 className="text-primary fw-bold mb-0">Cronograma</h4>
-                         
+                        
                         <div className="d-flex gap-3">
                             <Button 
                                 variant="outline-secondary" 
@@ -2344,10 +2308,7 @@ export default function App() {
                     <DeliveryTable 
                         deliveries={entregas}
                         onDelete={deleteEntrega}
-                        
-                        // CORREÇÃO CRÍTICA: Normaliza antes de editar
-                        onEdit={(item: any) => setEditingEntrega(normalizeEntrega(item))}
-                        
+                        onEdit={setEditingEntrega}
                         onStatusChange={updateEntregaStatus}
                         selectedIds={selectedEntregaIds}
                         onSelectItem={handleSelectEntrega}

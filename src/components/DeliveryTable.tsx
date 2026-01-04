@@ -1,145 +1,145 @@
-import { PencilSquare, Trash } from 'react-bootstrap-icons';
+import type { Entrega } from '../App';
 import { Form } from 'react-bootstrap';
-
-interface Delivery {
-    id: string;
-    dataHoraSolicitacao: string;
-    localArmazenagem: string; 
-    localObra: string;
-    itemNome?: string;
-    itemQuantidade: number;
-    itemUnidadeMedida?: string;
-    responsavelNome?: string;
-    responsavelTelefone?: string;
-    status: string;
-}
+import { Trash, PencilSquare } from 'react-bootstrap-icons';
 
 interface DeliveryTableProps {
-    deliveries: Delivery[];
-    onDelete: (id: string) => void;
-    onEdit: (delivery: Delivery) => void;
-    onStatusChange: (id: string, status: string) => void;
-    selectedIds: string[];
-    onSelectItem: (id: string) => void;
-    onSelectAll: (checked: boolean) => void;
+  deliveries: Entrega[];
+  onDelete: (id: string) => void;
+  onEdit: (entrega: Entrega) => void;
+  onStatusChange: (id: string, status: string) => void;
+  selectedIds: string[];
+  onSelectItem: (id: string) => void;
+  onSelectAll: (isChecked: boolean) => void;
 }
 
-export function DeliveryTable({ deliveries, onDelete, onEdit, onStatusChange, selectedIds, onSelectItem, onSelectAll }: DeliveryTableProps) {
-    
-    // Converte ISO UTC para hora local do navegador (ex: 11:00 UTC -> 08:00 BRT)
-    const formatTime = (isoString: string) => {
-        if (!isoString) return '--:--';
-        return new Date(isoString).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    };
+export function DeliveryTable({
+  deliveries,
+  onDelete,
+  onEdit,
+  onStatusChange,
+  selectedIds,
+  onSelectItem,
+  onSelectAll
+}: DeliveryTableProps) {
 
-    // Converte ISO UTC para data local
-    const formatDate = (isoString: string) => {
-        if (!isoString) return '--/--';
-        return new Date(isoString).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-    };
+  const selectableDeliveries = deliveries.filter(d => d.status !== 'Entregue');
+  const isAllSelected = selectableDeliveries.length > 0 && 
+                        selectableDeliveries.every(d => selectedIds.includes(d.id));
 
-    const formatPhone = (val?: string) => {
-        if(!val) return '-';
-        return val.replace(/^(\d{2})(\d{5})(\d{4})$/, "($1) $2-$3").replace(/^(\d{2})(\d{4})(\d{4})$/, "($1) $2-$3");
-    };
+  return (
+    <div className="table-responsive shadow-sm rounded bg-white">
+      <table className="table table-hover align-middle mb-0">
+        <thead className="table-light">
+          <tr>
+            <th style={{ width: '40px' }} className="text-center py-3">
+              <Form.Check 
+                type="checkbox"
+                checked={isAllSelected}
+                onChange={(e) => onSelectAll(e.target.checked)}
+                disabled={selectableDeliveries.length === 0}
+              />
+            </th>
+            <th className="py-3 text-secondary text-uppercase small fw-bold">Data</th>
+            <th className="py-3 text-secondary text-uppercase small fw-bold">Hora</th>
+            <th className="py-3 text-secondary text-uppercase small fw-bold">Local / Obra</th>
+            <th className="py-3 text-secondary text-uppercase small fw-bold">Produto</th>
+            <th className="py-3 text-secondary text-uppercase small fw-bold text-center">Qtd.</th>
+            <th className="py-3 text-secondary text-uppercase small fw-bold text-center">Status</th>
+            <th className="py-3 text-secondary text-uppercase small fw-bold text-end">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {deliveries.length === 0 ? (
+            <tr>
+              <td colSpan={8} className="text-center py-5 text-muted">
+                Nenhuma entrega programada.
+              </td>
+            </tr>
+          ) : (
+            deliveries.map((delivery) => {
+              const isDelivered = delivery.status === 'Entregue';
+              
+              // Linha cinza claro se entregue
+              const rowClass = isDelivered ? 'bg-light text-muted' : '';
 
-    const sortedDeliveries = [...deliveries].sort((a, b) => 
-        new Date(b.dataHoraSolicitacao).getTime() - new Date(a.dataHoraSolicitacao).getTime()
-    );
+              return (
+                <tr key={delivery.id} className={rowClass}>
+                  <td className="text-center">
+                    <Form.Check 
+                      type="checkbox"
+                      checked={selectedIds.includes(delivery.id)}
+                      onChange={() => onSelectItem(delivery.id)}
+                      disabled={isDelivered}
+                    />
+                  </td>
+                  
+                  <td className="fw-medium">
+                    {new Date(delivery.dataHoraSolicitacao).toLocaleDateString('pt-BR')}
+                  </td>
+                  <td>
+                    {new Date(delivery.dataHoraSolicitacao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                  </td>
 
-    const allSelected = deliveries.length > 0 && selectedIds.length === deliveries.length;
+                  <td>
+                    <div className="fw-medium">{delivery.localObra}</div>
+                    <small className="text-muted" style={{ fontSize: '0.85em' }}>
+                        {delivery.localArmazenagem || delivery.localArmazenamento || '-'}
+                    </small>
+                  </td>
 
-    return (
-        <div className="table-responsive bg-white rounded shadow-sm">
-            <table className="table table-hover align-middle mb-0">
-                <thead className="bg-light">
-                    <tr>
-                        <th style={{width: '40px'}} className="text-center">
-                            <Form.Check 
-                                type="checkbox" 
-                                checked={allSelected}
-                                onChange={(e) => onSelectAll(e.target.checked)}
-                            />
-                        </th>
-                        <th>Data</th>
-                        <th>Hora</th>
-                        <th>Obra / Destino</th>
-                        <th>Produto</th>
-                        <th>Resp. / Tel</th>
-                        <th>Status</th>
-                        <th className="text-end">Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {sortedDeliveries.length === 0 ? (
-                        <tr>
-                            <td colSpan={8} className="text-center py-4 text-muted">
-                                Nenhuma entrega agendada.
-                            </td>
-                        </tr>
-                    ) : (
-                        sortedDeliveries.map(delivery => (
-                            <tr key={delivery.id} className={selectedIds.includes(delivery.id) ? 'table-active' : ''}>
-                                <td className="text-center">
-                                    <Form.Check 
-                                        type="checkbox" 
-                                        checked={selectedIds.includes(delivery.id)}
-                                        onChange={() => onSelectItem(delivery.id)}
-                                    />
-                                </td>
-                                <td>{formatDate(delivery.dataHoraSolicitacao)}</td>
-                                <td className="fw-bold text-primary">{formatTime(delivery.dataHoraSolicitacao)}</td>
-                                <td>
-                                    <div className="fw-bold">{delivery.localObra}</div>
-                                    <small className="text-muted">{delivery.localArmazenagem}</small>
-                                </td>
-                                <td>
-                                    <div>{delivery.itemNome}</div>
-                                    <small className="text-muted badge bg-light text-dark border">
-                                        {delivery.itemQuantidade} {delivery.itemUnidadeMedida}
-                                    </small>
-                                </td>
-                                <td>
-                                    <div className="small">{delivery.responsavelNome || '-'}</div>
-                                    <div className="small text-muted">{formatPhone(delivery.responsavelTelefone)}</div>
-                                </td>
-                                <td>
-                                    <select 
-                                        className={`form-select form-select-sm border-0 fw-bold ${
-                                            delivery.status === 'Entregue' ? 'text-success' : 
-                                            delivery.status === 'Pendente' ? 'text-warning' : 'text-secondary'
-                                        }`}
-                                        style={{width: '110px', backgroundColor: 'transparent'}}
-                                        value={delivery.status}
-                                        onChange={(e) => onStatusChange(delivery.id, e.target.value)}
-                                    >
-                                        <option value="Pendente">Pendente</option>
-                                        <option value="Em Rota">Em Rota</option>
-                                        <option value="Entregue">Entregue</option>
-                                        <option value="Cancelado">Cancelado</option>
-                                    </select>
-                                </td>
-                                <td className="text-end">
-                                    <button 
-                                        className="btn btn-sm btn-link text-decoration-none"
-                                        onClick={() => onEdit(delivery)}
-                                        title="Editar"
-                                    >
-                                        <PencilSquare />
-                                    </button>
-                                    <button 
-                                        className="btn btn-sm btn-link text-danger text-decoration-none"
-                                        onClick={() => onDelete(delivery.id)}
-                                        title="Excluir"
-                                    >
-                                        <Trash />
-                                    </button>
-                                </td>
-                            </tr>
-                        ))
-                    )}
-                </tbody>
-            </table>
-        </div>
-    );
+                  <td>
+                    <span>{delivery.itemNome || 'Produto não encontrado'}</span>
+                    {delivery.sku && <div className="text-muted small" style={{ fontSize: '0.75em' }}>{delivery.sku}</div>}
+                  </td>
+
+                  <td className="text-center">
+                    <span className={`badge ${isDelivered ? 'bg-secondary' : 'bg-light text-dark border'}`}>
+                      {delivery.itemQuantidade} {delivery.itemUnidadeMedida}
+                    </span>
+                  </td>
+
+                  {/* CAMPO STATUS CORRIGIDO */}
+                  <td className="text-center" style={{ width: '140px' }}>
+                    <select 
+                        className={`form-select form-select-sm border-0 shadow-none fw-bold text-center ${
+                            isDelivered ? 'text-success' : 'text-warning'
+                        }`}
+                        style={{ width: 'auto', margin: '0 auto', backgroundColor: 'transparent', cursor: 'pointer' }}
+                        value={delivery.status}
+                        onChange={(e) => onStatusChange(delivery.id, e.target.value)}
+                    >
+                        <option value="Pendente" className="text-dark">Pendente</option>
+                        <option value="Entregue" className="text-dark">Entregue</option>
+                    </select>
+                  </td>
+
+                  <td className="text-end">
+                    <div className="d-flex justify-content-end gap-2">
+                        <button 
+                            className="btn btn-sm btn-link text-decoration-none p-0" 
+                            onClick={() => onEdit(delivery)}
+                            disabled={isDelivered}
+                            style={{ opacity: isDelivered ? 0.5 : 1 }}
+                            title="Editar"
+                        >
+                            <PencilSquare size={18} />
+                        </button>
+                        
+                        <button 
+                            className="btn btn-sm btn-link text-danger text-decoration-none p-0" 
+                            onClick={() => onDelete(delivery.id)}
+                            title="Excluir"
+                        >
+                            <Trash size={18} />
+                        </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
 }
