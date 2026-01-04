@@ -1818,6 +1818,7 @@ export default function App() {
     }
   }
 
+  // ALTERAÇÃO: Agora recarrega as entregas ao excluir uma movimentação
   async function deleteMov(id: UUID) {
     try {
       const response = await fetch(`${API_URL}/movimentacoes/${id}`, {
@@ -1825,12 +1826,20 @@ export default function App() {
       });
       if (!response.ok) throw new Error('Falha ao excluir movimentação');
       const { produtoAtualizado } = await response.json();
+      
+      // Atualiza estado local de Movimentações e Produtos
       setMovs((prev) => prev.filter((m) => m.id !== id));
       setAllProdutos((prev) =>
         prev.map((p) =>
           p.id === produtoAtualizado.id ? produtoAtualizado : p,
         ),
       );
+
+      // NOVO: Sincronização - Recarrega a lista de entregas para refletir a exclusão no cronograma
+      const entregasRes = await fetch(`${API_URL}/entregas`);
+      const entregasData = await entregasRes.json();
+      setEntregas(entregasData.map(normalizeEntrega));
+
     } catch (err) {
       console.error(err);
     }
@@ -1864,7 +1873,7 @@ export default function App() {
     }
   }
 
-  // FUNÇÃO RENOMEADA: Agora chamada pelo modal para confirmar a exclusão
+  // ALTERAÇÃO: Agora recarrega as movimentações ao excluir uma entrega
   async function confirmDeleteEntrega(id: string) {
       try {
           const res = await fetch(`${API_URL}/entregas/${id}`, { method: 'DELETE' });
@@ -1873,14 +1882,19 @@ export default function App() {
             throw new Error(data.error || 'Erro ao excluir');
           }
           
-          // Recarrega lista e normaliza
+          // Recarrega Entregas
           const entregasRes = await fetch(`${API_URL}/entregas`);
           const entregasData = await entregasRes.json();
           setEntregas(entregasData.map(normalizeEntrega));
 
+          // Recarrega Produtos
           const prodsRes = await fetch(`${API_URL}/produtos?_limit=10000`);
           setAllProdutos(await prodsRes.json());
           
+          // NOVO: Sincronização - Recarrega Movimentações para mostrar o estorno
+          const movsRes = await fetch(`${API_URL}/movimentacoes`);
+          setMovs(await movsRes.json());
+
           // Fecha o modal limpando o ID
           setEntregaToDeleteId(null);
 
@@ -2187,7 +2201,8 @@ export default function App() {
     <div className="container-fluid bg-light min-vh-100 px-0">
       <header className="main-header d-flex flex-column flex-md-row align-items-center justify-content-between sticky-top px-4 py-3 mb-4">
         <div className="brand-section">
-            <img src={meuLogo} alt="Logo da Empresa" className="app-logo" style={{height: '60px'}} />
+            <img src={meuLogo} alt="Logo da Empresa" className="app-logo" style={{height: '58px'}} />
+            <h5 className="brand-title d-none d-md-block">Sistema Integrado</h5>
         </div>
           
         <ul className="nav nav-pills nav-pills-custom my-3 my-md-0 gap-2">
