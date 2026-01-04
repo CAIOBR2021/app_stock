@@ -2276,6 +2276,7 @@ export default function App() {
                         produtosDisponiveis={allProdutos}
                         deliveryToEdit={editingEntrega}
                         onCancelEdit={() => setEditingEntrega(null)}
+                        historicoEntregas={entregas}
                     />
                 </div>
 

@@ -10,9 +10,10 @@ interface DeliveryFormProps {
   onCancelEdit?: () => void;
   deliveryToEdit?: any;
   produtosDisponiveis: any[];
+  historicoEntregas?: any[]; // Nova prop para receber o histórico
 }
 
-export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, deliveryToEdit }: DeliveryFormProps) {
+export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, deliveryToEdit, historicoEntregas = [] }: DeliveryFormProps) {
   // Estado do formulário
   const [formData, setFormData] = useState({
     localArmazenagem: '',
@@ -31,6 +32,39 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
   // Estado para controlar a seleção do React-Select
   const [selectedOption, setSelectedOption] = useState<any>(null);
 
+  // --- LOGICA DE DATALISTS E AUTO-PREENCHIMENTO ---
+  
+  // 1. Extrai listas únicas do histórico para preencher os Datalists
+  const sugestoes = useMemo(() => {
+    const destinos = new Set<string>();
+    const responsaveis = new Set<string>();
+    const telefones = new Set<string>();
+    
+    // Mapa para vincular Nome -> Último Telefone usado
+    const mapaTelefonePorNome: Record<string, string> = {};
+
+    historicoEntregas?.forEach(entrega => {
+        if (entrega.localObra) destinos.add(entrega.localObra);
+        if (entrega.responsavelNome) {
+            responsaveis.add(entrega.responsavelNome);
+            // Salva/Sobrescreve o telefone associado a este nome
+            if (entrega.responsavelTelefone) {
+                mapaTelefonePorNome[entrega.responsavelNome.toLowerCase()] = entrega.responsavelTelefone;
+                telefones.add(entrega.responsavelTelefone);
+            }
+        }
+    });
+
+    return {
+        destinos: Array.from(destinos),
+        responsaveis: Array.from(responsaveis),
+        telefones: Array.from(telefones),
+        mapaTelefonePorNome
+    };
+  }, [historicoEntregas]);
+
+  // --- FIM DA LOGICA DE PREPARAÇÃO ---
+
   // Prepara as opções para o React-Select baseado na lista de produtos
   const options = useMemo(() => {
     return produtosDisponiveis.map(p => ({
@@ -43,7 +77,6 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
   }, [produtosDisponiveis]);
 
   // --- ESTILOS CUSTOMIZADOS PARA O REACT-SELECT ---
-  // Isso faz o componente ficar idêntico aos inputs do Bootstrap (FloatingLabel)
   const customStyles: StylesConfig = {
     control: (provided, state) => ({
       ...provided,
@@ -146,6 +179,24 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
       setFormData({ ...formData, [field]: e.target.value });
   };
 
+  // Função específica para o Responsável que dispara o Auto-Fill do telefone
+  const handleResponsavelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const nomeDigitado = e.target.value;
+      let telefoneSugerido = formData.responsavelTelefone;
+
+      // Se o nome existir no mapa (case insensitive), puxa o telefone
+      const telefoneEncontrado = sugestoes.mapaTelefonePorNome[nomeDigitado.toLowerCase()];
+      if (telefoneEncontrado) {
+          telefoneSugerido = telefoneEncontrado;
+      }
+
+      setFormData({ 
+          ...formData, 
+          responsavelNome: nomeDigitado,
+          responsavelTelefone: telefoneSugerido
+      });
+  };
+
   const handleSelectChange = (option: any) => {
       setSelectedOption(option);
       if (option) {
@@ -212,20 +263,6 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
                     styles={customStyles} // APLICAÇÃO DOS ESTILOS
                     aria-label="Produto"
                 />
-                {/* Dica visual pequena se quiser imitar o label flutuante (opcional) */}
-                {!selectedOption && (
-                   <span style={{
-                       position: 'absolute',
-                       left: '12px',
-                       top: '50%',
-                       transform: 'translateY(-50%)',
-                       color: '#6c757d',
-                       pointerEvents: 'none',
-                       fontSize: '1rem',
-                       zIndex: 1
-                   }}>
-                   </span>
-                )}
             </div>
         </Col>
         <Col md={4}>
@@ -265,8 +302,16 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
                     value={formData.localObra} 
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange(e, 'localObra')} 
                     required 
+                    list="destinos-list" // Adicionado o ID da lista
                     placeholder="Ex: Bloco A"
+                    autoComplete="off"
                 />
+                {/* Datalist dinâmico de Destinos */}
+                <datalist id="destinos-list">
+                    {sugestoes.destinos.map((destino, index) => (
+                        <option key={index} value={destino} />
+                    ))}
+                </datalist>
             </FloatingLabel>
           </Col>
       </Row>
@@ -276,9 +321,17 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
             <FloatingLabel label="Responsável">
                 <Form.Control 
                     value={formData.responsavelNome} 
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange(e, 'responsavelNome')} 
+                    onChange={handleResponsavelChange} // Usa o handler específico
+                    list="responsaveis-list" // Adicionado o ID da lista
                     placeholder="Nome de quem retirou"
+                    autoComplete="off"
                 />
+                {/* Datalist dinâmico de Responsáveis */}
+                <datalist id="responsaveis-list">
+                     {sugestoes.responsaveis.map((resp, index) => (
+                        <option key={index} value={resp} />
+                    ))}
+                </datalist>
             </FloatingLabel>
           </Col>
           <Col md={6}>
@@ -286,8 +339,16 @@ export function DeliveryForm({ onSave, produtosDisponiveis, onCancelEdit, delive
                 <Form.Control 
                     value={formData.responsavelTelefone} 
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange(e, 'responsavelTelefone')} 
+                    list="telefones-list" // Adicionado o ID da lista
                     placeholder="(XX) XXXXX-XXXX"
+                    autoComplete="off"
                 />
+                {/* Datalist dinâmico de Telefones */}
+                <datalist id="telefones-list">
+                    {sugestoes.telefones.map((tel, index) => (
+                        <option key={index} value={tel} />
+                    ))}
+                </datalist>
             </FloatingLabel>
           </Col>
       </Row>
