@@ -674,6 +674,8 @@ function ProdutosTable({
   onTogglePrioritario,
   categorias,
   locais,
+  sortOrder,
+  onToggleSort
 }: {
   produtos: Produto[];
   onEdit: (id: UUID, patch: Partial<Produto>) => void;
@@ -682,6 +684,8 @@ function ProdutosTable({
   onTogglePrioritario: (id: UUID, currentState: boolean) => void;
   categorias: string[];
   locais: string[];
+  sortOrder?: 'asc' | 'desc' | null;
+  onToggleSort?: () => void;
 }) {
   const [editingId, setEditingId] = useState<UUID | null>(null);
   const [movProdId, setMovProdId] = useState<UUID | null>(null);
@@ -709,7 +713,16 @@ function ProdutosTable({
               <tr>
                 <th style={{ width: '4%' }}></th> {/* Prioridade */}
                 <th style={{ width: '12%' }}>SKU</th>
-                <th style={{ width: '36%' }}>Nome</th>
+                <th 
+                  style={{ width: '36%', cursor: 'pointer', userSelect: 'none' }} 
+                  onClick={onToggleSort}
+                  title="Clique para ordenar por nome"
+                >
+                  Nome
+                  {sortOrder === 'asc' && <i className="bi bi-sort-alpha-down ms-2"></i>}
+                  {sortOrder === 'desc' && <i className="bi bi-sort-alpha-down-alt ms-2"></i>}
+                  {!sortOrder && <i className="bi bi-filter ms-2 text-muted" style={{fontSize: '0.8em', opacity: 0.5}}></i>}
+                </th>
                 <th style={{ width: '12%' }}>Categoria</th>
                 <th style={{ width: '8%' }}>Qtd.</th>
                 <th style={{ width: '8%' }}>Est. Mín.</th>
@@ -1628,6 +1641,10 @@ export default function App() {
 
   const [q, setQ] = useState('');
   const [categoriaFilter, setCategoriaFilter] = useState('');
+  
+  // ESTADO DE ORDENAÇÃO (ADICIONADO)
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null);
+
   const [mostrarAbaixoMin, setMostrarAbaixoMin] = useState(false);
   const [mostrarPrioritarios, setMostrarPrioritarios] = useState(false);
   const [page, setPage] = useState(1);
@@ -2148,7 +2165,8 @@ export default function App() {
     if (loadingAll) {
       return produtos;
     }
-    return allProdutos.filter((p) => {
+    // 1. Filtra normalmente
+    let result = allProdutos.filter((p) => {
       const query = debouncedQ.trim().toLowerCase();
       const matchesQuery =
         query === '' ||
@@ -2168,6 +2186,19 @@ export default function App() {
         matchesPrioritario
       );
     });
+
+    // 2. Aplica ordenação se houver
+    if (sortOrder) {
+      result = [...result].sort((a, b) => {
+        if (sortOrder === 'asc') {
+          return a.nome.localeCompare(b.nome);
+        } else {
+          return b.nome.localeCompare(a.nome);
+        }
+      });
+    }
+
+    return result;
   }, [
     debouncedQ,
     categoriaFilter,
@@ -2176,6 +2207,7 @@ export default function App() {
     allProdutos,
     produtos,
     loadingAll,
+    sortOrder, // IMPORTANTE: Adicionado sortOrder às dependências
   ]);
 
   useEffect(() => {
@@ -2189,6 +2221,15 @@ export default function App() {
 
   const scrollTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
+  // FUNÇÃO DE TOGGLE DE ORDENAÇÃO
+  const handleToggleSort = () => {
+    setSortOrder(current => {
+      if (current === null) return 'asc';
+      if (current === 'asc') return 'desc';
+      return null; // Volta para o padrão (null)
+    });
+  };
+
   if (error) {
     return (
       <div className="container py-4">
@@ -2201,8 +2242,7 @@ export default function App() {
     <div className="container-fluid bg-light min-vh-100 px-0">
       <header className="main-header d-flex flex-column flex-md-row align-items-center justify-content-between sticky-top px-4 py-3 mb-4">
         <div className="brand-section">
-            <img src={meuLogo} alt="Logo da Empresa" className="app-logo" style={{height: '58px'}} />
-            <h5 className="brand-title d-none d-md-block">Sistema Integrado</h5>
+            <img src={meuLogo} alt="Logo da Empresa" className="app-logo" style={{height: '60px'}} />
         </div>
           
         <ul className="nav nav-pills nav-pills-custom my-3 my-md-0 gap-2">
@@ -2350,6 +2390,8 @@ export default function App() {
               onTogglePrioritario={togglePrioritario}
               categorias={categorias}
               locais={locaisArmazenamento}
+              sortOrder={sortOrder}
+              onToggleSort={handleToggleSort}
             />
           )}
 
