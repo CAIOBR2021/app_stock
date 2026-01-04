@@ -8,8 +8,11 @@
   --secondary-gradient: linear-gradient(135deg, #64748b 0%, #475569 100%); /* Cinza azulado */
   --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
   --danger-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+
+  /* NOVO: Gradiente de fundo suave para o corpo da página */
+  /* Começa quase branco no topo e vai para um cinza claro suave na parte inferior */
+  --bg-gradient-body: linear-gradient(to bottom, #f8fafc 0%, #e2e8f0 100%);
   
-  --bg-body: #f1f5f9; /* Fundo cinza muito claro para contraste */
   --bg-card: #ffffff;
   
   /* --- Sombras --- */
@@ -25,18 +28,19 @@
 
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: var(--bg-body);
+  /* background-color: var(--bg-body); <-- REMOVIDO cor sólida */
+  background: var(--bg-gradient-body); /* <-- ADICIONADO gradiente */
+  min-height: 100vh; /* Garante que o gradiente ocupe toda a altura da tela */
   color: #1e293b;
 }
 
-/* --- Header e Navegação (ATUALIZADO - Clean UI) --- */
+/* --- Header e Navegação (Clean UI) --- */
 .main-header {
-  /* Substituímos o gradiente azul sólido por branco translúcido */
-  background: rgba(255, 255, 255, 0.9) !important;
-  backdrop-filter: blur(12px) !important;          /* Efeito de vidro */
-  -webkit-backdrop-filter: blur(12px) !important;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important; /* Sombra mais suave */
+  background: rgba(255, 255, 255, 0.85) !important; /* Um pouco mais transparente para o fundo aparecer */
+  backdrop-filter: blur(16px) !important;          /* Desfoque um pouco maior */
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3) !important; /* Borda mais sutil */
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03) !important;
   padding-top: 0.8rem !important;
   padding-bottom: 0.8rem !important;
   z-index: 1020;
@@ -45,33 +49,32 @@ body {
 .brand-section {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px; /* Aumentei um pouco o espaço entre logo e título */
 }
 
 .brand-title {
   font-weight: 700 !important;
   letter-spacing: -0.5px !important;
-  /* Texto com gradiente moderno */
   background: linear-gradient(135deg, #1e293b 0%, #2563eb 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin: 0 !important;
-  font-size: 1.25rem;
+  font-size: 1.35rem; /* Título ligeiramente maior para acompanhar o logo */
 }
 
 .app-logo {
-  /* Remove a inversão de cor para a logo original aparecer no fundo branco */
   filter: none !important; 
+  /* A altura padrão agora é definida no inline style do App.tsx para Desktop */
 }
 
 /* Estilização dos Links de Navegação (Pills Customizadas) */
 .nav-pills .nav-link {
-  color: #64748b !important; /* Cinza slate */
+  color: #64748b !important;
   font-weight: 500;
   padding: 0.6rem 1.2rem;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: 50px !important; /* Borda redonda total */
+  border-radius: 50px !important;
   border: 1px solid transparent;
   display: flex;
   align-items: center;
@@ -79,8 +82,8 @@ body {
 }
 
 .nav-pills .nav-link:hover:not(.active) {
-  background-color: rgba(37, 99, 235, 0.08) !important; /* Azul bem claro */
-  color: #2563eb !important; /* Azul primário */
+  background-color: rgba(37, 99, 235, 0.1) !important;
+  color: #2563eb !important;
   transform: translateY(-1px);
 }
 
@@ -98,7 +101,8 @@ body {
   box-shadow: var(--shadow-md);
   padding: 2rem;
   margin-bottom: 2rem;
-  border: 1px solid rgba(0,0,0,0.05);
+  /* Borda ligeiramente mais transparente para mesclar com o novo fundo */
+  border: 1px solid rgba(255, 255, 255, 0.5); 
 }
 
 .product-card {
@@ -204,31 +208,18 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- ESTILOS DA FLAG DE PRIORIDADE (MANTIDOS) --- */
-/* Necessários para o funcionamento visual dos ícones de prioridade na tabela */
-
-/* 1. Estado Inativo (Padrão) */
+/* --- ESTILOS DA FLAG DE PRIORIDADE --- */
 .priority-flag {
-  color: #000;              /* Cor preta */
-  opacity: 0.15;            /* Quase transparente (15%) */
-  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Animação elástica suave */
-  cursor: pointer;          /* Mãozinha */
-  display: inline-block;    /* Necessário para o zoom funcionar corretamente */
+  color: #000; opacity: 0.15; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; display: inline-block;
 }
+.priority-flag:hover { transform: scale(1.4); opacity: 0.6; }
+.priority-flag.is-priority { color: #dc3545 !important; opacity: 1 !important; }
+.priority-flag.is-priority:hover { opacity: 1 !important; }
 
-/* 2. Efeito ao passar o mouse (Hover) - Aplica a todos os estados */
-.priority-flag:hover {
-  transform: scale(1.4);    /* AMPLIA O ÍCONE (40% maior) */
-  opacity: 0.6;             /* Fica um pouco mais visível se estiver inativo */
-}
-
-/* 3. Estado Ativado (Prioritário - Vermelho) */
-.priority-flag.is-priority {
-  color: #dc3545 !important; /* Vermelho */
-  opacity: 1 !important;     /* Totalmente visível (100%) */
-}
-
-/* 4. Ajuste: Hover quando já está Ativado */
-.priority-flag.is-priority:hover {
-  opacity: 1 !important;     /* Mantém 100% de opacidade */
+/* Responsividade da logo (ATUALIZADO) */
+@media (max-width: 576px) {
+  .app-logo {
+    /* Aumentado de 35px para 42px no mobile */
+    height: 42px !important; 
+  }
 }
