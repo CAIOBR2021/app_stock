@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Form, Button } from 'react-bootstrap';
-import { ClipboardData, CalendarWeek } from 'react-bootstrap-icons'; 
+import { ClipboardData, CalendarWeek, Funnel, XCircle } from 'react-bootstrap-icons'; 
 
 import meuLogo from './assets/logo.png';
 import { DeliveryForm } from './components/DeliveryForm';
@@ -1632,6 +1632,9 @@ export default function App() {
   const [showReprogramModal, setShowReprogramModal] = useState(false);
   const [newDeliveryDate, setNewDeliveryDate] = useState('');
 
+  // NOVO ESTADO: Filtro de Data para o Cronograma
+  const [rotaDateFilter, setRotaDateFilter] = useState(''); 
+
   const debouncedQ = useDebounce(q, 500);
 
   useEffect(() => {
@@ -1925,10 +1928,30 @@ export default function App() {
     );
   };
 
+  // --- NOVA LÓGICA DE FILTRAGEM PARA O CRONOGRAMA ---
+  
+  const filteredDeliveries = useMemo(() => {
+    let data = entregas;
+
+    // 1. Filtro de Data (Se houver data selecionada)
+    if (rotaDateFilter) {
+        data = data.filter(d => {
+            // Converte a data do item para YYYY-MM-DD local para comparar com o input
+            const itemDate = new Date(d.dataHoraSolicitacao).toLocaleDateString('en-CA'); // en-CA retorna YYYY-MM-DD
+            return itemDate === rotaDateFilter;
+        });
+    }
+
+    // 2. Ordenação Padrão (Data/Hora Crescente)
+    return data.sort((a, b) => 
+        new Date(a.dataHoraSolicitacao).getTime() - new Date(b.dataHoraSolicitacao).getTime()
+    );
+  }, [entregas, rotaDateFilter]);
+
   const handleSelectAllEntregas = (isChecked: boolean) => {
-    // FILTRAGEM: Apenas seleciona itens que NÃO estão entregues
+    // FILTRAGEM: Apenas seleciona itens que NÃO estão entregues E que estão visíveis no filtro atual
     if (isChecked) {
-        const activeIds = entregas
+        const activeIds = filteredDeliveries // Usa a lista filtrada
             .filter(e => !isDelivered(e.status))
             .map(e => e.id);
         setSelectedEntregaIds(activeIds);
@@ -2356,10 +2379,35 @@ export default function App() {
                 </div>
 
                 <div className="col-lg-8">
-                    <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                        <h4 className="text-primary fw-bold mb-0">Cronograma</h4>
+                    <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-3">
+                        <div className="d-flex align-items-center gap-3">
+                            <h4 className="text-primary fw-bold mb-0">Cronograma</h4>
+                            
+                            {/* NOVO: Input de Data */}
+                            <div className="input-group input-group-sm" style={{ maxWidth: '200px' }}>
+                                <span className="input-group-text bg-white border-end-0 text-secondary">
+                                    <Funnel />
+                                </span>
+                                <input 
+                                    type="date" 
+                                    className="form-control border-start-0 ps-0"
+                                    value={rotaDateFilter}
+                                    onChange={(e) => setRotaDateFilter(e.target.value)}
+                                    title="Filtrar por data"
+                                />
+                                {rotaDateFilter && (
+                                    <button 
+                                        className="btn btn-outline-secondary border-start-0"
+                                        onClick={() => setRotaDateFilter('')}
+                                        title="Limpar filtro"
+                                    >
+                                        <XCircle />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
                           
-                        <div className="d-flex gap-3">
+                        <div className="d-flex gap-2">
                             <Button 
                                 variant="outline-secondary" 
                                 size="sm"
@@ -2367,7 +2415,7 @@ export default function App() {
                                 onClick={handleGenerateDeliveryReport}
                                 className="d-flex align-items-center gap-2"
                             >
-                                <ClipboardData /> Relatório PDF
+                                <ClipboardData /> PDF
                             </Button>
                             <Button 
                                 variant="outline-primary" 
@@ -2381,8 +2429,15 @@ export default function App() {
                         </div>
                     </div>
 
+                    {/* Exibe aviso se houver filtro ativo mas nenhum resultado */}
+                    {rotaDateFilter && filteredDeliveries.length === 0 && (
+                        <div className="alert alert-info py-2 small">
+                            Nenhuma entrega encontrada para a data <strong>{new Date(rotaDateFilter + 'T00:00:00').toLocaleDateString('pt-BR')}</strong>.
+                        </div>
+                    )}
+
                     <DeliveryTable 
-                        deliveries={entregas}
+                        deliveries={filteredDeliveries} // Passando a lista filtrada
                         onDelete={deleteEntrega}
                         
                         // CORREÇÃO CRÍTICA: Bloqueia abertura de edição para itens entregues
