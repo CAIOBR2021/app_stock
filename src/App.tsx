@@ -1829,7 +1829,24 @@ export default function App() {
             body: JSON.stringify(data)
         });
         if (!res.ok) throw new Error((await res.json()).error);
-        window.location.reload(); 
+        
+        // CORREÇÃO: Atualizar estados em vez de recarregar
+        const entregasRes = await fetch(`${API_URL}/entregas`);
+        const entregasData = await entregasRes.json();
+        const fixedEntregas = entregasData.map((e: any) => ({
+            ...e,
+            localArmazenagem: e.localArmazenamento || e.localArmazenagem || '' 
+        }));
+        setEntregas(fixedEntregas);
+
+        const prodsRes = await fetch(`${API_URL}/produtos?_limit=10000`);
+        const prodsData = await prodsRes.json();
+        setAllProdutos(prodsData);
+
+        const movsRes = await fetch(`${API_URL}/movimentacoes`);
+        const movsData = await movsRes.json();
+        setMovs(movsData);
+
     } catch (err: any) {
         alert(err.message);
     }
