@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Form, Button } from 'react-bootstrap';
-import { ClipboardData, CalendarWeek, Funnel, XCircle } from 'react-bootstrap-icons'; 
+import { ClipboardData, CalendarWeek, Funnel, XCircle, BoxSeam, Truck } from 'react-bootstrap-icons'; 
 
 import meuLogo from './assets/logo.png';
 import { DeliveryForm } from './components/DeliveryForm';
@@ -88,11 +88,8 @@ function useDebounce<T>(value: T, delay: number): T {
 const normalizeEntrega = (e: any): Entrega => {
   return {
     ...e,
-    // Garante produtoId CamelCase
     produtoId: e.produtoId || e.produtoid || '',
-    // Garante campo de armazenamento
     localArmazenagem: e.localArmazenagem || e.localArmazenamento || '',
-    // Garante data string
     dataHoraSolicitacao: e.dataHoraSolicitacao || new Date().toISOString()
   };
 };
@@ -120,16 +117,16 @@ function ModalComponent({
   return (
     <div
       className="modal"
-      style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}
+      style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050 }}
       onClick={onClose}
     >
       <div
         className="modal-dialog modal-dialog-centered"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="modal-content">
-          <div className="modal-header">
-            <h5 className="modal-title">{title}</h5>
+        <div className="modal-content shadow-lg border-0">
+          <div className="modal-header bg-light">
+            <h5 className="modal-title fw-bold text-primary">{title}</h5>
             <button
               type="button"
               className="btn-close"
@@ -269,7 +266,7 @@ function ValorTotalEstoque({ allProdutos }: { allProdutos: Produto[] }) {
   return (
     <div className="d-flex align-items-center gap-2">
       {isVisible && valorTotal !== null && (
-        <span className="badge bg-light text-dark p-2 total-value-badge">
+        <span className="badge bg-light text-dark p-2 total-value-badge border">
           Valor Total:{' '}
           <strong>
             {valorTotal.toLocaleString('pt-BR', {
@@ -2181,36 +2178,35 @@ export default function App() {
 
   return (
     <div className="container-fluid bg-light min-vh-100 px-0">
-      <header className="main-header d-flex flex-column flex-md-row align-items-center justify-content-between sticky-top bg-white shadow-sm px-4 py-3 mb-4">
-        <div className="d-flex align-items-center">
-            <img src={meuLogo} alt="Logo da Empresa" className="app-logo me-3" style={{height: '50px'}} />
-            <h5 className="m-0 text-secondary d-none d-md-block">Sistema Integrado</h5>
+      <header className="main-header d-flex flex-column flex-md-row align-items-center justify-content-between sticky-top px-4 py-3 mb-4">
+        <div className="brand-section">
+            <img src={meuLogo} alt="Logo da Empresa" className="app-logo" style={{height: '45px'}} />
+            <h5 className="brand-title d-none d-md-block">Sistema Integrado</h5>
         </div>
           
-        <ul className="nav nav-pills my-3 my-md-0 gap-3">
+        <ul className="nav nav-pills nav-pills-custom my-3 my-md-0 gap-2">
           <li className="nav-item">
             <button
-              className={`nav-link d-flex align-items-center gap-2 ${view === 'estoque' ? 'active' : ''}`}
+              className={`nav-link d-flex align-items-center ${view === 'estoque' ? 'active' : ''}`}
               onClick={() => setView('estoque')}
             >
-              <i className="bi bi-box-seam"></i> Estoque
+              <BoxSeam /> Estoque
             </button>
           </li>
           <li className="nav-item">
             <button
-              className={`nav-link d-flex align-items-center gap-2 ${view === 'movimentacoes' ? 'active' : ''}`}
+              className={`nav-link d-flex align-items-center ${view === 'movimentacoes' ? 'active' : ''}`}
               onClick={() => setView('movimentacoes')}
             >
-              <i className="bi bi-clipboard-data"></i> Movimentações
+              <ClipboardData /> Movimentações
             </button>
           </li>
-          {/* Botão Novo: Rotas */}
           <li className="nav-item">
             <button
-              className={`nav-link d-flex align-items-center gap-2 ${view === 'rotas' ? 'active' : ''}`}
+              className={`nav-link d-flex align-items-center ${view === 'rotas' ? 'active' : ''}`}
               onClick={() => setView('rotas')}
             >
-              <i className="bi bi-truck"></i> Rotas & Entregas
+              <Truck /> Rotas & Entregas
             </button>
           </li>
         </ul>

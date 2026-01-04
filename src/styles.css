@@ -29,42 +29,66 @@ body {
   color: #1e293b;
 }
 
-/* --- Header e Navegação --- */
+/* --- Header e Navegação (ATUALIZADO - Clean UI) --- */
 .main-header {
-  background: var(--primary-gradient) !important;
-  border-bottom: none !important;
-  box-shadow: var(--shadow-md) !important;
-  padding-top: 1rem !important;
-  padding-bottom: 1rem !important;
+  /* Substituímos o gradiente azul sólido por branco translúcido */
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(12px) !important;          /* Efeito de vidro */
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important; /* Sombra mais suave */
+  padding-top: 0.8rem !important;
+  padding-bottom: 0.8rem !important;
+  z-index: 1020;
 }
 
-.main-header h5 {
-    color: white !important;
-    font-weight: 600;
-    letter-spacing: 0.5px;
+.brand-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-title {
+  font-weight: 700 !important;
+  letter-spacing: -0.5px !important;
+  /* Texto com gradiente moderno */
+  background: linear-gradient(135deg, #1e293b 0%, #2563eb 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0 !important;
+  font-size: 1.25rem;
 }
 
 .app-logo {
-    filter: brightness(0) invert(1); /* Torna o logo branco se for preto */
+  /* Remove a inversão de cor para a logo original aparecer no fundo branco */
+  filter: none !important; 
 }
 
+/* Estilização dos Links de Navegação (Pills Customizadas) */
 .nav-pills .nav-link {
-  color: rgba(255, 255, 255, 0.8) !important;
+  color: #64748b !important; /* Cinza slate */
   font-weight: 500;
   padding: 0.6rem 1.2rem;
-  transition: all 0.2s ease;
-  border-radius: var(--border-radius-md);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 50px !important; /* Borda redonda total */
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.nav-pills .nav-link:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: white !important;
+.nav-pills .nav-link:hover:not(.active) {
+  background-color: rgba(37, 99, 235, 0.08) !important; /* Azul bem claro */
+  color: #2563eb !important; /* Azul primário */
+  transform: translateY(-1px);
 }
 
 .nav-pills .nav-link.active {
-  background-color: rgba(255, 255, 255, 0.2) !important;
+  background: var(--primary-gradient) !important;
   color: white !important;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25) !important;
+  transform: scale(1.02);
 }
 
 /* --- Cartões e Containers --- */
@@ -92,31 +116,31 @@ body {
 }
 
 .card-title-clamp {
-    font-size: 1.1rem;
-    color: #0f172a;
+  font-size: 1.1rem;
+  color: #0f172a;
 }
 
 /* --- Botões e Elementos de Ação --- */
 .btn-primary {
-    background: var(--primary-gradient);
-    border: none;
-    box-shadow: var(--shadow-sm);
-    font-weight: 500;
+  background: var(--primary-gradient);
+  border: none;
+  box-shadow: var(--shadow-sm);
+  font-weight: 500;
 }
 
 .btn-primary:hover {
-    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-    box-shadow: var(--shadow-md);
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  box-shadow: var(--shadow-md);
 }
 
 .btn-outline-primary {
-    color: #2563eb;
-    border-color: #2563eb;
+  color: #2563eb;
+  border-color: #2563eb;
 }
 
 .btn-outline-primary:hover {
-    background: var(--primary-gradient);
-    border-color: transparent;
+  background: var(--primary-gradient);
+  border-color: transparent;
 }
 
 .total-value-badge {
@@ -130,24 +154,24 @@ body {
 
 /* --- Tabelas --- */
 .table-hover tbody tr:hover {
-    background-color: #f8fafc;
+  background-color: #f8fafc;
 }
 
 .table thead th {
-    background-color: #f1f5f9;
-    color: #475569;
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 0.85rem;
-    letter-spacing: 0.5px;
-    border-bottom: 2px solid #e2e8f0;
+  background-color: #f1f5f9;
+  color: #475569;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e2e8f0;
 }
 
 /* --- Badges de Status --- */
 .badge {
-    padding: 0.5em 0.75em;
-    font-weight: 500;
-    letter-spacing: 0.3px;
+  padding: 0.5em 0.75em;
+  font-weight: 500;
+  letter-spacing: 0.3px;
 }
 .badge.bg-success { background: var(--success-gradient) !important; }
 .badge.bg-danger { background: var(--danger-gradient) !important; }
@@ -155,19 +179,29 @@ body {
 
 /* --- Modais --- */
 .modal-content {
-    border-radius: var(--border-radius-lg);
-    border: none;
-    box-shadow: var(--shadow-lg);
+  border-radius: var(--border-radius-lg);
+  border: none;
+  box-shadow: var(--shadow-lg);
 }
 .modal-header {
-    background: #f8fafc;
-    border-bottom: 1px solid #e2e8f0;
-    border-top-left-radius: var(--border-radius-lg);
-    border-top-right-radius: var(--border-radius-lg);
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  border-top-left-radius: var(--border-radius-lg);
+  border-top-right-radius: var(--border-radius-lg);
 }
 .modal-title {
-    font-weight: 600;
-    color: #1e293b;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* --- Animações Genéricas --- */
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* --- ESTILOS DA FLAG DE PRIORIDADE (MANTIDOS) --- */
