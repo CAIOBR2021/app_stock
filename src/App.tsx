@@ -1891,6 +1891,12 @@ export default function App() {
               body: JSON.stringify({ status })
           });
           setEntregas(prev => prev.map(e => e.id === id ? { ...e, status } : e));
+
+          // LÓGICA ADICIONADA: Se o status for "Entregue", remove da seleção automaticamente
+          if (isDelivered(status)) {
+              setSelectedEntregaIds(prev => prev.filter(selectedId => selectedId !== id));
+          }
+
       } catch (err) { console.error(err); }
   }
 
