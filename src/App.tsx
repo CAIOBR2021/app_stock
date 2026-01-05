@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Form, Button } from 'react-bootstrap';
-import { ClipboardData, CalendarWeek, Funnel, XCircle, BoxSeam, Truck } from 'react-bootstrap-icons'; 
+// Adicionado CheckCircleFill e ArrowCounterclockwise para os botões novos
+import { ClipboardData, CalendarWeek, Funnel, XCircle, BoxSeam, Truck, CheckCircleFill, ArrowCounterclockwise } from 'react-bootstrap-icons'; 
 
 import meuLogo from './assets/logo.png';
 import { DeliveryForm } from './components/DeliveryForm';
@@ -827,7 +828,6 @@ function ProdutosTable({
       <div className="d-lg-none">
         <div className="row g-3">
           {produtos.map((p) => (
-            /* AQUI ESTÁ A MUDANÇA PRINCIPAL DA GRADE */
             <div key={p.id} className="col-12 col-md-6">
               <ProdutoCard
                 produto={p}
@@ -1272,7 +1272,6 @@ function ConsultaMovimentacoes({
     [produtos],
   );
 
-  // --- NOVA LÓGICA: Calcula motivos únicos para o datalist ---
   const motivosUnicos = useMemo(() => {
     const motivos = movs
       .map((m) => m.motivo)
@@ -1532,7 +1531,7 @@ function ConsultaMovimentacoes({
               onEdit(editId!, patch);
               setEditId(null);
             }}
-            motivosDisponiveis={motivosUnicos} // --- PASSANDO A PROP NOVA ---
+            motivosDisponiveis={motivosUnicos}
           />
         </ModalComponent>
       )}
@@ -1545,7 +1544,7 @@ function MovimentacaoEditForm({
   produto,
   onCancel,
   onSave,
-  motivosDisponiveis = [] // --- RECEBENDO A PROP NOVA COM VALOR PADRÃO ---
+  motivosDisponiveis = []
 }: {
   movimentacao: Movimentacao;
   produto?: Produto;
@@ -1610,10 +1609,9 @@ function MovimentacaoEditForm({
             className="form-control"
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
-            list="edit-motivos-list" // --- VÍNCULO COM DATALIST ---
+            list="edit-motivos-list"
             autoComplete="off"
           />
-          {/* --- DATALIST IMPLEMENTADO --- */}
           <datalist id="edit-motivos-list">
              {motivosDisponiveis.map((m, i) => (
                  <option key={i} value={m} />
@@ -1647,7 +1645,6 @@ export default function App() {
   const [entregas, setEntregas] = useState<Entrega[]>([]);
   const [editingEntrega, setEditingEntrega] = useState<Entrega | null>(null);
 
-  // NOVO ESTADO: ID da entrega para o modal de exclusão
   const [entregaToDeleteId, setEntregaToDeleteId] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
@@ -1661,7 +1658,6 @@ export default function App() {
   const [q, setQ] = useState('');
   const [categoriaFilter, setCategoriaFilter] = useState('');
   
-  // ESTADO DE ORDENAÇÃO (ADICIONADO)
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null);
 
   const [mostrarAbaixoMin, setMostrarAbaixoMin] = useState(false);
@@ -1672,7 +1668,7 @@ export default function App() {
   const [showReprogramModal, setShowReprogramModal] = useState(false);
   const [newDeliveryDate, setNewDeliveryDate] = useState('');
 
-  // NOVO ESTADO: Filtro de Data para o Cronograma
+  // ESTADO DO FILTRO DE DATA
   const [rotaDateFilter, setRotaDateFilter] = useState(''); 
 
   const debouncedQ = useDebounce(q, 500);
@@ -1704,7 +1700,6 @@ export default function App() {
 
         setAllProdutos(allProdsData);
         setMovs(movsData);
-        // APLICAÇÃO DA NORMALIZAÇÃO NA CARGA INICIAL
         setEntregas(entregasData.map(normalizeEntrega));
 
       } catch (err: any) {
@@ -1730,7 +1725,6 @@ export default function App() {
     };
   }, []);
 
-  // --- Ações de Produtos ---
   async function addProduto(
     p: Omit<Produto, 'id' | 'criadoEm' | 'atualizadoEm' | 'sku'>,
   ) {
@@ -1806,7 +1800,6 @@ export default function App() {
     }
   }
 
-  // --- Ações de Movimentações ---
   async function addMov(m: Omit<Movimentacao, 'id' | 'criadoEm'>) {
     try {
       const response = await fetch(`${API_URL}/movimentacoes`, {
@@ -1854,7 +1847,6 @@ export default function App() {
     }
   }
 
-  // ALTERAÇÃO: Agora recarrega as entregas ao excluir uma movimentação
   async function deleteMov(id: UUID) {
     try {
       const response = await fetch(`${API_URL}/movimentacoes/${id}`, {
@@ -1863,7 +1855,6 @@ export default function App() {
       if (!response.ok) throw new Error('Falha ao excluir movimentação');
       const { produtoAtualizado } = await response.json();
       
-      // Atualiza estado local de Movimentações e Produtos
       setMovs((prev) => prev.filter((m) => m.id !== id));
       setAllProdutos((prev) =>
         prev.map((p) =>
@@ -1871,7 +1862,6 @@ export default function App() {
         ),
       );
 
-      // NOVO: Sincronização - Recarrega a lista de entregas para refletir a exclusão no cronograma
       const entregasRes = await fetch(`${API_URL}/entregas`);
       const entregasData = await entregasRes.json();
       setEntregas(entregasData.map(normalizeEntrega));
@@ -1881,7 +1871,6 @@ export default function App() {
     }
   }
 
-  // --- Ações de Entregas (Integração) ---
   async function addEntrega(data: any) {
     try {
         const res = await fetch(`${API_URL}/entregas`, {
@@ -1891,7 +1880,6 @@ export default function App() {
         });
         if (!res.ok) throw new Error((await res.json()).error);
         
-        // CORREÇÃO: Atualizar estados e normalizar
         const entregasRes = await fetch(`${API_URL}/entregas`);
         const entregasData = await entregasRes.json();
         setEntregas(entregasData.map(normalizeEntrega));
@@ -1909,7 +1897,6 @@ export default function App() {
     }
   }
 
-  // ALTERAÇÃO: Agora recarrega as movimentações ao excluir uma entrega
   async function confirmDeleteEntrega(id: string) {
       try {
           const res = await fetch(`${API_URL}/entregas/${id}`, { method: 'DELETE' });
@@ -1918,20 +1905,16 @@ export default function App() {
             throw new Error(data.error || 'Erro ao excluir');
           }
           
-          // Recarrega Entregas
           const entregasRes = await fetch(`${API_URL}/entregas`);
           const entregasData = await entregasRes.json();
           setEntregas(entregasData.map(normalizeEntrega));
 
-          // Recarrega Produtos
           const prodsRes = await fetch(`${API_URL}/produtos?_limit=10000`);
           setAllProdutos(await prodsRes.json());
           
-          // NOVO: Sincronização - Recarrega Movimentações para mostrar o estorno
           const movsRes = await fetch(`${API_URL}/movimentacoes`);
           setMovs(await movsRes.json());
 
-          // Fecha o modal limpando o ID
           setEntregaToDeleteId(null);
 
       } catch (err: any) { 
@@ -1949,65 +1932,84 @@ export default function App() {
           });
           setEntregas(prev => prev.map(e => e.id === id ? { ...e, status } : e));
 
-          // LÓGICA ADICIONADA: Se o status for "Entregue", remove da seleção automaticamente
-          if (isDelivered(status)) {
-              setSelectedEntregaIds(prev => prev.filter(selectedId => selectedId !== id));
-          }
-
       } catch (err) { console.error(err); }
   }
 
-  // --- FUNCIONALIDADES DE SELEÇÃO E RELATÓRIOS PARA ENTREGAS ---
+  // --- NOVA FUNÇÃO: ALTERAÇÃO DE STATUS EM MASSA ---
+  const handleBulkStatusChange = async (newStatus: string) => {
+    if (selectedEntregaIds.length === 0) return;
+    
+    // Confirmação simples
+    if (!window.confirm(`Deseja marcar ${selectedEntregaIds.length} item(ns) como "${newStatus}"?`)) {
+        return;
+    }
+
+    try {
+        setLoading(true);
+        // Executa todas as atualizações em paralelo
+        await Promise.all(selectedEntregaIds.map(id => 
+            fetch(`${API_URL}/entregas/${id}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            })
+        ));
+
+        // Recarrega os dados
+        const entregasRes = await fetch(`${API_URL}/entregas`);
+        const entregasData = await entregasRes.json();
+        setEntregas(entregasData.map(normalizeEntrega));
+
+        // Limpa a seleção
+        setSelectedEntregaIds([]);
+        
+    } catch (err) {
+        console.error(err);
+        alert('Ocorreu um erro ao atualizar os status em massa.');
+    } finally {
+        setLoading(false);
+    }
+  };
 
   const formatPhoneNumber = (value: string) => {
     if (!value) return "";
-    const v = value.replace(/\D/g, ''); // Limpa
-      
-    // Tenta casar com celular (11 dígitos)
+    const v = value.replace(/\D/g, ''); 
     const matchCel = v.match(/^(\d{2})(\d{5})(\d{4})$/);
     if (matchCel) return `(${matchCel[1]}) ${matchCel[2]}-${matchCel[3]}`;
-
-    // Tenta casar com fixo (10 dígitos)
     const matchFixo = v.match(/^(\d{2})(\d{4})(\d{4})$/);
     if (matchFixo) return `(${matchFixo[1]}) ${matchFixo[2]}-${matchFixo[3]}`;
-
     return value;
   };
     
   const handleSelectEntrega = (id: string) => {
-    // Ao selecionar um individualmente, verificamos se ele NÃO está entregue para permitir (via UI)
-    // Mas a lógica da tabela já deve desabilitar o checkbox.
     setSelectedEntregaIds(prev => 
       prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
     );
   };
 
-  // --- NOVA LÓGICA DE FILTRAGEM PARA O CRONOGRAMA ---
+  // --- LÓGICA DE FILTRAGEM ATUALIZADA ---
   
   const filteredDeliveries = useMemo(() => {
     let data = entregas;
 
-    // 1. Filtro de Data (Se houver data selecionada)
+    // 1. Filtro de Data
     if (rotaDateFilter) {
         data = data.filter(d => {
-            // Converte a data do item para YYYY-MM-DD local para comparar com o input
-            const itemDate = new Date(d.dataHoraSolicitacao).toLocaleDateString('en-CA'); // en-CA retorna YYYY-MM-DD
+            const itemDate = new Date(d.dataHoraSolicitacao).toLocaleDateString('en-CA');
             return itemDate === rotaDateFilter;
         });
     }
 
-    // 2. Ordenação Padrão (Data/Hora Crescente)
+    // 2. Ordenação
     return data.sort((a, b) => 
         new Date(a.dataHoraSolicitacao).getTime() - new Date(b.dataHoraSolicitacao).getTime()
     );
   }, [entregas, rotaDateFilter]);
 
   const handleSelectAllEntregas = (isChecked: boolean) => {
-    // FILTRAGEM: Apenas seleciona itens que NÃO estão entregues E que estão visíveis no filtro atual
+    // Seleciona TODOS os itens visíveis no filtro, inclusive os entregues
     if (isChecked) {
-        const activeIds = filteredDeliveries // Usa a lista filtrada
-            .filter(e => !isDelivered(e.status))
-            .map(e => e.id);
+        const activeIds = filteredDeliveries.map(e => e.id);
         setSelectedEntregaIds(activeIds);
     } else {
         setSelectedEntregaIds([]);
@@ -2020,10 +2022,9 @@ export default function App() {
       return;
     }
 
-    // FILTRAGEM DE SEGURANÇA: Remove itens entregues da geração do PDF
     const selectedDeliveries = entregas
       .filter(d => selectedEntregaIds.includes(d.id))
-      .filter(d => !isDelivered(d.status)) // Garante que entregues não entrem
+      .filter(d => !isDelivered(d.status)) 
       .sort((a, b) => new Date(a.dataHoraSolicitacao).getTime() - new Date(b.dataHoraSolicitacao).getTime());
 
     if (selectedDeliveries.length === 0) {
@@ -2122,7 +2123,6 @@ export default function App() {
       return;
     }
 
-    // FILTRAGEM DE SEGURANÇA: Garante que apenas IDs válidos (não entregues) sejam processados
     const validIdsToReprogram = selectedEntregaIds.filter(id => {
         const delivery = entregas.find(e => e.id === id);
         return delivery && !isDelivered(delivery.status);
@@ -2151,7 +2151,6 @@ export default function App() {
         setShowReprogramModal(false);
         setNewDeliveryDate('');
         
-        // Recarrega sem refresh e normaliza
         const entregasRes = await fetch(`${API_URL}/entregas`);
         const entregasData = await entregasRes.json();
         setEntregas(entregasData.map(normalizeEntrega));
@@ -2184,7 +2183,6 @@ export default function App() {
     if (loadingAll) {
       return produtos;
     }
-    // 1. Filtra normalmente
     let result = allProdutos.filter((p) => {
       const query = debouncedQ.trim().toLowerCase();
       const matchesQuery =
@@ -2206,7 +2204,6 @@ export default function App() {
       );
     });
 
-    // 2. Aplica ordenação se houver
     if (sortOrder) {
       result = [...result].sort((a, b) => {
         if (sortOrder === 'asc') {
@@ -2226,7 +2223,7 @@ export default function App() {
     allProdutos,
     produtos,
     loadingAll,
-    sortOrder, // IMPORTANTE: Adicionado sortOrder às dependências
+    sortOrder,
   ]);
 
   useEffect(() => {
@@ -2240,12 +2237,11 @@ export default function App() {
 
   const scrollTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
-  // FUNÇÃO DE TOGGLE DE ORDENAÇÃO
   const handleToggleSort = () => {
     setSortOrder(current => {
       if (current === null) return 'asc';
       if (current === 'asc') return 'desc';
-      return null; // Volta para o padrão (null)
+      return null;
     });
   };
 
@@ -2457,57 +2453,88 @@ export default function App() {
                 </div>
 
                 <div className="col-lg-8">
-                    <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-3">
-                        <div className="d-flex align-items-center gap-3">
-                            <h4 className="text-primary fw-bold mb-0">Cronograma</h4>
-                            
-                            {/* NOVO: Input de Data */}
-                            <div className="input-group input-group-sm" style={{ maxWidth: '200px' }}>
-                                <span className="input-group-text bg-white border-end-0 text-secondary">
-                                    <Funnel />
-                                </span>
-                                <input 
-                                    type="date" 
-                                    className="form-control border-start-0 ps-0"
-                                    value={rotaDateFilter}
-                                    onChange={(e) => setRotaDateFilter(e.target.value)}
-                                    title="Filtrar por data"
-                                />
-                                {rotaDateFilter && (
-                                    <button 
-                                        className="btn btn-outline-secondary border-start-0"
-                                        onClick={() => setRotaDateFilter('')}
-                                        title="Limpar filtro"
-                                    >
-                                        <XCircle />
-                                    </button>
-                                )}
+                    <div className="d-flex flex-column gap-3 mb-3">
+                        
+                        <div className="d-flex justify-content-between align-items-center">
+                            <div className="d-flex align-items-center gap-3">
+                                <h4 className="text-primary fw-bold mb-0">Cronograma</h4>
+                                
+                                {/* INPUT DE DATA: Filtro */}
+                                <div className="input-group input-group-sm" style={{ maxWidth: '200px' }}>
+                                    <span className="input-group-text bg-white border-end-0 text-secondary">
+                                        <Funnel />
+                                    </span>
+                                    <input 
+                                        type="date" 
+                                        className="form-control border-start-0 ps-0"
+                                        value={rotaDateFilter}
+                                        onChange={(e) => setRotaDateFilter(e.target.value)}
+                                        title="Filtrar por data"
+                                    />
+                                    {rotaDateFilter && (
+                                        <button 
+                                            className="btn btn-outline-secondary border-start-0"
+                                            onClick={() => setRotaDateFilter('')}
+                                            title="Limpar filtro"
+                                        >
+                                            <XCircle />
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                          
-                        <div className="d-flex gap-2">
-                            <Button 
-                                variant="outline-secondary" 
-                                size="sm"
-                                disabled={selectedEntregaIds.length === 0}
-                                onClick={handleGenerateDeliveryReport}
-                                className="d-flex align-items-center gap-2"
-                            >
-                                <ClipboardData /> PDF
-                            </Button>
-                            <Button 
-                                variant="outline-primary" 
-                                size="sm"
-                                disabled={selectedEntregaIds.length === 0}
-                                onClick={() => setShowReprogramModal(true)}
-                                className="d-flex align-items-center gap-2"
-                            >
-                                <CalendarWeek /> Reprogramar
-                            </Button>
+
+                        {/* BARRA DE FERRAMENTAS: Ações em Massa */}
+                        <div className="bg-white p-2 rounded shadow-sm border d-flex flex-wrap gap-2 justify-content-between align-items-center">
+                            <div className="d-flex align-items-center gap-2">
+                                <small className="text-muted ms-2 me-2">
+                                    {selectedEntregaIds.length} selecionado(s)
+                                </small>
+                                
+                                <div className="btn-group btn-group-sm">
+                                    <Button 
+                                        variant="outline-success" 
+                                        onClick={() => handleBulkStatusChange('Entregue')}
+                                        disabled={selectedEntregaIds.length === 0 || loading}
+                                        title="Marcar selecionados como Entregue"
+                                    >
+                                        <CheckCircleFill className="me-1" /> Entregue
+                                    </Button>
+                                    <Button 
+                                        variant="outline-warning" 
+                                        onClick={() => handleBulkStatusChange('Pendente')}
+                                        disabled={selectedEntregaIds.length === 0 || loading}
+                                        title="Marcar selecionados como Pendente"
+                                        className="text-dark"
+                                    >
+                                        <ArrowCounterclockwise className="me-1" /> Pendente
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <div className="d-flex gap-2">
+                                <Button 
+                                    variant="outline-secondary" 
+                                    size="sm"
+                                    disabled={selectedEntregaIds.length === 0}
+                                    onClick={handleGenerateDeliveryReport}
+                                    className="d-flex align-items-center gap-2"
+                                >
+                                    <ClipboardData /> PDF
+                                </Button>
+                                <Button 
+                                    variant="outline-primary" 
+                                    size="sm"
+                                    disabled={selectedEntregaIds.length === 0}
+                                    onClick={() => setShowReprogramModal(true)}
+                                    className="d-flex align-items-center gap-2"
+                                >
+                                    <CalendarWeek /> Reprogramar
+                                </Button>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Exibe aviso se houver filtro ativo mas nenhum resultado */}
                     {rotaDateFilter && filteredDeliveries.length === 0 && (
                         <div className="alert alert-info py-2 small">
                             Nenhuma entrega encontrada para a data <strong>{new Date(rotaDateFilter + 'T00:00:00').toLocaleDateString('pt-BR')}</strong>.
@@ -2515,12 +2542,8 @@ export default function App() {
                     )}
 
                     <DeliveryTable 
-                        deliveries={filteredDeliveries} // Passando a lista filtrada
-                        
-                        // ALTERADO: Ao clicar em excluir, define o ID no estado para abrir o modal
+                        deliveries={filteredDeliveries}
                         onDelete={(id) => setEntregaToDeleteId(id)}
-                        
-                        // CORREÇÃO CRÍTICA: Bloqueia abertura de edição para itens entregues
                         onEdit={(item: any) => {
                              const ent = normalizeEntrega(item);
                              if(!isDelivered(ent.status)) {
@@ -2529,7 +2552,6 @@ export default function App() {
                                  alert("Itens entregues não podem ser editados.");
                              }
                         }}
-                        
                         onStatusChange={updateEntregaStatus}
                         selectedIds={selectedEntregaIds}
                         onSelectItem={handleSelectEntrega}
@@ -2580,7 +2602,6 @@ export default function App() {
         </ModalComponent>
       )}
 
-      {/* NOVO: MODAL DE CONFIRMAÇÃO DE EXCLUSÃO DE ENTREGA */}
       {entregaToDeleteId && (
         <ModalComponent title="Confirmar Exclusão" onClose={() => setEntregaToDeleteId(null)}>
             {(() => {
