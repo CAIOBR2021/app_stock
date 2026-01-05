@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Form, Button } from 'react-bootstrap';
-// Adicionado CheckCircleFill e ArrowCounterclockwise para os botões novos
-import { ClipboardData, CalendarWeek, Funnel, XCircle, BoxSeam, Truck, CheckCircleFill, ArrowCounterclockwise } from 'react-bootstrap-icons'; 
+import { ClipboardData, CalendarWeek, Funnel, XCircle, BoxSeam, Truck, CheckCircleFill, ArrowCounterclockwise, ExclamationTriangleFill } from 'react-bootstrap-icons'; 
 
 import meuLogo from './assets/logo.png';
 import { DeliveryForm } from './components/DeliveryForm';
@@ -1647,6 +1646,12 @@ export default function App() {
 
   const [entregaToDeleteId, setEntregaToDeleteId] = useState<string | null>(null);
 
+  // --- NOVOS ESTADOS PARA MODAIS DE CONFIRMAÇÃO E ERRO ---
+  const [showBulkConfirmModal, setShowBulkConfirmModal] = useState(false);
+  const [bulkTargetStatus, setBulkTargetStatus] = useState('');
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
   const [loading, setLoading] = useState(true);
   const [loadingAll, setLoadingAll] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1668,7 +1673,6 @@ export default function App() {
   const [showReprogramModal, setShowReprogramModal] = useState(false);
   const [newDeliveryDate, setNewDeliveryDate] = useState('');
 
-  // ESTADO DO FILTRO DE DATA
   const [rotaDateFilter, setRotaDateFilter] = useState(''); 
 
   const debouncedQ = useDebounce(q, 500);
@@ -1935,15 +1939,15 @@ export default function App() {
       } catch (err) { console.error(err); }
   }
 
-  // --- NOVA FUNÇÃO: ALTERAÇÃO DE STATUS EM MASSA ---
-  const handleBulkStatusChange = async (newStatus: string) => {
+  // --- NOVA FUNÇÃO: CONFIGURA AÇÃO EM MASSA E ABRE MODAL ---
+  const handleBulkStatusChange = (newStatus: string) => {
     if (selectedEntregaIds.length === 0) return;
-    
-    // Confirmação simples
-    if (!window.confirm(`Deseja marcar ${selectedEntregaIds.length} item(ns) como "${newStatus}"?`)) {
-        return;
-    }
+    setBulkTargetStatus(newStatus);
+    setShowBulkConfirmModal(true);
+  };
 
+  // --- FUNÇÃO QUE EXECUTA A AÇÃO APÓS CONFIRMAÇÃO ---
+  const confirmBulkStatusChange = async () => {
     try {
         setLoading(true);
         // Executa todas as atualizações em paralelo
@@ -1951,7 +1955,7 @@ export default function App() {
             fetch(`${API_URL}/entregas/${id}/status`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus })
+                body: JSON.stringify({ status: bulkTargetStatus })
             })
         ));
 
@@ -1962,6 +1966,7 @@ export default function App() {
 
         // Limpa a seleção
         setSelectedEntregaIds([]);
+        setShowBulkConfirmModal(false);
         
     } catch (err) {
         console.error(err);
@@ -1987,8 +1992,6 @@ export default function App() {
     );
   };
 
-  // --- LÓGICA DE FILTRAGEM ATUALIZADA ---
-  
   const filteredDeliveries = useMemo(() => {
     let data = entregas;
 
@@ -2007,7 +2010,6 @@ export default function App() {
   }, [entregas, rotaDateFilter]);
 
   const handleSelectAllEntregas = (isChecked: boolean) => {
-    // Seleciona TODOS os itens visíveis no filtro, inclusive os entregues
     if (isChecked) {
         const activeIds = filteredDeliveries.map(e => e.id);
         setSelectedEntregaIds(activeIds);
@@ -2018,17 +2020,21 @@ export default function App() {
 
   const handleGenerateDeliveryReport = () => {
     if (selectedEntregaIds.length === 0) {
-      alert('Selecione ao menos uma entrega para gerar o relatório.');
+      setErrorMessage('Selecione ao menos uma entrega para gerar o relatório.');
+      setShowErrorModal(true);
       return;
     }
 
+    // FILTRO ATUALIZADO: Remove itens entregues da geração do PDF
     const selectedDeliveries = entregas
       .filter(d => selectedEntregaIds.includes(d.id))
       .filter(d => !isDelivered(d.status)) 
       .sort((a, b) => new Date(a.dataHoraSolicitacao).getTime() - new Date(b.dataHoraSolicitacao).getTime());
 
+    // --- NOVA VALIDAÇÃO: MODAL DE ERRO SE NÃO HOUVER ITENS VÁLIDOS ---
     if (selectedDeliveries.length === 0) {
-        alert("Nenhum item válido para o relatório (itens entregues são ignorados).");
+        setErrorMessage("Não existem itens pendentes selecionados para gerar o relatório. Itens já entregues não são incluídos.");
+        setShowErrorModal(true);
         return;
     }
 
@@ -2123,13 +2129,16 @@ export default function App() {
       return;
     }
 
+    // --- RESTRIÇÃO: Filtra apenas itens NÃO entregues ---
     const validIdsToReprogram = selectedEntregaIds.filter(id => {
         const delivery = entregas.find(e => e.id === id);
         return delivery && !isDelivered(delivery.status);
     });
 
+    // --- NOVA VALIDAÇÃO: MODAL DE ERRO SE TENTAR REPROGRAMAR APENAS ITENS ENTREGUES ---
     if (validIdsToReprogram.length === 0) {
-        alert("Nenhum item selecionado pode ser reprogramado (itens entregues não permitem edição).");
+        setErrorMessage("Itens marcados como 'Entregue' não podem ser reprogramados. Por favor, selecione apenas itens pendentes ou altere o status antes.");
+        setShowErrorModal(true);
         setShowReprogramModal(false);
         return;
     }
@@ -2459,7 +2468,6 @@ export default function App() {
                             <div className="d-flex align-items-center gap-3">
                                 <h4 className="text-primary fw-bold mb-0">Cronograma</h4>
                                 
-                                {/* INPUT DE DATA: Filtro */}
                                 <div className="input-group input-group-sm" style={{ maxWidth: '200px' }}>
                                     <span className="input-group-text bg-white border-end-0 text-secondary">
                                         <Funnel />
@@ -2484,7 +2492,6 @@ export default function App() {
                             </div>
                         </div>
 
-                        {/* BARRA DE FERRAMENTAS: Ações em Massa */}
                         <div className="bg-white p-2 rounded shadow-sm border d-flex flex-wrap gap-2 justify-content-between align-items-center">
                             <div className="d-flex align-items-center gap-2">
                                 <small className="text-muted ms-2 me-2">
@@ -2599,6 +2606,35 @@ export default function App() {
                     <Button variant="primary" onClick={handleReprogramDeliveries}>Confirmar</Button>
                 </div>
             </div>
+        </ModalComponent>
+      )}
+
+      {/* --- MODAL DE CONFIRMAÇÃO DE STATUS EM MASSA --- */}
+      {showBulkConfirmModal && (
+        <ModalComponent title="Confirmar Alteração" onClose={() => setShowBulkConfirmModal(false)}>
+           <div className="p-3 text-center">
+              <ExclamationTriangleFill className="text-warning mb-3" size={40} />
+              <p>
+                 Você tem certeza que deseja marcar <strong>{selectedEntregaIds.length}</strong> item(ns) como <strong>"{bulkTargetStatus}"</strong>?
+              </p>
+              <div className="d-flex justify-content-center gap-2 mt-4">
+                 <Button variant="secondary" onClick={() => setShowBulkConfirmModal(false)}>Cancelar</Button>
+                 <Button variant="primary" onClick={confirmBulkStatusChange}>Confirmar</Button>
+              </div>
+           </div>
+        </ModalComponent>
+      )}
+
+      {/* --- MODAL DE ERRO --- */}
+      {showErrorModal && (
+        <ModalComponent title="Atenção" onClose={() => setShowErrorModal(false)}>
+           <div className="p-3 text-center">
+              <XCircle className="text-danger mb-3" size={40} />
+              <p className="fw-medium">{errorMessage}</p>
+              <div className="mt-4">
+                 <Button variant="secondary" onClick={() => setShowErrorModal(false)}>Fechar</Button>
+              </div>
+           </div>
         </ModalComponent>
       )}
 
