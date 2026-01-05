@@ -1,6 +1,16 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Form, Button } from 'react-bootstrap';
-import { ClipboardData, CalendarWeek, Funnel, XCircle, BoxSeam, Truck, CheckCircleFill, ArrowCounterclockwise, ExclamationTriangleFill } from 'react-bootstrap-icons'; 
+import { 
+  ClipboardData, 
+  CalendarWeek, 
+  Funnel, 
+  XCircle, 
+  BoxSeam, 
+  Truck, 
+  CheckCircleFill, 
+  ArrowCounterclockwise, 
+  ExclamationTriangleFill 
+} from 'react-bootstrap-icons'; 
 
 import meuLogo from './assets/logo.png';
 import { DeliveryForm } from './components/DeliveryForm';
@@ -1646,11 +1656,16 @@ export default function App() {
 
   const [entregaToDeleteId, setEntregaToDeleteId] = useState<string | null>(null);
 
-  // --- NOVOS ESTADOS PARA MODAIS DE CONFIRMAÇÃO E ERRO ---
+  // --- NOVOS ESTADOS PARA MODAIS ---
   const [showBulkConfirmModal, setShowBulkConfirmModal] = useState(false);
   const [bulkTargetStatus, setBulkTargetStatus] = useState('');
+  
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Estado para Modal de Sucesso
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const [loading, setLoading] = useState(true);
   const [loadingAll, setLoadingAll] = useState(true);
@@ -2156,7 +2171,11 @@ export default function App() {
                 body: JSON.stringify({ dataHoraSolicitacao: newDateTime })
             });
         }));
-        alert(`${validIdsToReprogram.length} entrega(s) reprogramada(s) com sucesso!`);
+        
+        // MODAL DE SUCESSO AQUI
+        setSuccessMessage(`${validIdsToReprogram.length} entrega(s) reprogramada(s) com sucesso!`);
+        setShowSuccessModal(true);
+        
         setShowReprogramModal(false);
         setNewDeliveryDate('');
         
@@ -2166,7 +2185,8 @@ export default function App() {
 
     } catch (e) { 
         console.error(e);
-        alert('Erro ao reprogramar entregas.');
+        setErrorMessage('Erro ao reprogramar entregas.');
+        setShowErrorModal(true);
     }
   };
 
@@ -2633,6 +2653,22 @@ export default function App() {
               <p className="fw-medium">{errorMessage}</p>
               <div className="mt-4">
                  <Button variant="secondary" onClick={() => setShowErrorModal(false)}>Fechar</Button>
+              </div>
+           </div>
+        </ModalComponent>
+      )}
+
+      {/* --- MODAL DE SUCESSO --- */}
+      {showSuccessModal && (
+        <ModalComponent title="Sucesso" onClose={() => setShowSuccessModal(false)}>
+           <div className="p-3 text-center">
+              <CheckCircleFill className="text-success mb-3" size={40} />
+              <p className="fw-medium fs-5">Tudo certo!</p>
+              <p className="text-muted">{successMessage}</p>
+              <div className="mt-4">
+                 <Button variant="success" onClick={() => setShowSuccessModal(false)} className="px-4">
+                    OK
+                 </Button>
               </div>
            </div>
         </ModalComponent>
