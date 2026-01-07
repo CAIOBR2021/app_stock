@@ -1667,6 +1667,9 @@ export default function App() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
+  // --- NOVO ESTADO: MODAL DE ESTOQUE INSUFICIENTE ---
+  const [showStockLimitModal, setShowStockLimitModal] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [loadingAll, setLoadingAll] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1967,8 +1970,28 @@ export default function App() {
     }
   }
 
-  // --- FUNÇÃO "WRAPPER" PARA DECIDIR ENTRE SALVAR OU EDITAR ---
+  // --- FUNÇÃO "WRAPPER" COM VALIDAÇÃO DE ESTOQUE ---
   const handleSaveDelivery = (data: any) => {
+    // 1. Encontrar o produto correspondente
+    const produto = allProdutos.find(p => p.id === data.produtoId);
+    
+    if (produto) {
+        // 2. Calcular estoque disponível para esta operação
+        let estoqueDisponivel = produto.quantidade;
+
+        // Se estiver editando e o produto é o mesmo, "devolvemos" a quantidade antiga para validar
+        if (editingEntrega && editingEntrega.produtoId === data.produtoId) {
+             estoqueDisponivel += Number(editingEntrega.itemQuantidade);
+        }
+        
+        // 3. Verificar se a solicitação excede o disponível
+        if (Number(data.itemQuantidade) > estoqueDisponivel) {
+            setShowStockLimitModal(true); // Abre o modal
+            return; // Impede o salvamento
+        }
+    }
+
+    // Se passou na validação, prossegue
     if (editingEntrega) {
       // Se estamos editando, chama a função de atualização passando o ID correto
       updateEntregaFull(editingEntrega.id, data);
@@ -2715,6 +2738,24 @@ export default function App() {
               <p className="fw-medium">{errorMessage}</p>
               <div className="mt-4">
                  <Button variant="secondary" onClick={() => setShowErrorModal(false)}>Fechar</Button>
+              </div>
+           </div>
+        </ModalComponent>
+      )}
+
+      {/* --- NOVO MODAL: ESTOQUE INSUFICIENTE --- */}
+      {showStockLimitModal && (
+        <ModalComponent title="Estoque Insuficiente" onClose={() => setShowStockLimitModal(false)}>
+           <div className="p-3 text-center">
+              <ExclamationTriangleFill className="text-warning mb-3" size={40} />
+              <p className="fw-medium fs-5">Atenção!</p>
+              <p>
+                  A quantidade solicitada é maior que o estoque disponível no momento.
+              </p>
+              <div className="mt-4">
+                 <Button variant="secondary" onClick={() => setShowStockLimitModal(false)}>
+                    OK, vou ajustar
+                 </Button>
               </div>
            </div>
         </ModalComponent>
