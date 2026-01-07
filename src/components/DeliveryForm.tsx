@@ -157,15 +157,8 @@ export function DeliveryForm({
       return;
     }
 
-    if (selectedOption.quantidade < formData.itemQuantidade) {
-      if (
-        !window.confirm(
-          `Atenção: A quantidade solicitada (${formData.itemQuantidade}) é maior que o saldo atual (${selectedOption.quantidade}). Deseja continuar?`,
-        )
-      ) {
-        return;
-      }
-    }
+    // REMOVIDO O WINDOW.CONFIRM DAQUI.
+    // A validação agora é feita no componente pai (App.tsx).
 
     // Cria uma data baseada nos inputs locais e converte para ISO String completa
     const dataLocal = new Date(`${data}T${hora}:00`);
