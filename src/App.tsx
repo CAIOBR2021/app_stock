@@ -1812,9 +1812,9 @@ export default function App() {
       }
     } catch (err) {
       console.error(err);
-      alert(
-        'Não foi possível salvar a alteração de prioridade. Verifique sua conexão.',
-      );
+      // SUBSTITUÍDO: alert -> setErrorMessage
+      setErrorMessage('Não foi possível salvar a alteração de prioridade. Verifique sua conexão.');
+      setShowErrorModal(true);
       setAllProdutos((prev) =>
         prev.map((p) =>
           p.id === id ? { ...p, prioritario: currentState } : p,
@@ -1967,7 +1967,9 @@ export default function App() {
         setMovs(movsData);
 
     } catch (err: any) {
-        alert(err.message);
+        // SUBSTITUÍDO: alert -> setErrorMessage
+        setErrorMessage(err.message);
+        setShowErrorModal(true);
     }
   }
 
@@ -2048,7 +2050,9 @@ export default function App() {
 
       } catch (err: any) { 
           console.error(err);
-          alert(err.message);
+          // SUBSTITUÍDO: alert -> setErrorMessage
+          setErrorMessage(err.message);
+          setShowErrorModal(true);
       }
   }
 
@@ -2095,7 +2099,9 @@ export default function App() {
         
     } catch (err) {
         console.error(err);
-        alert('Ocorreu um erro ao atualizar os status em massa.');
+        // SUBSTITUÍDO: alert -> setErrorMessage
+        setErrorMessage('Ocorreu um erro ao atualizar os status em massa.');
+        setShowErrorModal(true);
     } finally {
         setLoading(false);
     }
@@ -2250,7 +2256,9 @@ export default function App() {
   const handleReprogramDeliveries = async () => {
     if (selectedEntregaIds.length === 0) return;
     if (!newDeliveryDate) {
-      alert('Escolha uma nova data.');
+      // SUBSTITUÍDO: alert -> setErrorMessage
+      setErrorMessage('Escolha uma nova data.');
+      setShowErrorModal(true);
       return;
     }
 
@@ -2686,7 +2694,9 @@ export default function App() {
                              if(!isDelivered(ent.status)) {
                                  setEditingEntrega(ent);
                              } else {
-                                 alert("Itens entregues não podem ser editados.");
+                                 // SUBSTITUÍDO: alert -> setErrorMessage
+                                 setErrorMessage("Itens entregues não podem ser editados.");
+                                 setShowErrorModal(true);
                              }
                         }}
                         onStatusChange={updateEntregaStatus}
