@@ -130,7 +130,7 @@ function ModalComponent({
   return (
     <div
       className="modal"
-      style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1050 }}
+      style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 9999 }} // Z-INDEX AUMENTADO
       onClick={onClose}
     >
       <div
@@ -1669,6 +1669,7 @@ export default function App() {
 
   // --- NOVO ESTADO: MODAL DE ESTOQUE INSUFICIENTE ---
   const [showStockLimitModal, setShowStockLimitModal] = useState(false);
+  const [pendingDeliveryData, setPendingDeliveryData] = useState<any>(null); // Dados temporários para confirmação
 
   const [loading, setLoading] = useState(true);
   const [loadingAll, setLoadingAll] = useState(true);
@@ -1970,35 +1971,59 @@ export default function App() {
     }
   }
 
+  // --- Função auxiliar para processar o salvamento (Add ou Update) ---
+  const processDeliverySave = (data: any) => {
+    if (editingEntrega) {
+      updateEntregaFull(editingEntrega.id, data);
+    } else {
+      addEntrega(data);
+    }
+  };
+
   // --- FUNÇÃO "WRAPPER" COM VALIDAÇÃO DE ESTOQUE ---
   const handleSaveDelivery = (data: any) => {
-    // 1. Encontrar o produto correspondente
-    const produto = allProdutos.find(p => p.id === data.produtoId);
+    console.log("Tentando salvar entrega:", data);
+
+    // 1. Encontrar o produto correspondente (tenta pelo ID, senão tenta pelo nome)
+    let produto = allProdutos.find(p => p.id === data.produtoId);
+    if (!produto && data.itemNome) {
+        produto = allProdutos.find(p => p.nome.toLowerCase() === data.itemNome.toLowerCase());
+    }
     
     if (produto) {
         // 2. Calcular estoque disponível para esta operação
         let estoqueDisponivel = produto.quantidade;
 
         // Se estiver editando e o produto é o mesmo, "devolvemos" a quantidade antiga para validar
-        if (editingEntrega && editingEntrega.produtoId === data.produtoId) {
+        if (editingEntrega && (editingEntrega.produtoId === produto.id || editingEntrega.itemNome === produto.nome)) {
              estoqueDisponivel += Number(editingEntrega.itemQuantidade);
         }
         
+        // Converte a quantidade solicitada (lidando com string/virgula se necessário)
+        const qtdSolicitada = Number(String(data.itemQuantidade).replace(',', '.'));
+
         // 3. Verificar se a solicitação excede o disponível
-        if (Number(data.itemQuantidade) > estoqueDisponivel) {
-            setShowStockLimitModal(true); // Abre o modal
-            return; // Impede o salvamento
+        if (qtdSolicitada > estoqueDisponivel) {
+            console.warn(`Estoque insuficiente. Disp: ${estoqueDisponivel}, Solicitado: ${qtdSolicitada}`);
+            setPendingDeliveryData(data); // Guarda os dados para caso o usuário confirme
+            setShowStockLimitModal(true); // Abre o modal de aviso
+            return; // Impede o salvamento imediato
         }
+    } else {
+        console.warn("Produto não encontrado para validação de estoque.");
     }
 
-    // Se passou na validação, prossegue
-    if (editingEntrega) {
-      // Se estamos editando, chama a função de atualização passando o ID correto
-      updateEntregaFull(editingEntrega.id, data);
-    } else {
-      // Se é novo, chama a função de adicionar existente
-      addEntrega(data);
-    }
+    // Se passou na validação ou não achou o produto (não bloqueia se não achar), prossegue
+    processDeliverySave(data);
+  };
+
+  // --- Handler para confirmar o salvamento forçado ---
+  const handleConfirmStockOverride = () => {
+      if (pendingDeliveryData) {
+          processDeliverySave(pendingDeliveryData);
+          setPendingDeliveryData(null);
+      }
+      setShowStockLimitModal(false);
   };
 
   async function confirmDeleteEntrega(id: string) {
@@ -2743,18 +2768,24 @@ export default function App() {
         </ModalComponent>
       )}
 
-      {/* --- NOVO MODAL: ESTOQUE INSUFICIENTE --- */}
+      {/* --- NOVO MODAL: AVISO DE ESTOQUE INSUFICIENTE (Com confirmação) --- */}
       {showStockLimitModal && (
-        <ModalComponent title="Estoque Insuficiente" onClose={() => setShowStockLimitModal(false)}>
+        <ModalComponent title="Aviso de Estoque Insuficiente" onClose={() => setShowStockLimitModal(false)}>
            <div className="p-3 text-center">
               <ExclamationTriangleFill className="text-warning mb-3" size={40} />
               <p className="fw-medium fs-5">Atenção!</p>
               <p>
                   A quantidade solicitada é maior que o estoque disponível no momento.
               </p>
-              <div className="mt-4">
+              <p className="text-muted small">
+                  Deseja prosseguir com o agendamento mesmo assim?
+              </p>
+              <div className="d-flex justify-content-center gap-3 mt-4">
                  <Button variant="secondary" onClick={() => setShowStockLimitModal(false)}>
-                    OK, vou ajustar
+                    Cancelar
+                 </Button>
+                 <Button variant="danger" onClick={handleConfirmStockOverride}>
+                    Confirmar Agendamento
                  </Button>
               </div>
            </div>
