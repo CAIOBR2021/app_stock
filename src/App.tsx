@@ -1890,6 +1890,57 @@ export default function App() {
     }
   }
 
+  // --- NOVA FUNÇÃO PARA ATUALIZAR ENTREGA (PUT) E SINCRONIZAR TUDO ---
+  async function updateEntregaFull(id: string, data: any) {
+    try {
+      setLoading(true); // Bloqueia tela enquanto sincroniza
+      
+      // Sobrescreve a entrega existente (PUT)
+      const res = await fetch(`${API_URL}/entregas/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Falha ao atualizar entrega');
+      }
+
+      // --- SINCRONIZAÇÃO TOTAL ---
+      // Recarrega Entregas, Produtos (para atualizar saldo) e Movimentações (para corrigir histórico)
+      const [entregasRes, prodsRes, movsRes] = await Promise.all([
+        fetch(`${API_URL}/entregas`),
+        fetch(`${API_URL}/produtos?_limit=10000`),
+        fetch(`${API_URL}/movimentacoes`)
+      ]);
+
+      if (!entregasRes.ok || !prodsRes.ok || !movsRes.ok) {
+         throw new Error("Erro ao sincronizar dados após edição.");
+      }
+
+      const entregasData = await entregasRes.json();
+      const prodsData = await prodsRes.json();
+      const movsData = await movsRes.json();
+
+      setEntregas(entregasData.map(normalizeEntrega));
+      setAllProdutos(prodsData);
+      setMovs(movsData);
+
+      // Limpa o estado de edição e mostra sucesso
+      setEditingEntrega(null);
+      setSuccessMessage('Entrega atualizada e estoque sincronizado com sucesso!');
+      setShowSuccessModal(true);
+
+    } catch (err: any) {
+      console.error(err);
+      setErrorMessage(err.message);
+      setShowErrorModal(true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function addEntrega(data: any) {
     try {
         const res = await fetch(`${API_URL}/entregas`, {
@@ -1915,6 +1966,17 @@ export default function App() {
         alert(err.message);
     }
   }
+
+  // --- FUNÇÃO "WRAPPER" PARA DECIDIR ENTRE SALVAR OU EDITAR ---
+  const handleSaveDelivery = (data: any) => {
+    if (editingEntrega) {
+      // Se estamos editando, chama a função de atualização passando o ID correto
+      updateEntregaFull(editingEntrega.id, data);
+    } else {
+      // Se é novo, chama a função de adicionar existente
+      addEntrega(data);
+    }
+  };
 
   async function confirmDeleteEntrega(id: string) {
       try {
@@ -2473,7 +2535,7 @@ export default function App() {
             <div className="row g-4">
                 <div className="col-lg-4">
                     <DeliveryForm 
-                        onSave={addEntrega}
+                        onSave={handleSaveDelivery} 
                         produtosDisponiveis={allProdutos}
                         deliveryToEdit={editingEntrega}
                         onCancelEdit={() => setEditingEntrega(null)}
