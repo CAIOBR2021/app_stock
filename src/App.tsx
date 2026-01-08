@@ -1865,6 +1865,13 @@ export default function App() {
           p.id === produtoAtualizado.id ? produtoAtualizado : p,
         ),
       );
+
+      // --- CORREÇÃO: Atualizar também o cronograma de entregas ---
+      const entregasRes = await fetch(`${API_URL}/entregas`);
+      const entregasData = await entregasRes.json();
+      setEntregas(entregasData.map(normalizeEntrega));
+      // -----------------------------------------------------------
+
     } catch (err) {
       console.error('Erro ao atualizar movimentação:', err);
     }
