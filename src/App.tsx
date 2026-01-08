@@ -1692,7 +1692,15 @@ export default function App() {
   const [showReprogramModal, setShowReprogramModal] = useState(false);
   const [newDeliveryDate, setNewDeliveryDate] = useState('');
 
-  const [rotaDateFilter, setRotaDateFilter] = useState(''); 
+  // ESTADO DE FILTRO DE DATA INICIALIZADO COM A DATA DE HOJE
+  const [rotaDateFilter, setRotaDateFilter] = useState(() => {
+    const now = new Date();
+    // Garante que usamos a data local
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  });
 
   const debouncedQ = useDebounce(q, 500);
 
