@@ -1869,62 +1869,42 @@ export default function App() {
     }
   }
 
-  // ATUALIZADO: addMov agora aceita custoEntrada
+  // ATUALIZADO: addMov agora aceita custoEntrada e passa para o backend
+  // A lógica de cálculo foi removida do frontend para evitar race conditions
   async function addMov(
     m: Omit<Movimentacao, 'id' | 'criadoEm'>, 
-    custoEntrada?: number
+    custoEntrada?: number // Continua recebendo do formulário
   ) {
     try {
-      // 1. Lógica de Custo Médio Ponderado
-      // Se for ENTRADA e tiver um custo informado, atualizamos o valor do produto
-      if (m.tipo === 'entrada' && custoEntrada !== undefined && custoEntrada !== null) {
-        const produtoAtual = allProdutos.find(p => p.id === m.produtoId);
-        
-        if (produtoAtual) {
-          const qtdAtual = Math.max(0, produtoAtual.quantidade); // Evita negativos no cálculo
-          const valorAtual = produtoAtual.valorUnitario || 0;
-          const qtdEntrada = m.quantidade;
-          
-          // Cálculo do novo custo médio
-          // ( (QtdAtual * ValorAtual) + (QtdEntrada * ValorEntrada) ) / (QtdAtual + QtdEntrada)
-          const valorTotalEstoque = qtdAtual * valorAtual;
-          const valorTotalEntrada = qtdEntrada * custoEntrada;
-          const novaQuantidadeTotal = qtdAtual + qtdEntrada;
-          
-          let novoPrecoMedio = valorAtual; // Fallback
-          
-          if (novaQuantidadeTotal > 0) {
-             novoPrecoMedio = (valorTotalEstoque + valorTotalEntrada) / novaQuantidadeTotal;
-          } else {
-             novoPrecoMedio = custoEntrada;
-          }
-
-          // Atualiza o produto com o novo preço ANTES de criar a movimentação
-          await updateProduto(produtoAtual.id, { valorUnitario: novoPrecoMedio });
-        }
-      }
+      // Monta o payload enviando o custoEntrada junto com a movimentação
+      const payload = {
+        ...m,
+        custoEntrada: custoEntrada // O Backend vai ler isso e calcular
+      };
 
       const response = await fetch(`${API_URL}/movimentacoes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(m),
+        body: JSON.stringify(payload),
       });
-      if (!response.ok) throw new Error('Falha ao criar movimentação');
-      const { movimentacao, produto } = await response.json();
-      setMovs((prev) => [movimentacao, ...prev]);
-      setAllProdutos((prev) =>
-        prev.map((p) => (p.id === produto.id ? produto : p)),
-      );
       
-      // Recarrega o produto específico para garantir sincronia do preço calculado (caso backend tenha retornado algo diferente ou para confirmar)
-      const prodsRes = await fetch(`${API_URL}/produtos/${produto.id}`);
-      if(prodsRes.ok) {
-         const prodAtualizado = await prodsRes.json();
-         setAllProdutos((prev) => prev.map((p) => (p.id === prodAtualizado.id ? prodAtualizado : p)));
-      }
+      if (!response.ok) throw new Error('Falha ao criar movimentação');
+      
+      // O backend já retorna o produto com o PREÇO NOVO e a QUANTIDADE NOVA
+      const { movimentacao, produto } = await response.json();
+      
+      setMovs((prev) => [movimentacao, ...prev]);
+      
+      // Apenas substituímos o produto na lista com o que veio do servidor.
+      // Sem cálculos complexos no front, sem erro de sincronia.
+      setAllProdutos((prev) =>
+        prev.map((p) => (p.id === produto.id ? produto : p))
+      );
 
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setErrorMessage(err.message);
+      setShowErrorModal(true);
     }
   }
 
