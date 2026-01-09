@@ -967,9 +967,10 @@ function MovimentacaoForm({
         <strong>
           {produto.quantidade} {produto.unidade}
         </strong>
-        {produto.valorUnitario && (
+        {/* CORREÇÃO DO BUG: Usamos '!= null' para permitir que o 0 seja formatado corretamente como R$ 0,00 e não exiba "0" solto */}
+        {produto.valorUnitario != null && (
             <span className="ms-2 text-muted">
-                (Valor Unit. Atual: R$ {produto.valorUnitario.toLocaleString('pt-BR', {minimumFractionDigits: 2})})
+                (Valor Unit. Atual: R$ {Number(produto.valorUnitario).toLocaleString('pt-BR', {minimumFractionDigits: 2})})
             </span>
         )}
       </div>
