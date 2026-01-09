@@ -690,7 +690,8 @@ function ProdutosTable({
   produtos: Produto[];
   onEdit: (id: UUID, patch: Partial<Produto>) => void;
   onDelete: (id: UUID) => void;
-  onAddMov: (m: Omit<Movimentacao, 'id' | 'criadoEm'>) => void;
+  // ATUALIZADO: Agora aceita o segundo parâmetro opcional custo
+  onAddMov: (m: Omit<Movimentacao, 'id' | 'criadoEm'>, custo?: number) => void;
   onTogglePrioritario: (id: UUID, currentState: boolean) => void;
   categorias: string[];
   locais: string[];
@@ -883,8 +884,9 @@ function ProdutosTable({
           <MovimentacaoForm
             produto={produtoParaMov}
             onCancel={() => setMovProdId(null)}
-            onSave={(m) => {
-              onAddMov(m);
+            // ATUALIZADO: Passa 'custo' para onAddMov
+            onSave={(m, custo) => {
+              onAddMov(m, custo);
               setMovProdId(null);
             }}
           />
@@ -930,11 +932,15 @@ function MovimentacaoForm({
 }: {
   produto: Produto;
   onCancel: () => void;
-  onSave: (m: Omit<Movimentacao, 'id' | 'criadoEm'>) => void;
+  // ATUALIZADO: Aceita custo opcional
+  onSave: (m: Omit<Movimentacao, 'id' | 'criadoEm'>, custoEntrada?: number) => void;
 }) {
   const [tipo, setTipo] = useState<TipoMov>('saida');
   const [quantidade, setQuantidade] = useState<number>(1);
   const [motivo, setMotivo] = useState<string>('');
+  
+  // NOVO: Estado para custo de entrada
+  const [custoEntrada, setCustoEntrada] = useState<number | undefined>(undefined);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -944,8 +950,15 @@ function MovimentacaoForm({
       tipo,
       quantidade,
       motivo: motivo.trim() || undefined,
-    });
+    }, custoEntrada);
   }
+  
+  // Limpa o custo se não for entrada
+  useEffect(() => {
+    if (tipo !== 'entrada') {
+      setCustoEntrada(undefined);
+    }
+  }, [tipo]);
 
   return (
     <form onSubmit={submit}>
@@ -954,6 +967,11 @@ function MovimentacaoForm({
         <strong>
           {produto.quantidade} {produto.unidade}
         </strong>
+        {produto.valorUnitario && (
+            <span className="ms-2 text-muted">
+                (Valor Unit. Atual: R$ {produto.valorUnitario.toLocaleString('pt-BR', {minimumFractionDigits: 2})})
+            </span>
+        )}
       </div>
       <div className="row g-3">
         <div className="col-md-4">
@@ -981,7 +999,27 @@ function MovimentacaoForm({
             required
           />
         </div>
-        <div className="col-md-4">
+
+        {/* NOVO CAMPO: Custo Unitário na Entrada */}
+        {tipo === 'entrada' && (
+          <div className="col-md-4">
+            <label className="form-label">Custo Unit. (Novo)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              className="form-control"
+              placeholder="R$"
+              value={custoEntrada ?? ''}
+              onChange={(e) => setCustoEntrada(e.target.value === '' ? undefined : Number(e.target.value))}
+            />
+            <small className="text-muted" style={{fontSize: '0.75rem'}}>
+               Atualiza média ponderada
+            </small>
+          </div>
+        )}
+
+        <div className="col-md-12">
           <label className="form-label">Motivo (opcional)</label>
           <input
             className="form-control"
@@ -1659,7 +1697,7 @@ export default function App() {
   // --- NOVOS ESTADOS PARA MODAIS ---
   const [showBulkConfirmModal, setShowBulkConfirmModal] = useState(false);
   const [bulkTargetStatus, setBulkTargetStatus] = useState('');
-  
+   
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -1681,7 +1719,7 @@ export default function App() {
 
   const [q, setQ] = useState('');
   const [categoriaFilter, setCategoriaFilter] = useState('');
-  
+   
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null);
 
   const [mostrarAbaixoMin, setMostrarAbaixoMin] = useState(false);
@@ -1831,8 +1869,41 @@ export default function App() {
     }
   }
 
-  async function addMov(m: Omit<Movimentacao, 'id' | 'criadoEm'>) {
+  // ATUALIZADO: addMov agora aceita custoEntrada
+  async function addMov(
+    m: Omit<Movimentacao, 'id' | 'criadoEm'>, 
+    custoEntrada?: number
+  ) {
     try {
+      // 1. Lógica de Custo Médio Ponderado
+      // Se for ENTRADA e tiver um custo informado, atualizamos o valor do produto
+      if (m.tipo === 'entrada' && custoEntrada !== undefined && custoEntrada !== null) {
+        const produtoAtual = allProdutos.find(p => p.id === m.produtoId);
+        
+        if (produtoAtual) {
+          const qtdAtual = Math.max(0, produtoAtual.quantidade); // Evita negativos no cálculo
+          const valorAtual = produtoAtual.valorUnitario || 0;
+          const qtdEntrada = m.quantidade;
+          
+          // Cálculo do novo custo médio
+          // ( (QtdAtual * ValorAtual) + (QtdEntrada * ValorEntrada) ) / (QtdAtual + QtdEntrada)
+          const valorTotalEstoque = qtdAtual * valorAtual;
+          const valorTotalEntrada = qtdEntrada * custoEntrada;
+          const novaQuantidadeTotal = qtdAtual + qtdEntrada;
+          
+          let novoPrecoMedio = valorAtual; // Fallback
+          
+          if (novaQuantidadeTotal > 0) {
+             novoPrecoMedio = (valorTotalEstoque + valorTotalEntrada) / novaQuantidadeTotal;
+          } else {
+             novoPrecoMedio = custoEntrada;
+          }
+
+          // Atualiza o produto com o novo preço ANTES de criar a movimentação
+          await updateProduto(produtoAtual.id, { valorUnitario: novoPrecoMedio });
+        }
+      }
+
       const response = await fetch(`${API_URL}/movimentacoes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1844,6 +1915,14 @@ export default function App() {
       setAllProdutos((prev) =>
         prev.map((p) => (p.id === produto.id ? produto : p)),
       );
+      
+      // Recarrega o produto específico para garantir sincronia do preço calculado (caso backend tenha retornado algo diferente ou para confirmar)
+      const prodsRes = await fetch(`${API_URL}/produtos/${produto.id}`);
+      if(prodsRes.ok) {
+         const prodAtualizado = await prodsRes.json();
+         setAllProdutos((prev) => prev.map((p) => (p.id === prodAtualizado.id ? prodAtualizado : p)));
+      }
+
     } catch (err) {
       console.error(err);
     }
@@ -1892,7 +1971,7 @@ export default function App() {
       });
       if (!response.ok) throw new Error('Falha ao excluir movimentação');
       const { produtoAtualizado } = await response.json();
-      
+       
       setMovs((prev) => prev.filter((m) => m.id !== id));
       setAllProdutos((prev) =>
         prev.map((p) =>
@@ -1913,7 +1992,7 @@ export default function App() {
   async function updateEntregaFull(id: string, data: any) {
     try {
       setLoading(true); // Bloqueia tela enquanto sincroniza
-      
+       
       // Sobrescreve a entrega existente (PUT)
       const res = await fetch(`${API_URL}/entregas/${id}`, {
         method: 'PUT',
@@ -2006,7 +2085,7 @@ export default function App() {
     if (!produto && data.itemNome) {
         produto = allProdutos.find(p => p.nome.toLowerCase() === data.itemNome.toLowerCase());
     }
-    
+     
     if (produto) {
         // 2. Calcular estoque disponível para esta operação
         let estoqueDisponivel = produto.quantidade;
