@@ -606,6 +606,13 @@ function ProdutoCard({
               title="Item prioritário!"
             ></i>
           )}
+          {/* Ícone de etiqueta/tag para indicar valor unitário preenchido */}
+          {produto.valorUnitario != null && (
+            <i
+              className="bi bi-tag-fill text-success"
+              title="Valor unitário registrado"
+            ></i>
+          )}
         </div>
 
         <h6 className="card-title card-title-clamp mb-2 fw-bold">
@@ -782,6 +789,13 @@ function ProdutosTable({
                           title="Estoque abaixo do mínimo!"
                         ></i>
                       )}
+                    {/* Ícone de etiqueta/tag para indicar valor unitário preenchido */}
+                    {p.valorUnitario != null && (
+                      <i
+                        className="bi bi-tag-fill text-success ms-2"
+                        title="Valor unitário registrado"
+                      ></i>
+                    )}
                   </td>
                   <td>{p.categoria ?? '-'}</td>
                   <td>
