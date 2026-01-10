@@ -606,8 +606,8 @@ function ProdutoCard({
               title="Item prioritário!"
             ></i>
           )}
-          {/* Ícone de etiqueta/tag para indicar valor unitário preenchido */}
-          {produto.valorUnitario != null && (
+          {/* Ícone de etiqueta/tag para indicar valor unitário preenchido (se > 0) */}
+          {produto.valorUnitario != null && produto.valorUnitario > 0 && (
             <i
               className="bi bi-tag-fill text-success"
               title="Valor unitário registrado"
@@ -789,8 +789,8 @@ function ProdutosTable({
                           title="Estoque abaixo do mínimo!"
                         ></i>
                       )}
-                    {/* Ícone de etiqueta/tag para indicar valor unitário preenchido */}
-                    {p.valorUnitario != null && (
+                    {/* Ícone de etiqueta/tag para indicar valor unitário preenchido (se > 0) */}
+                    {p.valorUnitario != null && p.valorUnitario > 0 && (
                       <i
                         className="bi bi-tag-fill text-success ms-2"
                         title="Valor unitário registrado"
