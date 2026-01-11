@@ -2469,7 +2469,12 @@ export default function App() {
 
       {/* 2. HEADER MOBILE (Apenas Logo) */}
       <div className="mobile-header d-lg-none">
-          <img src={meuLogo} alt="Logo" style={{height: '32px'}} />
+          {/* ALTERADO: Tamanho aumentado de 32px para 50px + Sombra */}
+          <img 
+            src={meuLogo} 
+            alt="Logo" 
+            style={{ height: '50px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }} 
+          />
       </div>
 
       {/* 3. MAIN CONTENT */}
@@ -2527,8 +2532,9 @@ export default function App() {
                 <div className="col-12 col-md-8 col-lg-4">
                   <div className="d-flex gap-3 align-items-center h-100 pb-2">
                     <div className="form-check form-switch">
+                      {/* ALTERADO: Adicionado switch-gradient-warning para diferenciar */}
                       <input
-                        className="form-check-input switch-gradient switch-gradient-primary"
+                        className="form-check-input switch-gradient switch-gradient-warning"
                         type="checkbox"
                         id="abaixoMin"
                         checked={mostrarAbaixoMin}
