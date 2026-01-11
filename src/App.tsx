@@ -600,8 +600,9 @@ function ProdutoCard({
             ></i>
           )}
           {produto.prioritario && (
+            /* ATUALIZADO: Usando as classes novas da Flag */
             <i
-              className="bi bi-flag-fill text-danger"
+              className="bi bi-flag-fill priority-flag is-priority"
               title="Item prioritário!"
             ></i>
           )}
