@@ -11,9 +11,6 @@
   /* Degradê Principal (AZUL) */
   --brand-gradient: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
   
-  /* NOVO: Degradê Vermelho para Prioridade (Flag) */
-  --brand-gradient-red: linear-gradient(135deg, #d90429 0%, #ef233c 100%);
-
   /* Cores Funcionais */
   --bg-body: #f4f6f8;       /* Cinza muito claro para o fundo da página */
   --bg-surface: #ffffff;    /* Branco puro para cards */
@@ -242,27 +239,29 @@ body {
   margin-top: 1rem; /* Espaço para a faixa */
 }
 
-/* --- RECURSO PRIORITÁRIO (FLAG) --- */
+/* --- ESTILOS DA FLAG DE PRIORIDADE (ATUALIZADO) --- */
 .priority-flag {
-  color: #e2e8f0; /* Cinza claro quando inativo */
+  color: #94a3b8;
+  opacity: 0.3;
   transition: all 0.3s ease;
   cursor: pointer;
+  display: inline-block;
 }
 
 .priority-flag:hover {
-  transform: scale(1.2);
-  /* Hover também fica vermelho para indicar a ação */
-  color: #ef233c; 
+  transform: scale(1.4);
+  opacity: 0.8;
+  color: #ef4444;
 }
 
 .priority-flag.is-priority {
-  /* ALTERAÇÃO: Efeito de degradê VERMELHO no texto/ícone */
-  background: var(--brand-gradient-red);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text; /* Padrão */
-  /* Ajuste da sombra para tom avermelhado */
-  filter: drop-shadow(0 2px 4px rgba(217, 4, 41, 0.2));
+  color: #ef4444 !important;
+  opacity: 1 !important;
+  filter: drop-shadow(0 2px 4px rgba(239, 68, 68, 0.3));
+}
+
+.priority-flag.is-priority:hover {
+  opacity: 1 !important;
 }
 
 /* Botões - Mantendo o Azul Degrade */
@@ -374,7 +373,7 @@ body {
   cursor: pointer;
 }
 
-/* --- PAGINAÇÃO COM DEGRADÊ AZUL (NOVO) --- */
+/* --- PAGINAÇÃO COM DEGRADÊ AZUL --- */
 .page-item.active .page-link {
     background: var(--brand-gradient) !important;
     border-color: transparent !important;
