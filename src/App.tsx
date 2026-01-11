@@ -3,7 +3,6 @@ import { Form, Button } from 'react-bootstrap';
 import { 
   ClipboardData, 
   CalendarWeek, 
-  Funnel, 
   XCircle, 
   BoxSeam, 
   Truck, 

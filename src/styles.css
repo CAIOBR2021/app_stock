@@ -239,6 +239,27 @@ body {
   margin-top: 1rem; /* Espaço para a faixa */
 }
 
+/* --- RECURSO PRIORITÁRIO (NOVO) --- */
+.priority-flag {
+  color: #e2e8f0; /* Cinza claro quando inativo */
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.priority-flag:hover {
+  transform: scale(1.2);
+  color: var(--brand-secondary);
+}
+
+.priority-flag.is-priority {
+  /* Efeito de degradê no texto/ícone */
+  background: var(--brand-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text; /* Padrão */
+  filter: drop-shadow(0 2px 4px rgba(15, 76, 129, 0.2));
+}
+
 /* Botões */
 .btn-primary {
   background: var(--brand-gradient);
@@ -289,6 +310,17 @@ body {
 }
 .products-table tbody tr:hover {
   background-color: #f8fafc; /* Hover muito sutil */
+}
+
+/* Helper para botão invisível dentro da tabela */
+.btn-icon {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Inputs de Filtro Estilizados */
