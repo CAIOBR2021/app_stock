@@ -17,6 +17,14 @@
   --text-main: #1e293b;
   --text-muted: #64748b;
   
+  /* --- NOVOS DEGRADÉS (BADGES) --- */
+  /* Verde (Success) */
+  --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  /* Vermelho (Danger) */
+  --gradient-danger: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  /* Amarelo/Laranja (Warning) */
+  --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+
   /* Dimensões do Layout */
   --sidebar-width: 260px;
   --bottom-nav-height: 70px;
@@ -239,7 +247,7 @@ body {
   margin-top: 1rem; /* Espaço para a faixa */
 }
 
-/* --- ESTILOS DA FLAG DE PRIORIDADE (ATUALIZADO) --- */
+/* --- ESTILOS DA FLAG DE PRIORIDADE --- */
 .priority-flag {
   color: #94a3b8;
   opacity: 0.3;
@@ -340,11 +348,34 @@ body {
   box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.15);
 }
 
-/* Badges */
+/* --- BADGES COM DEGRADÊ (ATUALIZADO) --- */
 .badge {
   padding: 0.5em 0.8em;
   font-weight: 600;
   border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Badge Verde (Entrada/Sucesso) */
+.badge.bg-success {
+  background: var(--gradient-success) !important;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.25);
+  border: none;
+}
+
+/* Badge Vermelho (Saída/Danger) */
+.badge.bg-danger {
+  background: var(--gradient-danger) !important;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.25);
+  border: none;
+}
+
+/* Badge Amarelo/Laranja (Ajuste/Warning) */
+.badge.bg-warning {
+  background: var(--gradient-warning) !important;
+  color: white !important; /* Garante leitura no fundo laranja */
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.25);
+  border: none;
 }
 
 /* --- SWITCHES COM DEGRADÊ --- */
