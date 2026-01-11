@@ -1699,7 +1699,7 @@ function MovimentacaoEditForm({
   );
 }
 
-// --- COMPONENTE PRINCIPAL ---
+// --- COMPONENTE PRINCIPAL (ATUALIZADO PARA PROPOSTA CLEAN) ---
 export default function App() {
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [allProdutos, setAllProdutos] = useState<Produto[]>([]);
@@ -1709,20 +1709,17 @@ export default function App() {
 
   const [entregaToDeleteId, setEntregaToDeleteId] = useState<string | null>(null);
 
-  // --- NOVOS ESTADOS PARA MODAIS ---
   const [showBulkConfirmModal, setShowBulkConfirmModal] = useState(false);
   const [bulkTargetStatus, setBulkTargetStatus] = useState('');
    
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Estado para Modal de Sucesso
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
-  // --- NOVO ESTADO: MODAL DE ESTOQUE INSUFICIENTE ---
   const [showStockLimitModal, setShowStockLimitModal] = useState(false);
-  const [pendingDeliveryData, setPendingDeliveryData] = useState<any>(null); // Dados temporários para confirmação
+  const [pendingDeliveryData, setPendingDeliveryData] = useState<any>(null);
 
   const [loading, setLoading] = useState(true);
   const [loadingAll, setLoadingAll] = useState(true);
@@ -1745,10 +1742,8 @@ export default function App() {
   const [showReprogramModal, setShowReprogramModal] = useState(false);
   const [newDeliveryDate, setNewDeliveryDate] = useState('');
 
-  // ESTADO DE FILTRO DE DATA INICIALIZADO COM A DATA DE HOJE
   const [rotaDateFilter, setRotaDateFilter] = useState(() => {
     const now = new Date();
-    // Garante que usamos a data local
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');
@@ -1795,18 +1790,13 @@ export default function App() {
     }
 
     fetchInitialData();
-
+    
     const checkScrollTop = () => {
-      if (window.pageYOffset > 400) {
-        setShowScroll(true);
-      } else {
-        setShowScroll(false);
-      }
+      if (window.pageYOffset > 400) setShowScroll(true);
+      else setShowScroll(false);
     };
     window.addEventListener('scroll', checkScrollTop);
-    return () => {
-      window.removeEventListener('scroll', checkScrollTop);
-    };
+    return () => window.removeEventListener('scroll', checkScrollTop);
   }, []);
 
   async function addProduto(
@@ -1873,7 +1863,6 @@ export default function App() {
       }
     } catch (err) {
       console.error(err);
-      // SUBSTITUÍDO: alert -> setErrorMessage
       setErrorMessage('Não foi possível salvar a alteração de prioridade. Verifique sua conexão.');
       setShowErrorModal(true);
       setAllProdutos((prev) =>
@@ -1884,17 +1873,14 @@ export default function App() {
     }
   }
 
-  // ATUALIZADO: addMov agora aceita custoEntrada e passa para o backend
-  // A lógica de cálculo foi removida do frontend para evitar race conditions
   async function addMov(
     m: Omit<Movimentacao, 'id' | 'criadoEm'>, 
-    custoEntrada?: number // Continua recebendo do formulário
+    custoEntrada?: number
   ) {
     try {
-      // Monta o payload enviando o custoEntrada junto com a movimentação
       const payload = {
         ...m,
-        custoEntrada: custoEntrada // O Backend vai ler isso e calcular
+        custoEntrada: custoEntrada
       };
 
       const response = await fetch(`${API_URL}/movimentacoes`, {
@@ -1905,13 +1891,10 @@ export default function App() {
       
       if (!response.ok) throw new Error('Falha ao criar movimentação');
       
-      // O backend já retorna o produto com o PREÇO NOVO e a QUANTIDADE NOVA
       const { movimentacao, produto } = await response.json();
       
       setMovs((prev) => [movimentacao, ...prev]);
       
-      // Apenas substituímos o produto na lista com o que veio do servidor.
-      // Sem cálculos complexos no front, sem erro de sincronia.
       setAllProdutos((prev) =>
         prev.map((p) => (p.id === produto.id ? produto : p))
       );
@@ -1948,11 +1931,9 @@ export default function App() {
         ),
       );
 
-      // --- CORREÇÃO: Atualizar também o cronograma de entregas ---
       const entregasRes = await fetch(`${API_URL}/entregas`);
       const entregasData = await entregasRes.json();
       setEntregas(entregasData.map(normalizeEntrega));
-      // -----------------------------------------------------------
 
     } catch (err) {
       console.error('Erro ao atualizar movimentação:', err);
@@ -1983,12 +1964,10 @@ export default function App() {
     }
   }
 
-  // --- NOVA FUNÇÃO PARA ATUALIZAR ENTREGA (PUT) E SINCRONIZAR TUDO ---
   async function updateEntregaFull(id: string, data: any) {
     try {
-      setLoading(true); // Bloqueia tela enquanto sincroniza
+      setLoading(true);
        
-      // Sobrescreve a entrega existente (PUT)
       const res = await fetch(`${API_URL}/entregas/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -2000,8 +1979,6 @@ export default function App() {
         throw new Error(errData.error || 'Falha ao atualizar entrega');
       }
 
-      // --- SINCRONIZAÇÃO TOTAL ---
-      // Recarrega Entregas, Produtos (para atualizar saldo) e Movimentações (para corrigir histórico)
       const [entregasRes, prodsRes, movsRes] = await Promise.all([
         fetch(`${API_URL}/entregas`),
         fetch(`${API_URL}/produtos?_limit=10000`),
@@ -2020,7 +1997,6 @@ export default function App() {
       setAllProdutos(prodsData);
       setMovs(movsData);
 
-      // Limpa o estado de edição e mostra sucesso
       setEditingEntrega(null);
       setSuccessMessage('Entrega atualizada e estoque sincronizado com sucesso!');
       setShowSuccessModal(true);
@@ -2056,13 +2032,11 @@ export default function App() {
         setMovs(movsData);
 
     } catch (err: any) {
-        // SUBSTITUÍDO: alert -> setErrorMessage
         setErrorMessage(err.message);
         setShowErrorModal(true);
     }
   }
 
-  // --- Função auxiliar para processar o salvamento (Add ou Update) ---
   const processDeliverySave = (data: any) => {
     if (editingEntrega) {
       updateEntregaFull(editingEntrega.id, data);
@@ -2071,44 +2045,30 @@ export default function App() {
     }
   };
 
-  // --- FUNÇÃO "WRAPPER" COM VALIDAÇÃO DE ESTOQUE ---
   const handleSaveDelivery = (data: any) => {
-    console.log("Tentando salvar entrega:", data);
-
-    // 1. Encontrar o produto correspondente (tenta pelo ID, senão tenta pelo nome)
     let produto = allProdutos.find(p => p.id === data.produtoId);
     if (!produto && data.itemNome) {
         produto = allProdutos.find(p => p.nome.toLowerCase() === data.itemNome.toLowerCase());
     }
      
     if (produto) {
-        // 2. Calcular estoque disponível para esta operação
         let estoqueDisponivel = produto.quantidade;
-
-        // Se estiver editando e o produto é o mesmo, "devolvemos" a quantidade antiga para validar
         if (editingEntrega && (editingEntrega.produtoId === produto.id || editingEntrega.itemNome === produto.nome)) {
              estoqueDisponivel += Number(editingEntrega.itemQuantidade);
         }
         
-        // Converte a quantidade solicitada (lidando com string/virgula se necessário)
         const qtdSolicitada = Number(String(data.itemQuantidade).replace(',', '.'));
 
-        // 3. Verificar se a solicitação excede o disponível
         if (qtdSolicitada > estoqueDisponivel) {
-            console.warn(`Estoque insuficiente. Disp: ${estoqueDisponivel}, Solicitado: ${qtdSolicitada}`);
-            setPendingDeliveryData(data); // Guarda os dados para caso o usuário confirme
-            setShowStockLimitModal(true); // Abre o modal de aviso
-            return; // Impede o salvamento imediato
+            setPendingDeliveryData(data);
+            setShowStockLimitModal(true);
+            return;
         }
-    } else {
-        console.warn("Produto não encontrado para validação de estoque.");
     }
 
-    // Se passou na validação ou não achou o produto (não bloqueia se não achar), prossegue
     processDeliverySave(data);
   };
 
-  // --- Handler para confirmar o salvamento forçado ---
   const handleConfirmStockOverride = () => {
       if (pendingDeliveryData) {
           processDeliverySave(pendingDeliveryData);
@@ -2139,7 +2099,6 @@ export default function App() {
 
       } catch (err: any) { 
           console.error(err);
-          // SUBSTITUÍDO: alert -> setErrorMessage
           setErrorMessage(err.message);
           setShowErrorModal(true);
       }
@@ -2157,18 +2116,15 @@ export default function App() {
       } catch (err) { console.error(err); }
   }
 
-  // --- NOVA FUNÇÃO: CONFIGURA AÇÃO EM MASSA E ABRE MODAL ---
   const handleBulkStatusChange = (newStatus: string) => {
     if (selectedEntregaIds.length === 0) return;
     setBulkTargetStatus(newStatus);
     setShowBulkConfirmModal(true);
   };
 
-  // --- FUNÇÃO QUE EXECUTA A AÇÃO APÓS CONFIRMAÇÃO ---
   const confirmBulkStatusChange = async () => {
     try {
         setLoading(true);
-        // Executa todas as atualizações em paralelo
         await Promise.all(selectedEntregaIds.map(id => 
             fetch(`${API_URL}/entregas/${id}/status`, {
                 method: 'PATCH',
@@ -2177,18 +2133,15 @@ export default function App() {
             })
         ));
 
-        // Recarrega os dados
         const entregasRes = await fetch(`${API_URL}/entregas`);
         const entregasData = await entregasRes.json();
         setEntregas(entregasData.map(normalizeEntrega));
 
-        // Limpa a seleção
         setSelectedEntregaIds([]);
         setShowBulkConfirmModal(false);
         
     } catch (err) {
         console.error(err);
-        // SUBSTITUÍDO: alert -> setErrorMessage
         setErrorMessage('Ocorreu um erro ao atualizar os status em massa.');
         setShowErrorModal(true);
     } finally {
@@ -2215,7 +2168,6 @@ export default function App() {
   const filteredDeliveries = useMemo(() => {
     let data = entregas;
 
-    // 1. Filtro de Data
     if (rotaDateFilter) {
         data = data.filter(d => {
             const itemDate = new Date(d.dataHoraSolicitacao).toLocaleDateString('en-CA');
@@ -2223,7 +2175,6 @@ export default function App() {
         });
     }
 
-    // 2. Ordenação
     return data.sort((a, b) => 
         new Date(a.dataHoraSolicitacao).getTime() - new Date(b.dataHoraSolicitacao).getTime()
     );
@@ -2245,13 +2196,11 @@ export default function App() {
       return;
     }
 
-    // FILTRO ATUALIZADO: Remove itens entregues da geração do PDF
     const selectedDeliveries = entregas
       .filter(d => selectedEntregaIds.includes(d.id))
       .filter(d => !isDelivered(d.status)) 
       .sort((a, b) => new Date(a.dataHoraSolicitacao).getTime() - new Date(b.dataHoraSolicitacao).getTime());
 
-    // --- NOVA VALIDAÇÃO: MODAL DE ERRO SE NÃO HOUVER ITENS VÁLIDOS ---
     if (selectedDeliveries.length === 0) {
         setErrorMessage("Não existem itens pendentes selecionados para gerar o relatório. Itens já entregues não são incluídos.");
         setShowErrorModal(true);
@@ -2345,19 +2294,16 @@ export default function App() {
   const handleReprogramDeliveries = async () => {
     if (selectedEntregaIds.length === 0) return;
     if (!newDeliveryDate) {
-      // SUBSTITUÍDO: alert -> setErrorMessage
       setErrorMessage('Escolha uma nova data.');
       setShowErrorModal(true);
       return;
     }
 
-    // --- RESTRIÇÃO: Filtra apenas itens NÃO entregues ---
     const validIdsToReprogram = selectedEntregaIds.filter(id => {
         const delivery = entregas.find(e => e.id === id);
         return delivery && !isDelivered(delivery.status);
     });
 
-    // --- NOVA VALIDAÇÃO: MODAL DE ERRO SE TENTAR REPROGRAMAR APENAS ITENS ENTREGUES ---
     if (validIdsToReprogram.length === 0) {
         setErrorMessage("Itens marcados como 'Entregue' não podem ser reprogramados. Por favor, selecione apenas itens pendentes ou altere o status antes.");
         setShowErrorModal(true);
@@ -2379,7 +2325,6 @@ export default function App() {
             });
         }));
         
-        // MODAL DE SUCESSO AQUI
         setSuccessMessage(`${validIdsToReprogram.length} entrega(s) reprogramada(s) com sucesso!`);
         setShowSuccessModal(true);
         
@@ -2462,10 +2407,6 @@ export default function App() {
     sortOrder,
   ]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [filteredProdutos.length]);
-
   const paginatedProdutos = useMemo(() => {
     const startIndex = (page - 1) * ITEMS_PER_PAGE;
     return filteredProdutos.slice(startIndex, startIndex + ITEMS_PER_PAGE);
@@ -2481,204 +2422,224 @@ export default function App() {
     });
   };
 
+  // --- RENDERIZAÇÃO ALTERADA PARA PROPOSTA 01 (CLEAN CORPORATE) ---
+
   if (error) {
     return (
-      <div className="container py-4">
-        <div className="alert alert-danger">{error}</div>
+      <div className="d-flex justify-content-center align-items-center min-vh-100 bg-light">
+        <div className="alert alert-danger shadow-sm border-0 rounded-3 p-4">
+            <h4 className="alert-heading mb-3"><i className="bi bi-exclamation-octagon me-2"></i>Erro de Conexão</h4>
+            <p>{error}</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container-fluid bg-light min-vh-100 px-0">
-      <header className="main-header d-flex flex-column flex-md-row align-items-center justify-content-between sticky-top px-4 py-3 mb-4">
-        <div className="brand-section">
-            <img src={meuLogo} alt="Logo da Empresa" className="app-logo" style={{height: '60px'}} />
+    <div className="app-layout">
+      
+      {/* 1. SIDEBAR (DESKTOP) */}
+      <aside className="sidebar">
+        <div className="sidebar-logo-area">
+          <img src={meuLogo} alt="Logo" className="sidebar-logo" />
         </div>
+        
+        <nav className="sidebar-nav">
+          <button 
+            className={`nav-item-clean ${view === 'estoque' ? 'active' : ''}`}
+            onClick={() => { setView('estoque'); scrollTop(); }}
+          >
+            <BoxSeam /> Controle de Estoque
+          </button>
           
-        <ul className="nav nav-pills nav-pills-custom my-3 my-md-0 gap-2">
-          <li className="nav-item">
-            <button
-              className={`nav-link d-flex align-items-center ${view === 'estoque' ? 'active' : ''}`}
-              onClick={() => setView('estoque')}
-            >
-              <BoxSeam /> Estoque
-            </button>
-          </li>
-          <li className="nav-item">
-            <button
-              className={`nav-link d-flex align-items-center ${view === 'movimentacoes' ? 'active' : ''}`}
-              onClick={() => setView('movimentacoes')}
-            >
-              <ClipboardData /> Movimentações
-            </button>
-          </li>
-          <li className="nav-item">
-            <button
-              className={`nav-link d-flex align-items-center ${view === 'rotas' ? 'active' : ''}`}
-              onClick={() => setView('rotas')}
-            >
-              <Truck /> Rotas & Entregas
-            </button>
-          </li>
-        </ul>
-      </header>
+          <button 
+            className={`nav-item-clean ${view === 'movimentacoes' ? 'active' : ''}`}
+            onClick={() => { setView('movimentacoes'); scrollTop(); }}
+          >
+            <ClipboardData /> Movimentações
+          </button>
+          
+          <button 
+            className={`nav-item-clean ${view === 'rotas' ? 'active' : ''}`}
+            onClick={() => { setView('rotas'); scrollTop(); }}
+          >
+            <Truck /> Rotas & Entregas
+          </button>
+        </nav>
+        
+        <div className="mt-auto text-center p-3 text-muted small">
+             <small>© 2024 AppStock</small>
+        </div>
+      </aside>
 
-      <div className="container pb-5">
-      {view === 'estoque' && (
-        <>
-          <div className="filter-panel card-modern">
-            <div className="row gy-3 align-items-end">
-              <div className="col-12 col-lg-5">
-                <label htmlFor="search-input" className="form-label fw-bold">
-                  Pesquisar
-                </label>
-                <div className="input-group">
-                  <span className="input-group-text">
-                    <i className="bi bi-search"></i>
-                  </span>
-                  <input
-                    id="search-input"
-                    className="form-control"
-                    placeholder={
-                      loadingAll
-                        ? 'Carregando produtos...'
-                        : 'Nome, SKU ou categoria'
-                    }
-                    value={q}
-                    onChange={(e) => setQ(e.target.value)}
-                    disabled={loadingAll}
-                  />
-                  {q && (
-                    <button
-                      className="btn btn-light btn-clear-search"
-                      type="button"
-                      onClick={() => setQ('')}
-                    >
-                      <i className="bi bi-x-lg"></i>
-                    </button>
-                  )}
-                </div>
-              </div>
-              <div className="col-12 col-md-4 col-lg-3">
-                <label htmlFor="category-filter" className="form-label fw-bold">
-                  Categoria
-                </label>
-                <select
-                  id="category-filter"
-                  className="form-select"
-                  value={categoriaFilter}
-                  onChange={(e) => setCategoriaFilter(e.target.value)}
-                >
-                  <option value="">Todas as categorias</option>
-                  {categorias.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="col-12 col-md-8 col-lg-4 d-flex align-items-center justify-content-start">
-                <div className="d-flex gap-4">
-                  <div className="form-check form-switch">
+      {/* 2. HEADER MOBILE (Apenas Logo) */}
+      <div className="mobile-header d-lg-none">
+          <img src={meuLogo} alt="Logo" style={{height: '32px'}} />
+      </div>
+
+      {/* 3. MAIN CONTENT */}
+      <main className="main-content">
+        
+        {/* Page Title & Context Header */}
+        <header className="page-header d-none d-lg-flex">
+            <h1 className="page-title">
+                {view === 'estoque' && 'Visão Geral do Estoque'}
+                {view === 'movimentacoes' && 'Histórico de Movimentações'}
+                {view === 'rotas' && 'Cronograma de Entregas'}
+            </h1>
+            
+            {/* User Profile / Logout Placeholder */}
+            <div className="d-flex align-items-center gap-3">
+                 <div className="d-flex flex-column text-end lh-1">
+                    <span className="fw-bold fs-6">Administrador</span>
+                    <span className="text-muted" style={{fontSize: '0.8rem'}}>Logística</span>
+                 </div>
+                 <div className="bg-light rounded-circle d-flex align-items-center justify-content-center text-primary" 
+                      style={{width: '40px', height: '40px', border: '1px solid #e2e8f0'}}>
+                     <i className="bi bi-person-fill fs-5"></i>
+                 </div>
+            </div>
+        </header>
+
+        {/* --- VIEW: ESTOQUE --- */}
+        {view === 'estoque' && (
+          <div className="animate-fade-in">
+            {/* Painel de Filtros Redesenhado */}
+            <div className="card-modern">
+              <div className="row gy-3 align-items-end">
+                <div className="col-12 col-lg-5">
+                  <label className="form-label fw-bold text-muted small text-uppercase">Pesquisar Produto</label>
+                  <div className="input-group">
+                    <span className="input-group-text bg-white border-end-0 text-muted">
+                      <i className="bi bi-search"></i>
+                    </span>
                     <input
-                      className="form-check-input"
-                      type="checkbox"
-                      role="switch"
-                      id="abaixoMin"
-                      checked={mostrarAbaixoMin}
-                      onChange={(e) => setMostrarAbaixoMin(e.target.checked)}
+                      className="form-control border-start-0 ps-0"
+                      placeholder={loadingAll ? 'Carregando...' : 'Buscar por nome, SKU ou categoria...'}
+                      value={q}
+                      onChange={(e) => setQ(e.target.value)}
+                      disabled={loadingAll}
                     />
-                    <label className="form-check-label" htmlFor="abaixoMin">
-                      Abaixo do mínimo
-                    </label>
-                  </div>
-                  <div className="form-check form-switch">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      role="switch"
-                      id="prioritarios"
-                      checked={mostrarPrioritarios}
-                      onChange={(e) => setMostrarPrioritarios(e.target.checked)}
-                    />
-                    <label className="form-check-label" htmlFor="prioritarios">
-                      Prioritários
-                    </label>
+                    {q && (
+                        <button className="btn btn-light border" onClick={() => setQ('')}><i className="bi bi-x"></i></button>
+                    )}
                   </div>
                 </div>
-              </div>
-            </div>
-            <hr />
-            <div className="d-flex justify-content-between align-items-center">
-              <ValorTotalEstoque allProdutos={allProdutos} />
-              <div className="d-flex gap-2">
-                <Relatorios
-                  produtos={allProdutos}
-                  categoriaSelecionada={categoriaFilter}
-                />
-                <BotaoNovoProduto
-                  onCreate={addProduto}
-                  categorias={categorias}
-                  locais={locaisArmazenamento}
-                />
-              </div>
-            </div>
-          </div>
+                
+                <div className="col-12 col-md-4 col-lg-3">
+                  <label className="form-label fw-bold text-muted small text-uppercase">Filtrar Categoria</label>
+                  <select
+                    className="form-select"
+                    value={categoriaFilter}
+                    onChange={(e) => setCategoriaFilter(e.target.value)}
+                  >
+                    <option value="">Todas</option>
+                    {categorias.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
 
-          {loading ? (
-            <div className="text-center p-5">
-              <div className="spinner-border" role="status">
-                <span className="visually-hidden">Loading...</span>
+                <div className="col-12 col-md-8 col-lg-4">
+                  <div className="d-flex gap-3 align-items-center h-100 pb-2">
+                    <div className="form-check form-switch">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="abaixoMin"
+                        checked={mostrarAbaixoMin}
+                        onChange={(e) => setMostrarAbaixoMin(e.target.checked)}
+                      />
+                      <label className="form-check-label small fw-medium" htmlFor="abaixoMin">Abaixo do mín.</label>
+                    </div>
+                    <div className="form-check form-switch">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="prioritarios"
+                        checked={mostrarPrioritarios}
+                        onChange={(e) => setMostrarPrioritarios(e.target.checked)}
+                      />
+                      <label className="form-check-label small fw-medium" htmlFor="prioritarios">Prioritários</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <hr className="my-4 text-muted opacity-25" />
+
+              <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <ValorTotalEstoque allProdutos={allProdutos} />
+                <div className="d-flex gap-2">
+                  <Relatorios produtos={allProdutos} categoriaSelecionada={categoriaFilter} />
+                  <BotaoNovoProduto onCreate={addProduto} categorias={categorias} locais={locaisArmazenamento} />
+                </div>
               </div>
             </div>
-          ) : (
-            <ProdutosTable
-              produtos={paginatedProdutos}
-              onEdit={updateProduto}
-              onDelete={deleteProduto}
-              onAddMov={addMov}
-              onTogglePrioritario={togglePrioritario}
-              categorias={categorias}
-              locais={locaisArmazenamento}
-              sortOrder={sortOrder}
-              onToggleSort={handleToggleSort}
-            />
-          )}
 
-          <div className="mt-4 d-flex justify-content-center">
-            {!loading && !loadingAll && (
-              <Paginacao
-                totalItems={filteredProdutos.length}
-                itemsPerPage={ITEMS_PER_PAGE}
-                currentPage={page}
-                onPageChange={setPage}
+            {loading ? (
+              <div className="text-center p-5">
+                <div className="spinner-border text-primary" role="status"></div>
+                <p className="mt-2 text-muted">Carregando estoque...</p>
+              </div>
+            ) : (
+              <ProdutosTable
+                produtos={paginatedProdutos}
+                onEdit={updateProduto}
+                onDelete={deleteProduto}
+                onAddMov={addMov}
+                onTogglePrioritario={togglePrioritario}
+                categorias={categorias}
+                locais={locaisArmazenamento}
+                sortOrder={sortOrder}
+                onToggleSort={handleToggleSort}
               />
             )}
+
+            <div className="mt-4 d-flex justify-content-center">
+              {!loading && !loadingAll && (
+                <Paginacao
+                  totalItems={filteredProdutos.length}
+                  itemsPerPage={ITEMS_PER_PAGE}
+                  currentPage={page}
+                  onPageChange={setPage}
+                />
+              )}
+            </div>
+
+            <div className="mt-5">
+                <h6 className="text-uppercase text-muted fw-bold mb-3 small tracking-wider">Últimas Movimentações</h6>
+                <div className="card-modern p-0 overflow-hidden">
+                    <div className="p-3">
+                        <MovsList movs={movs.slice(0, 5)} produtos={allProdutos} />
+                    </div>
+                </div>
+            </div>
           </div>
+        )}
 
-          <hr className="my-4" />
-          <h5 className="mb-3">Movimentações Recentes</h5>
-          <MovsList movs={movs.slice(0, 10)} produtos={allProdutos} />
-        </>
-      )}
-
-      {view === 'movimentacoes' && (
-        <div className="card-modern">
+        {/* --- VIEW: MOVIMENTAÇÕES --- */}
+        {view === 'movimentacoes' && (
+          <div className="card-modern animate-fade-in">
             <ConsultaMovimentacoes
-            movs={movs}
-            produtos={allProdutos}
-            onDelete={deleteMov}
-            onEdit={updateMov}
+              movs={movs}
+              produtos={allProdutos}
+              onDelete={deleteMov}
+              onEdit={updateMov}
             />
-        </div>
-      )}
+          </div>
+        )}
 
-      {/* VIEW: ROTAS */}
-      {view === 'rotas' && (
-        <div className="animate-fade-in">
+        {/* --- VIEW: ROTAS --- */}
+        {view === 'rotas' && (
+          <div className="animate-fade-in">
             <div className="row g-4">
-                <div className="col-lg-4">
+              <div className="col-lg-4">
+                {/* Form Wrapper para Card */}
+                <div className="card-modern h-100">
+                    <h5 className="mb-4 fw-bold text-primary">
+                        {editingEntrega ? 'Editar Agendamento' : 'Novo Agendamento'}
+                    </h5>
                     <DeliveryForm 
                         onSave={handleSaveDelivery} 
                         produtosDisponiveis={allProdutos}
@@ -2687,94 +2648,62 @@ export default function App() {
                         historicoEntregas={entregas}
                     />
                 </div>
+              </div>
 
-                <div className="col-lg-8">
-                    <div className="d-flex flex-column gap-3 mb-3">
-                        
-                        <div className="d-flex justify-content-between align-items-center">
-                            <div className="d-flex align-items-center gap-3">
-                                <h4 className="text-primary fw-bold mb-0">Cronograma</h4>
-                                
-                                <div className="input-group input-group-sm" style={{ maxWidth: '200px' }}>
-                                    <span className="input-group-text bg-white border-end-0 text-secondary">
-                                        <Funnel />
-                                    </span>
-                                    <input 
-                                        type="date" 
-                                        className="form-control border-start-0 ps-0"
-                                        value={rotaDateFilter}
-                                        onChange={(e) => setRotaDateFilter(e.target.value)}
-                                        title="Filtrar por data"
-                                    />
-                                    {rotaDateFilter && (
-                                        <button 
-                                            className="btn btn-outline-secondary border-start-0"
-                                            onClick={() => setRotaDateFilter('')}
-                                            title="Limpar filtro"
-                                        >
-                                            <XCircle />
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="bg-white p-2 rounded shadow-sm border d-flex flex-wrap gap-2 justify-content-between align-items-center">
-                            <div className="d-flex align-items-center gap-2">
-                                <small className="text-muted ms-2 me-2">
-                                    {selectedEntregaIds.length} selecionado(s)
-                                </small>
-                                
-                                <div className="btn-group btn-group-sm">
-                                    <Button 
-                                        variant="outline-success" 
-                                        onClick={() => handleBulkStatusChange('Entregue')}
-                                        disabled={selectedEntregaIds.length === 0 || loading}
-                                        title="Marcar selecionados como Entregue"
+              <div className="col-lg-8">
+                <div className="d-flex flex-column gap-3 mb-3">
+                    <div className="d-flex justify-content-between align-items-center">
+                        <div className="d-flex align-items-center gap-3">
+                            {/* Filtro de Data Estilizado */}
+                            <div className="input-group" style={{ maxWidth: '220px' }}>
+                                <span className="input-group-text bg-white border-end-0 text-muted">
+                                    <CalendarWeek />
+                                </span>
+                                <input 
+                                    type="date" 
+                                    className="form-control border-start-0 ps-0"
+                                    value={rotaDateFilter}
+                                    onChange={(e) => setRotaDateFilter(e.target.value)}
+                                />
+                                {rotaDateFilter && (
+                                    <button 
+                                        className="btn btn-outline-secondary border-start-0"
+                                        onClick={() => setRotaDateFilter('')}
+                                        title="Limpar data"
                                     >
-                                        <CheckCircleFill className="me-1" /> Entregue
-                                    </Button>
-                                    <Button 
-                                        variant="outline-warning" 
-                                        onClick={() => handleBulkStatusChange('Pendente')}
-                                        disabled={selectedEntregaIds.length === 0 || loading}
-                                        title="Marcar selecionados como Pendente"
-                                        className="text-dark"
-                                    >
-                                        <ArrowCounterclockwise className="me-1" /> Pendente
-                                    </Button>
-                                </div>
-                            </div>
-
-                            <div className="d-flex gap-2">
-                                <Button 
-                                    variant="outline-secondary" 
-                                    size="sm"
-                                    disabled={selectedEntregaIds.length === 0}
-                                    onClick={handleGenerateDeliveryReport}
-                                    className="d-flex align-items-center gap-2"
-                                >
-                                    <ClipboardData /> PDF
-                                </Button>
-                                <Button 
-                                    variant="outline-primary" 
-                                    size="sm"
-                                    disabled={selectedEntregaIds.length === 0}
-                                    onClick={() => setShowReprogramModal(true)}
-                                    className="d-flex align-items-center gap-2"
-                                >
-                                    <CalendarWeek /> Reprogramar
-                                </Button>
+                                        <XCircle />
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>
 
-                    {rotaDateFilter && filteredDeliveries.length === 0 && (
-                        <div className="alert alert-info py-2 small">
-                            Nenhuma entrega encontrada para a data <strong>{new Date(rotaDateFilter + 'T00:00:00').toLocaleDateString('pt-BR')}</strong>.
+                    {/* Barra de Ferramentas da Tabela */}
+                    <div className="bg-white p-3 rounded-4 border d-flex flex-wrap gap-3 justify-content-between align-items-center shadow-sm">
+                        <div className="d-flex align-items-center gap-2">
+                             <span className="badge bg-light text-dark border me-2">
+                                {selectedEntregaIds.length} selecionados
+                             </span>
+                             <Button variant="outline-success" size="sm" onClick={() => handleBulkStatusChange('Entregue')} disabled={selectedEntregaIds.length === 0}>
+                                <CheckCircleFill className="me-1" /> Entregue
+                             </Button>
+                             <Button variant="outline-warning" size="sm" className="text-dark" onClick={() => handleBulkStatusChange('Pendente')} disabled={selectedEntregaIds.length === 0}>
+                                <ArrowCounterclockwise className="me-1" /> Pendente
+                             </Button>
                         </div>
-                    )}
+                        
+                        <div className="d-flex gap-2">
+                             <Button variant="outline-primary" size="sm" disabled={selectedEntregaIds.length === 0} onClick={() => setShowReprogramModal(true)}>
+                                <CalendarWeek className="me-2"/> Reprogramar
+                             </Button>
+                             <Button variant="secondary" size="sm" disabled={selectedEntregaIds.length === 0} onClick={handleGenerateDeliveryReport}>
+                                <ClipboardData className="me-2"/> PDF
+                             </Button>
+                        </div>
+                    </div>
+                </div>
 
+                <div className="card-modern p-0 overflow-hidden">
                     <DeliveryTable 
                         deliveries={filteredDeliveries}
                         onDelete={(id) => setEntregaToDeleteId(id)}
@@ -2782,8 +2711,8 @@ export default function App() {
                              const ent = normalizeEntrega(item);
                              if(!isDelivered(ent.status)) {
                                  setEditingEntrega(ent);
+                                 scrollTop();
                              } else {
-                                 // SUBSTITUÍDO: alert -> setErrorMessage
                                  setErrorMessage("Itens entregues não podem ser editados.");
                                  setShowErrorModal(true);
                              }
@@ -2794,41 +2723,57 @@ export default function App() {
                         onSelectAll={handleSelectAllEntregas}
                     />
                 </div>
+              </div>
             </div>
-        </div>
-      )}
+          </div>
+        )}
+      </main>
 
+      {/* 4. BOTTOM NAV (MOBILE ONLY) */}
+      <nav className="bottom-nav">
+          <button 
+            className={`bottom-nav-item ${view === 'estoque' ? 'active' : ''}`}
+            onClick={() => { setView('estoque'); scrollTop(); }}
+          >
+            <BoxSeam />
+            <span>Estoque</span>
+          </button>
+          
+          <button 
+            className={`bottom-nav-item ${view === 'movimentacoes' ? 'active' : ''}`}
+            onClick={() => { setView('movimentacoes'); scrollTop(); }}
+          >
+            <ClipboardData />
+            <span>Movs</span>
+          </button>
+          
+          <button 
+            className={`bottom-nav-item ${view === 'rotas' ? 'active' : ''}`}
+            onClick={() => { setView('rotas'); scrollTop(); }}
+          >
+            <Truck />
+            <span>Rotas</span>
+          </button>
+      </nav>
+
+      {/* 5. MODAIS GLOBAIS */}
       {showScroll && (
         <button
           className="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center"
           onClick={scrollTop}
-          style={{
-            position: 'fixed',
-            bottom: '20px',
-            right: '20px',
-            width: '45px',
-            height: '45px',
-            zIndex: 1000,
-            padding: 0,
-          }}
+          style={{ position: 'fixed', bottom: '90px', right: '20px', width: '45px', height: '45px', zIndex: 1000 }}
         >
           <i className="bi bi-arrow-up fs-4"></i>
         </button>
       )}
-      </div>
 
       {showReprogramModal && (
         <ModalComponent title="Reprogramar Entregas" onClose={() => setShowReprogramModal(false)}>
             <div className="p-2">
-                <p>Você selecionou <strong>{selectedEntregaIds.length}</strong> entrega(s) para reprogramar.</p>
+                <p>Reprogramar <strong>{selectedEntregaIds.length}</strong> entrega(s).</p>
                 <Form.Group>
-                    <Form.Label>Nova Data de Entrega</Form.Label>
-                    <Form.Control 
-                        type="date" 
-                        value={newDeliveryDate} 
-                        onChange={(e) => setNewDeliveryDate(e.target.value)} 
-                        className="mb-3"
-                    />
+                    <Form.Label>Nova Data</Form.Label>
+                    <Form.Control type="date" value={newDeliveryDate} onChange={(e) => setNewDeliveryDate(e.target.value)} className="mb-3" />
                 </Form.Group>
                 <div className="text-end">
                     <Button variant="secondary" onClick={() => setShowReprogramModal(false)} className="me-2">Cancelar</Button>
@@ -2838,14 +2783,11 @@ export default function App() {
         </ModalComponent>
       )}
 
-      {/* --- MODAL DE CONFIRMAÇÃO DE STATUS EM MASSA --- */}
       {showBulkConfirmModal && (
         <ModalComponent title="Confirmar Alteração" onClose={() => setShowBulkConfirmModal(false)}>
            <div className="p-3 text-center">
               <ExclamationTriangleFill className="text-warning mb-3" size={40} />
-              <p>
-                 Você tem certeza que deseja marcar <strong>{selectedEntregaIds.length}</strong> item(ns) como <strong>"{bulkTargetStatus}"</strong>?
-              </p>
+              <p>Marcar <strong>{selectedEntregaIds.length}</strong> item(ns) como <strong>"{bulkTargetStatus}"</strong>?</p>
               <div className="d-flex justify-content-center gap-2 mt-4">
                  <Button variant="secondary" onClick={() => setShowBulkConfirmModal(false)}>Cancelar</Button>
                  <Button variant="primary" onClick={confirmBulkStatusChange}>Confirmar</Button>
@@ -2854,90 +2796,47 @@ export default function App() {
         </ModalComponent>
       )}
 
-      {/* --- MODAL DE ERRO --- */}
       {showErrorModal && (
         <ModalComponent title="Atenção" onClose={() => setShowErrorModal(false)}>
            <div className="p-3 text-center">
               <XCircle className="text-danger mb-3" size={40} />
-              <p className="fw-medium">{errorMessage}</p>
-              <div className="mt-4">
-                 <Button variant="secondary" onClick={() => setShowErrorModal(false)}>Fechar</Button>
-              </div>
+              <p>{errorMessage}</p>
+              <div className="mt-4"><Button variant="secondary" onClick={() => setShowErrorModal(false)}>Fechar</Button></div>
            </div>
         </ModalComponent>
       )}
 
-      {/* --- NOVO MODAL: AVISO DE ESTOQUE INSUFICIENTE (Com confirmação) --- */}
       {showStockLimitModal && (
-        <ModalComponent title="Aviso de Estoque Insuficiente" onClose={() => setShowStockLimitModal(false)}>
+        <ModalComponent title="Estoque Insuficiente" onClose={() => setShowStockLimitModal(false)}>
            <div className="p-3 text-center">
               <ExclamationTriangleFill className="text-warning mb-3" size={40} />
-              <p className="fw-medium fs-5">Atenção!</p>
-              <p>
-                  A quantidade solicitada é maior que o estoque disponível no momento.
-              </p>
-              <p className="text-muted small">
-                  Deseja prosseguir com o agendamento mesmo assim?
-              </p>
+              <p>A quantidade solicitada excede o disponível.</p>
+              <p className="text-muted small">Deseja forçar o agendamento?</p>
               <div className="d-flex justify-content-center gap-3 mt-4">
-                 <Button variant="secondary" onClick={() => setShowStockLimitModal(false)}>
-                    Cancelar
-                 </Button>
-                 <Button variant="danger" onClick={handleConfirmStockOverride}>
-                    Confirmar Agendamento
-                 </Button>
+                 <Button variant="secondary" onClick={() => setShowStockLimitModal(false)}>Cancelar</Button>
+                 <Button variant="danger" onClick={handleConfirmStockOverride}>Confirmar</Button>
               </div>
            </div>
         </ModalComponent>
       )}
 
-      {/* --- MODAL DE SUCESSO --- */}
       {showSuccessModal && (
         <ModalComponent title="Sucesso" onClose={() => setShowSuccessModal(false)}>
            <div className="p-3 text-center">
               <CheckCircleFill className="text-success mb-3" size={40} />
-              <p className="fw-medium fs-5">Tudo certo!</p>
-              <p className="text-muted">{successMessage}</p>
-              <div className="mt-4">
-                 <Button variant="success" onClick={() => setShowSuccessModal(false)} className="px-4">
-                    OK
-                 </Button>
-              </div>
+              <p>{successMessage}</p>
+              <div className="mt-4"><Button variant="success" onClick={() => setShowSuccessModal(false)}>OK</Button></div>
            </div>
         </ModalComponent>
       )}
 
       {entregaToDeleteId && (
         <ModalComponent title="Confirmar Exclusão" onClose={() => setEntregaToDeleteId(null)}>
-            {(() => {
-                const ent = entregas.find(e => e.id === entregaToDeleteId);
-                if (!ent) return null;
-                return (
-                    <div>
-                        <p>Você tem certeza que deseja excluir esta entrega do cronograma?</p>
-                        <div className="card mb-3 bg-light border-0">
-                            <div className="card-body py-2">
-                                <ul className="list-unstyled mb-0 small">
-                                    <li className="mb-1"><strong>Local:</strong> {ent.localObra}</li>
-                                    <li className="mb-1"><strong>Produto:</strong> {ent.itemNome}</li>
-                                    <li className="mb-1"><strong>Qtd:</strong> {ent.itemQuantidade} {ent.itemUnidadeMedida}</li>
-                                    <li><strong>Data:</strong> {new Date(ent.dataHoraSolicitacao).toLocaleString('pt-BR')}</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <p className="text-danger small fw-bold mb-0">
-                            <i className="bi bi-exclamation-triangle-fill me-1"></i>
-                            Atenção: O estoque será devolvido automaticamente ao produto.
-                        </p>
-                        <div className="text-end mt-4">
-                            <button className="btn btn-secondary me-2" onClick={() => setEntregaToDeleteId(null)}>Cancelar</button>
-                            <button className="btn btn-danger" onClick={() => confirmDeleteEntrega(entregaToDeleteId)}>
-                                <i className="bi bi-trash me-1"></i>Confirmar Exclusão
-                            </button>
-                        </div>
-                    </div>
-                )
-            })()}
+            <p>Deseja excluir esta entrega? O estoque será devolvido.</p>
+            <div className="text-end mt-4">
+                <button className="btn btn-secondary me-2" onClick={() => setEntregaToDeleteId(null)}>Cancelar</button>
+                <button className="btn btn-danger" onClick={() => confirmDeleteEntrega(entregaToDeleteId!)}>Excluir</button>
+            </div>
         </ModalComponent>
       )}
 
