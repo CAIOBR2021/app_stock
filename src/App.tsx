@@ -2465,10 +2465,6 @@ export default function App() {
             <Truck /> Rotas & Entregas
           </button>
         </nav>
-        
-        <div className="mt-auto text-center p-3 text-muted small">
-             <small>© 2024 AppStock</small>
-        </div>
       </aside>
 
       {/* 2. HEADER MOBILE (Apenas Logo) */}
@@ -2487,17 +2483,6 @@ export default function App() {
                 {view === 'rotas' && 'Cronograma de Entregas'}
             </h1>
             
-            {/* User Profile / Logout Placeholder */}
-            <div className="d-flex align-items-center gap-3">
-                 <div className="d-flex flex-column text-end lh-1">
-                    <span className="fw-bold fs-6">Administrador</span>
-                    <span className="text-muted" style={{fontSize: '0.8rem'}}>Logística</span>
-                 </div>
-                 <div className="bg-light rounded-circle d-flex align-items-center justify-content-center text-primary" 
-                      style={{width: '40px', height: '40px', border: '1px solid #e2e8f0'}}>
-                     <i className="bi bi-person-fill fs-5"></i>
-                 </div>
-            </div>
         </header>
 
         {/* --- VIEW: ESTOQUE --- */}
@@ -2543,7 +2528,7 @@ export default function App() {
                   <div className="d-flex gap-3 align-items-center h-100 pb-2">
                     <div className="form-check form-switch">
                       <input
-                        className="form-check-input"
+                        className="form-check-input switch-gradient switch-gradient-primary"
                         type="checkbox"
                         id="abaixoMin"
                         checked={mostrarAbaixoMin}
@@ -2553,7 +2538,7 @@ export default function App() {
                     </div>
                     <div className="form-check form-switch">
                       <input
-                        className="form-check-input"
+                        className="form-check-input switch-gradient switch-gradient-primary"
                         type="checkbox"
                         id="prioritarios"
                         checked={mostrarPrioritarios}
