@@ -456,3 +456,30 @@ body {
     padding: 1.5rem;
   }
 }
+
+/* ... (código anterior mantém-se igual) */
+
+@media (max-width: 991px) {
+  .sidebar {
+    display: none; /* Esconde sidebar no mobile/tablet */
+  }
+  
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+    padding: 1rem;
+    padding-bottom: calc(var(--bottom-nav-height) + 20px); /* Espaço para o menu inferior */
+  }
+
+  .mobile-header {
+    display: none; /* ALTERADO: Oculta o header (e o logo) no mobile */
+  }
+
+  .bottom-nav {
+    display: flex; /* Mostra nav inferior */
+  }
+
+  .card-modern {
+    padding: 1.5rem;
+  }
+}
