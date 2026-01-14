@@ -2621,7 +2621,7 @@ export default function App() {
             <div className="row g-4">
               <div className="col-lg-4">
                 {/* Form Wrapper para Card */}
-                <div className="card-modern h-150">
+                <div className="card-modern h-180">
                     <h5 className="mb-4 fw-bold text-primary">
                         {editingEntrega ? 'Editar Agendamento' : 'Novo Agendamento'}
                     </h5>
