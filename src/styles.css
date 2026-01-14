@@ -457,8 +457,6 @@ body {
   }
 }
 
-/* ... (código anterior mantém-se igual) */
-
 @media (max-width: 991px) {
   .sidebar {
     display: none; /* Esconde sidebar no mobile/tablet */
