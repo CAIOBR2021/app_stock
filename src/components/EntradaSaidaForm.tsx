@@ -24,11 +24,9 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
   const [nomeObra, setNomeObra] = useState('');
   const [tipo, setTipo] = useState<'entrada' | 'saida'>('entrada');
   
-  // Agora armazenamos quantidade e valorUnitario por produto selecionado
   const [selecionados, setSelecionados] = useState<Record<string, { quantidade: number, valorUnitario: number }>>({});
   const [busca, setBusca] = useState('');
 
-  // Filtra os produtos: se for saída, mostra apenas os que têm estoque > 0
   const produtosDisponiveis = useMemo(() => {
     return produtos.filter(p => {
       const atendeBusca = p.nome.toLowerCase().includes(busca.toLowerCase()) || p.sku.toLowerCase().includes(busca.toLowerCase());
@@ -43,6 +41,7 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
       if (novo[p.id]) {
         delete novo[p.id];
       } else {
+        // Usa 0 caso o valorUnitario venha como null do banco
         novo[p.id] = { quantidade: 1, valorUnitario: p.valorUnitario || 0 };
       }
       return novo;
@@ -64,13 +63,11 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
     const itens = Object.entries(selecionados).map(([produtoId, dados]) => ({
       produtoId,
       quantidade: dados.quantidade,
-      // Envia o valor apenas se for entrada
       valorUnitario: tipo === 'entrada' ? dados.valorUnitario : undefined
     }));
     
     onSubmit({ ordemCompra, nomeObra, tipo, itens });
     
-    // Limpar o formulário após o envio
     setOrdemCompra('');
     setNomeObra('');
     setSelecionados({});
@@ -153,7 +150,8 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
                               <span className="fw-medium">{p.nome}</span>
                               <div className="text-muted small">
                                 SKU: {p.sku} | Estoque: {p.quantidade} {p.unidade} 
-                                {tipo === 'saida' && p.valorUnitario !== undefined && ` | Preço Médio: R$ ${p.valorUnitario.toFixed(2)}`}
+                                {/* Correção aplicada aqui: validando se p.valorUnitario é um número válido (não null) */}
+                                {tipo === 'saida' && typeof p.valorUnitario === 'number' && ` | Preço Médio: R$ ${p.valorUnitario.toFixed(2)}`}
                               </div>
                             </div>
                           }
@@ -162,7 +160,6 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
                         />
                         {isSelected && (
                           <div className="d-flex gap-2 align-items-center flex-wrap justify-content-end">
-                            {/* Campo de Valor aparece apenas na ENTRADA */}
                             {tipo === 'entrada' && (
                               <div style={{ width: '160px' }}>
                                 <InputGroup size="sm">
@@ -171,7 +168,7 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
                                     type="number" 
                                     step="0.01"
                                     min="0"
-                                    value={selecionado.valorUnitario || ''} 
+                                    value={selecionado.valorUnitario === 0 ? '' : selecionado.valorUnitario} 
                                     onChange={(e) => handleChangeValor(p.id, Number(e.target.value))}
                                     placeholder="Valor Unit."
                                   />
