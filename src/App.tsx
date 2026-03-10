@@ -1,9 +1,9 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Form, Button } from 'react-bootstrap';
+import { Form, Button, Badge, ListGroup } from 'react-bootstrap';
 import { 
   ClipboardData, CalendarWeek, XCircle, BoxSeam, Truck, 
   CheckCircleFill, ArrowCounterclockwise, ExclamationTriangleFill,
-  ArrowLeftRight
+  ArrowLeftRight, BellFill
 } from 'react-bootstrap-icons'; 
 
 import meuLogo from './assets/logo.png';
@@ -40,6 +40,9 @@ export default function App() {
   const [successMessage, setSuccessMessage] = useState('');
   const [showStockLimitModal, setShowStockLimitModal] = useState(false);
   const [pendingDeliveryData, setPendingDeliveryData] = useState<any>(null);
+  
+  // Novo estado para controlar o modal de Alertas de Stock Baixo
+  const [showLowStockModal, setShowLowStockModal] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [loadingAll, setLoadingAll] = useState(true);
@@ -194,42 +197,15 @@ export default function App() {
       const motivoFinal = motivoBase.length > 0 ? motivoBase.join(' | ') : `Movimentação em lote (${dados.tipo})`;
 
       for (const item of dados.itens) {
-        const currentProduct = allProdutos.find(p => p.id === item.produtoId);
-
-        if (dados.tipo === 'entrada' && currentProduct) {
-          // Lógica de Média Ponderada
-          const qtdAtual = currentProduct.quantidade || 0;
-          const precoMedioAtual = currentProduct.valorUnitario || 0;
-          const qtdEntrada = item.quantidade;
-          const precoUnitarioNovo = item.valorUnitario || 0;
-
-          const novoPrecoMedio = ((qtdAtual * precoMedioAtual) + (qtdEntrada * precoUnitarioNovo)) / (qtdAtual + qtdEntrada);
-
-          // 1. Registra a movimentação e atualiza a quantidade (enviando custoEntrada)
-          await addMov({
-            produtoId: item.produtoId,
-            tipo: dados.tipo,
-            quantidade: item.quantidade,
-            motivo: motivoFinal
-          }, precoUnitarioNovo);
-
-          // 2. Dispara a atualização direta do produto para salvar a nova Média Ponderada no campo valorUnitario
-          await updateProduto(item.produtoId, { 
-            valorUnitario: Number(novoPrecoMedio.toFixed(2)) 
-          });
-
-        } else {
-          // Em caso de SAÍDA, apenas registra a movimentação sem valor
-          await addMov({
-            produtoId: item.produtoId,
-            tipo: dados.tipo,
-            quantidade: item.quantidade,
-            motivo: motivoFinal
-          });
-        }
+        await addMov({
+          produtoId: item.produtoId,
+          tipo: dados.tipo,
+          quantidade: item.quantidade,
+          motivo: motivoFinal
+        }, item.valorUnitario); 
       }
       
-      setSuccessMessage('Movimentações registradas e preços médios atualizados com sucesso!');
+      setSuccessMessage('Movimentações registradas e preços atualizados com sucesso!');
       setShowSuccessModal(true);
       setView('estoque'); 
       scrollTop();
@@ -635,6 +611,11 @@ export default function App() {
     }
   };
 
+  // Cálculo dos produtos abaixo do mínimo para o Alerta Visual
+  const produtosAbaixoMinimo = useMemo(() => {
+    return allProdutos.filter(p => p.estoqueMinimo != null && p.quantidade <= p.estoqueMinimo);
+  }, [allProdutos]);
+
   const categorias = useMemo(() => Array.from(new Set(allProdutos.map((p) => p.categoria || '').filter(Boolean))), [allProdutos]);
   const locaisArmazenamento = useMemo(() => Array.from(new Set(allProdutos.map((p) => p.localArmazenamento || '').filter(Boolean))), [allProdutos]);
 
@@ -694,16 +675,46 @@ export default function App() {
         </nav>
       </aside>
 
-      <div className="mobile-header d-lg-none"><img src={meuLogo} alt="Logo" style={{height: '32px'}} /></div>
+      <div className="mobile-header d-lg-none d-flex justify-content-between align-items-center px-3">
+        <img src={meuLogo} alt="Logo" style={{height: '32px'}} />
+        {/* Sino de Notificação em Mobile */}
+        <div 
+          className="position-relative cursor-pointer" 
+          onClick={() => setShowLowStockModal(true)}
+          style={{ cursor: 'pointer' }}
+        >
+          <BellFill size={22} className="text-secondary" />
+          {produtosAbaixoMinimo.length > 0 && (
+            <Badge pill bg="danger" className="position-absolute top-0 start-100 translate-middle border border-light rounded-circle">
+              {produtosAbaixoMinimo.length}
+            </Badge>
+          )}
+        </div>
+      </div>
 
       <main className="main-content">
-        <header className="page-header d-none d-lg-flex">
-            <h1 className="page-title">
+        <header className="page-header d-none d-lg-flex justify-content-between align-items-center">
+            <h1 className="page-title m-0">
                 {view === 'estoque' && 'Visão Geral do Estoque'}
                 {view === 'movimentacoes' && 'Histórico de Movimentações'}
                 {view === 'rotas' && 'Cronograma de Entregas'}
                 {view === 'entradas_saidas' && 'Lançamento de Entradas e Saídas'}
             </h1>
+            
+            {/* Sino de Notificação em Desktop */}
+            <div 
+              className="position-relative bg-white p-2 rounded-circle shadow-sm border d-flex align-items-center justify-content-center" 
+              onClick={() => setShowLowStockModal(true)}
+              style={{ cursor: 'pointer', width: '45px', height: '45px' }}
+              title="Alertas de Stock"
+            >
+              <BellFill size={20} className={produtosAbaixoMinimo.length > 0 ? "text-danger" : "text-secondary"} />
+              {produtosAbaixoMinimo.length > 0 && (
+                <Badge pill bg="danger" className="position-absolute top-0 start-100 translate-middle border border-light rounded-circle">
+                  {produtosAbaixoMinimo.length}
+                </Badge>
+              )}
+            </div>
         </header>
 
         {view === 'estoque' && (
@@ -847,6 +858,43 @@ export default function App() {
         <button className="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center" onClick={scrollTop} style={{ position: 'fixed', bottom: '90px', right: '20px', width: '45px', height: '45px', zIndex: 1000 }}>
           <i className="bi bi-arrow-up fs-4"></i>
         </button>
+      )}
+
+      {showLowStockModal && (
+        <ModalComponent title="Alertas de Stock" onClose={() => setShowLowStockModal(false)}>
+           <div className="p-2">
+              <h6 className="text-muted mb-4">Produtos abaixo da quantidade mínima:</h6>
+              {produtosAbaixoMinimo.length === 0 ? (
+                <div className="text-center my-5">
+                    <CheckCircleFill size={40} className="text-success mb-3" />
+                    <p className="text-muted fw-bold">Stock estabilizado!</p>
+                    <p className="small text-muted">Não existem materiais em rutura no momento.</p>
+                </div>
+              ) : (
+                <div className="border rounded-3 overflow-hidden" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+                    <ListGroup variant="flush">
+                        {produtosAbaixoMinimo.map(p => (
+                            <ListGroup.Item key={p.id} className="d-flex justify-content-between align-items-center py-3">
+                                <div>
+                                    <div className="fw-bold text-dark">{p.nome}</div>
+                                    <div className="small text-muted">SKU: {p.sku} | Loc: {p.localArmazenamento || 'N/A'}</div>
+                                </div>
+                                <div className="text-end">
+                                    <Badge bg="danger" className="mb-1 fs-6 px-2 py-1">
+                                        {p.quantidade} {p.unidade}
+                                    </Badge>
+                                    <div className="small text-muted fw-medium">Mín: {p.estoqueMinimo}</div>
+                                </div>
+                            </ListGroup.Item>
+                        ))}
+                    </ListGroup>
+                </div>
+              )}
+              <div className="mt-4 text-end">
+                 <Button variant="secondary" onClick={() => setShowLowStockModal(false)}>Fechar Notificações</Button>
+              </div>
+           </div>
+        </ModalComponent>
       )}
 
       {showReprogramModal && (
