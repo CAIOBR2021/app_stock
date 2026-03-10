@@ -106,15 +106,17 @@ export function MovimentacaoEditForm({ movimentacao, produto, onCancel, onSave, 
         <div className="mb-3"><label className="form-label">Tipo de Movimentação</label><input className="form-control" value={movimentacao.tipo.toUpperCase()} readOnly disabled /></div>
         <div className="row g-3">
           <div className="col-md-6"><label className="form-label">Quantidade *</label><input type="number" className="form-control" value={quantidade} onChange={(e) => setQuantidade(Number(e.target.value))} min="1" required /></div>
+          
+          {/* CAMPO MOTIVO COM ENGRENAGEM PADRONIZADA */}
           <div className="col-md-6">
             <label className="form-label">Motivo (opcional)</label>
-            <div className="d-flex gap-2">
+            <div className="d-flex align-items-center">
               <div className="flex-grow-1">
                 <input type="text" className="form-control" value={motivo} onChange={(e) => setMotivo(e.target.value)} list="edit-motivos-list" autoComplete="off" />
                 <datalist id="edit-motivos-list">{visibleMotivos.map((m, i) => <option key={i} value={m} />)}</datalist>
               </div>
-              <button type="button" className="btn btn-outline-secondary" onClick={() => setShowManageModal(true)} title="Gerenciar Motivos">
-                <i className="bi bi-gear-fill"></i>
+              <button type="button" className="btn-manage-discreet ms-1" onClick={() => setShowManageModal(true)} title="Gerenciar Motivos">
+                <i className="bi bi-gear-fill" style={{ fontSize: '18px' }}></i>
               </button>
             </div>
           </div>

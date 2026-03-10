@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import type { Produto, Movimentacao, TipoMov, UUID } from '../types';
 import { API_URL } from '../constants';
-import { ModalComponent, PasswordEntryModal } from './Shared';
+import { ModalComponent, PasswordEntryModal, GerenciarHistoricoModal } from './Shared';
 
 export function ValorTotalEstoque({ allProdutos }: { allProdutos: Produto[] }) {
   const [valorTotal, setValorTotal] = useState<number | null>(null);
@@ -127,6 +127,41 @@ export function ProdutoForm({ onCancel, onSave, produto, categorias, locais }: {
   const [fornecedor, setFornecedor] = useState(produto?.fornecedor ?? '');
   const [valorUnitario, setValorUnitario] = useState<number | undefined>(produto?.valorUnitario ?? undefined);
 
+  // --- LÓGICA DA ENGRENAGEM DE HISTÓRICO ---
+  const [showManageModal, setShowManageModal] = useState(false);
+  const [manageField, setManageField] = useState<'categorias' | 'locais' | null>(null);
+  const [hiddenOptions, setHiddenOptions] = useState<Record<string, string[]>>(() => {
+    const saved = localStorage.getItem('produtoHiddenOptions');
+    return saved ? JSON.parse(saved) : { categorias: [], locais: [] };
+  });
+
+  useEffect(() => {
+    localStorage.setItem('produtoHiddenOptions', JSON.stringify(hiddenOptions));
+  }, [hiddenOptions]);
+
+  const visibleCategorias = categorias.filter((c) => !hiddenOptions.categorias?.includes(c));
+  const visibleLocais = locais.filter((l) => !hiddenOptions.locais?.includes(l));
+
+  const handleRemoveOption = (item: string) => {
+    if (manageField && window.confirm(`Remover "${item}" das sugestões?`)) {
+      setHiddenOptions((prev) => ({
+        ...prev,
+        [manageField]: [...(prev[manageField] || []), item],
+      }));
+    }
+  };
+
+  const handleClearAllOptions = () => {
+    if (manageField && window.confirm('Tem certeza que deseja limpar todo o histórico de sugestões deste campo?')) {
+      const currentVisible = manageField === 'categorias' ? visibleCategorias : visibleLocais;
+      setHiddenOptions((prev) => ({
+        ...prev,
+        [manageField]: [...(prev[manageField] || []), ...currentVisible],
+      }));
+    }
+  };
+  // ----------------------------------------
+
   let valorTotalDisplay = '---';
   const quantidadeParaCalculo = produto ? produto.quantidade : quantidade;
   const valorUnitarioNumerico = valorUnitario != null && !isNaN(parseFloat(String(valorUnitario))) ? parseFloat(String(valorUnitario)) : null;
@@ -154,62 +189,90 @@ export function ProdutoForm({ onCancel, onSave, produto, categorias, locais }: {
   }
 
   return (
-    <form onSubmit={submit}>
-      <div className="row g-3">
-        {produto && (
-          <div className="col-md-4">
-            <label className="form-label">SKU</label>
-            <input className="form-control" value={produto.sku} readOnly disabled />
+    <>
+      <form onSubmit={submit}>
+        <div className="row g-3">
+          {produto && (
+            <div className="col-md-4">
+              <label className="form-label">SKU</label>
+              <input className="form-control" value={produto.sku} readOnly disabled />
+            </div>
+          )}
+          <div className={produto ? 'col-md-8' : 'col-md-12'}>
+            <label className="form-label">Nome *</label>
+            <input className="form-control" placeholder="Ex: Parafuso Sextavado" value={nome} onChange={(e) => setNome(e.target.value)} required />
           </div>
-        )}
-        <div className={produto ? 'col-md-8' : 'col-md-12'}>
-          <label className="form-label">Nome *</label>
-          <input className="form-control" placeholder="Ex: Parafuso Sextavado" value={nome} onChange={(e) => setNome(e.target.value)} required />
+          <div className="col-12">
+            <label className="form-label">Descrição</label>
+            <textarea className="form-control" placeholder="Detalhes do produto (opcional)" value={descricao} onChange={(e) => setDescricao(e.target.value)} />
+          </div>
+          
+          <div className="col-12 col-md-6">
+            <label className="form-label">Categoria</label>
+            <div className="d-flex align-items-center">
+              <div className="flex-grow-1">
+                <input className="form-control" placeholder="Ex: Ferragens" value={categoria} onChange={(e) => setCategoria(e.target.value)} list="cats" autoComplete="off" />
+                <datalist id="cats">{visibleCategorias.map((c) => <option key={c} value={c} />)}</datalist>
+              </div>
+              <button type="button" className="btn-manage-discreet ms-1" onClick={() => { setManageField('categorias'); setShowManageModal(true); }} title="Gerenciar Categorias">
+                <i className="bi bi-gear-fill" style={{ fontSize: '18px' }}></i>
+              </button>
+            </div>
+          </div>
+          
+          <div className="col-12 col-md-6">
+            <label className="form-label">Local de Armazenamento</label>
+            <div className="d-flex align-items-center">
+              <div className="flex-grow-1">
+                <input className="form-control" placeholder="Ex: Pátio 04" value={localArmazenamento} onChange={(e) => setLocalArmazenamento(e.target.value)} list="locais" autoComplete="off" />
+                <datalist id="locais">{visibleLocais.map((l) => <option key={l} value={l} />)}</datalist>
+              </div>
+              <button type="button" className="btn-manage-discreet ms-1" onClick={() => { setManageField('locais'); setShowManageModal(true); }} title="Gerenciar Locais">
+                <i className="bi bi-gear-fill" style={{ fontSize: '18px' }}></i>
+              </button>
+            </div>
+          </div>
+          
+          <div className="col-12 col-sm-4">
+            <label className="form-label">Unidade de Medida</label>
+            <input className="form-control" placeholder="un, kg, m, L" value={unidade} onChange={(e) => setUnidade(e.target.value)} required />
+          </div>
+          <div className="col-12 col-sm-4">
+            <label className="form-label">Quantidade Inicial</label>
+            <input type="number" min={0} className="form-control" value={quantidade} onChange={(e) => setQuantidade(Number(e.target.value))} disabled={!!produto} />
+          </div>
+          <div className="col-12 col-sm-4">
+            <label className="form-label">Estoque Mínimo</label>
+            <input type="number" min={0} className="form-control" value={estoqueMinimo ?? ''} onChange={(e) => setEstoqueMinimo(e.target.value === '' ? undefined : Number(e.target.value))} />
+          </div>
+          <div className="col-12 col-md-6">
+            <label className="form-label">Valor Unitário (R$)</label>
+            <input type="number" step="0.01" min="0" className="form-control" placeholder="opcional" value={valorUnitario ?? ''} onChange={(e) => setValorUnitario(e.target.value === '' ? undefined : Number(e.target.value))} />
+          </div>
+          <div className="col-12 col-md-6">
+            <label className="form-label">Valor Total em Estoque (R$)</label>
+            <input type="text" className="form-control" readOnly disabled value={valorTotalDisplay} />
+          </div>
+          <div className="col-md-12">
+            <label className="form-label">Fornecedor</label>
+            <input className="form-control" placeholder="Nome do fornecedor (opcional)" value={fornecedor} onChange={(e) => setFornecedor(e.target.value)} />
+          </div>
         </div>
-        <div className="col-12">
-          <label className="form-label">Descrição</label>
-          <textarea className="form-control" placeholder="Detalhes do produto (opcional)" value={descricao} onChange={(e) => setDescricao(e.target.value)} />
+        <div className="text-end mt-4">
+          <button type="button" className="btn btn-secondary me-2" onClick={onCancel}><i className="bi bi-x-circle d-none d-lg-inline-block me-1"></i>Cancelar</button>
+          <button type="submit" className="btn btn-primary"><i className="bi bi-check2-circle d-none d-lg-inline-block me-1"></i>Salvar</button>
         </div>
-        <div className="col-12 col-md-6">
-          <label className="form-label">Categoria</label>
-          <input className="form-control" placeholder="Ex: Ferragens" value={categoria} onChange={(e) => setCategoria(e.target.value)} list="cats" />
-          <datalist id="cats">{categorias.map((c) => <option key={c} value={c} />)}</datalist>
-        </div>
-        <div className="col-12 col-md-6">
-          <label className="form-label">Local de Armazenamento</label>
-          <input className="form-control" placeholder="Ex: Pátio 04" value={localArmazenamento} onChange={(e) => setLocalArmazenamento(e.target.value)} list="locais" />
-          <datalist id="locais">{locais.map((l) => <option key={l} value={l} />)}</datalist>
-        </div>
-        <div className="col-12 col-sm-4">
-          <label className="form-label">Unidade de Medida</label>
-          <input className="form-control" placeholder="un, kg, m, L" value={unidade} onChange={(e) => setUnidade(e.target.value)} required />
-        </div>
-        <div className="col-12 col-sm-4">
-          <label className="form-label">Quantidade Inicial</label>
-          <input type="number" min={0} className="form-control" value={quantidade} onChange={(e) => setQuantidade(Number(e.target.value))} disabled={!!produto} />
-        </div>
-        <div className="col-12 col-sm-4">
-          <label className="form-label">Estoque Mínimo</label>
-          <input type="number" min={0} className="form-control" value={estoqueMinimo ?? ''} onChange={(e) => setEstoqueMinimo(e.target.value === '' ? undefined : Number(e.target.value))} />
-        </div>
-        <div className="col-12 col-md-6">
-          <label className="form-label">Valor Unitário (R$)</label>
-          <input type="number" step="0.01" min="0" className="form-control" placeholder="opcional" value={valorUnitario ?? ''} onChange={(e) => setValorUnitario(e.target.value === '' ? undefined : Number(e.target.value))} />
-        </div>
-        <div className="col-12 col-md-6">
-          <label className="form-label">Valor Total em Estoque (R$)</label>
-          <input type="text" className="form-control" readOnly disabled value={valorTotalDisplay} />
-        </div>
-        <div className="col-md-12">
-          <label className="form-label">Fornecedor</label>
-          <input className="form-control" placeholder="Nome do fornecedor (opcional)" value={fornecedor} onChange={(e) => setFornecedor(e.target.value)} />
-        </div>
-      </div>
-      <div className="text-end mt-4">
-        <button type="button" className="btn btn-secondary me-2" onClick={onCancel}><i className="bi bi-x-circle d-none d-lg-inline-block me-1"></i>Cancelar</button>
-        <button type="submit" className="btn btn-primary"><i className="bi bi-check2-circle d-none d-lg-inline-block me-1"></i>Salvar</button>
-      </div>
-    </form>
+      </form>
+
+      <GerenciarHistoricoModal
+        show={showManageModal}
+        onClose={() => setShowManageModal(false)}
+        title={manageField === 'categorias' ? 'Categorias' : 'Locais de Armazenamento'}
+        items={manageField === 'categorias' ? visibleCategorias : visibleLocais}
+        onRemove={handleRemoveOption}
+        onClearAll={handleClearAllOptions}
+      />
+    </>
   );
 }
 

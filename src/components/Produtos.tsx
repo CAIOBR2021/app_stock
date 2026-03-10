@@ -273,10 +273,10 @@ export function ProdutoForm({
             />
           </div>
 
-          {/* CAMPO CATEGORIA COM ENGRENAGEM */}
+          {/* CAMPO CATEGORIA COM ENGRENAGEM PADRONIZADA */}
           <div className="col-12 col-md-6">
             <label className="form-label">Categoria</label>
-            <div className="d-flex gap-2">
+            <div className="d-flex align-items-center">
               <div className="flex-grow-1">
                 <input
                   className="form-control"
@@ -294,22 +294,22 @@ export function ProdutoForm({
               </div>
               <button
                 type="button"
-                className="btn btn-outline-secondary"
+                className="btn-manage-discreet ms-1"
                 onClick={() => {
                   setManageField('categorias');
                   setShowManageModal(true);
                 }}
                 title="Gerenciar Categorias"
               >
-                <i className="bi bi-gear-fill"></i>
+                <i className="bi bi-gear-fill" style={{ fontSize: '18px' }}></i>
               </button>
             </div>
           </div>
 
-          {/* CAMPO LOCAL DE ARMAZENAMENTO COM ENGRENAGEM */}
+          {/* CAMPO LOCAL DE ARMAZENAMENTO COM ENGRENAGEM PADRONIZADA */}
           <div className="col-12 col-md-6">
             <label className="form-label">Local de Armazenamento</label>
-            <div className="d-flex gap-2">
+            <div className="d-flex align-items-center">
               <div className="flex-grow-1">
                 <input
                   className="form-control"
@@ -327,14 +327,14 @@ export function ProdutoForm({
               </div>
               <button
                 type="button"
-                className="btn btn-outline-secondary"
+                className="btn-manage-discreet ms-1"
                 onClick={() => {
                   setManageField('locais');
                   setShowManageModal(true);
                 }}
                 title="Gerenciar Locais"
               >
-                <i className="bi bi-gear-fill"></i>
+                <i className="bi bi-gear-fill" style={{ fontSize: '18px' }}></i>
               </button>
             </div>
           </div>

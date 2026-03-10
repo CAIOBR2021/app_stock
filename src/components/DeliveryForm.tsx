@@ -13,22 +13,7 @@ interface DeliveryFormProps {
 }
 
 const customFormStyles = `
-  .btn-manage-discreet {
-    background: transparent;
-    border: none;
-    color: #94a3b8;
-    padding: 0 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    border-radius: 8px;
-    height: 58px;
-  }
-  .btn-manage-discreet:hover {
-    color: #0d6efd;
-    background-color: #f1f5f9;
-  }
+  
   .modern-modal .modal-content {
     border-radius: 20px;
     border: none;
