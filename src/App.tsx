@@ -3,7 +3,7 @@ import { Form, Button, Badge, ListGroup } from 'react-bootstrap';
 import { 
   ClipboardData, CalendarWeek, XCircle, BoxSeam, Truck, 
   CheckCircleFill, ArrowCounterclockwise, ExclamationTriangleFill,
-  ArrowLeftRight, BellFill, MoonFill, SunFill
+  ArrowLeftRight, BellFill
 } from 'react-bootstrap-icons'; 
 
 import meuLogo from './assets/logo.png';
@@ -41,6 +41,7 @@ export default function App() {
   const [showStockLimitModal, setShowStockLimitModal] = useState(false);
   const [pendingDeliveryData, setPendingDeliveryData] = useState<any>(null);
   
+  // Novo estado para controlar o modal de Alertas de Stock Baixo
   const [showLowStockModal, setShowLowStockModal] = useState(false);
 
   const [loading, setLoading] = useState(true);
@@ -60,22 +61,6 @@ export default function App() {
   const [selectedEntregaIds, setSelectedEntregaIds] = useState<string[]>([]);
   const [showReprogramModal, setShowReprogramModal] = useState(false);
   const [newDeliveryDate, setNewDeliveryDate] = useState('');
-
-  // Lógica do Dark Mode
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const saved = localStorage.getItem('app_theme');
-    return saved === 'dark';
-  });
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-      localStorage.setItem('app_theme', 'dark');
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-      localStorage.setItem('app_theme', 'light');
-    }
-  }, [isDarkMode]);
 
   const [rotaDateFilter, setRotaDateFilter] = useState(() => {
     const now = new Date();
@@ -110,9 +95,9 @@ export default function App() {
         const movsData = await movsRes.json();
         const entregasData = await entregasRes.json();
 
-        setAllProdutos(allProdsData || []);
-        setMovs(movsData || []);
-        setEntregas((entregasData || []).map(normalizeEntrega));
+        setAllProdutos(allProdsData);
+        setMovs(movsData);
+        setEntregas(entregasData.map(normalizeEntrega));
 
       } catch (err: any) {
         console.error('Falha ao buscar dados:', err);
@@ -141,7 +126,7 @@ export default function App() {
       });
       if (!response.ok) throw new Error('Falha ao criar produto');
       const novoProduto = await response.json();
-      setAllProdutos((prev) => [novoProduto, ...(prev || [])]);
+      setAllProdutos((prev) => [novoProduto, ...prev]);
     } catch (err) { console.error(err); }
   }
 
@@ -154,20 +139,20 @@ export default function App() {
       });
       if (!response.ok) throw new Error('Falha ao atualizar produto');
       const produtoAtualizado = await response.json();
-      setAllProdutos((prev) => (prev || []).map((x) => (x.id === id ? produtoAtualizado : x)));
+      setAllProdutos((prev) => prev.map((x) => (x.id === id ? produtoAtualizado : x)));
     } catch (err) { console.error(err); }
   }
 
   async function deleteProduto(id: UUID) {
     try {
       await fetch(`${API_URL}/produtos/${id}`, { method: 'DELETE' });
-      setAllProdutos((prev) => (prev || []).filter((p) => p.id !== id));
-      setMovs((prev) => (prev || []).filter((m) => m.produtoId !== id));
+      setAllProdutos((prev) => prev.filter((p) => p.id !== id));
+      setMovs((prev) => prev.filter((m) => m.produtoId !== id));
     } catch (err) { console.error(err); }
   }
 
   async function togglePrioritario(id: UUID, currentState: boolean) {
-    setAllProdutos((prev) => (prev || []).map((p) => (p.id === id ? { ...p, prioritario: !currentState } : p)));
+    setAllProdutos((prev) => prev.map((p) => (p.id === id ? { ...p, prioritario: !currentState } : p)));
     try {
       const response = await fetch(`${API_URL}/produtos/${id}`, {
         method: 'PATCH',
@@ -179,7 +164,7 @@ export default function App() {
       console.error(err);
       setErrorMessage('Não foi possível salvar a alteração de prioridade. Verifique sua conexão.');
       setShowErrorModal(true);
-      setAllProdutos((prev) => (prev || []).map((p) => p.id === id ? { ...p, prioritario: currentState } : p));
+      setAllProdutos((prev) => prev.map((p) => p.id === id ? { ...p, prioritario: currentState } : p));
     }
   }
 
@@ -194,8 +179,8 @@ export default function App() {
       if (!response.ok) throw new Error('Falha ao criar movimentação');
       
       const { movimentacao, produto } = await response.json();
-      setMovs((prev) => [movimentacao, ...(prev || [])]);
-      setAllProdutos((prev) => (prev || []).map((p) => (p.id === produto.id ? produto : p)));
+      setMovs((prev) => [movimentacao, ...prev]);
+      setAllProdutos((prev) => prev.map((p) => (p.id === produto.id ? produto : p)));
     } catch (err: any) {
       console.error(err);
       setErrorMessage(err.message);
@@ -242,12 +227,12 @@ export default function App() {
       if (!response.ok) throw new Error('Falha ao atualizar movimentação');
 
       const { movimentacaoAtualizada, produtoAtualizado } = await response.json();
-      setMovs((prev) => (prev || []).map((m) => (m.id === id ? movimentacaoAtualizada : m)));
-      setAllProdutos((prev) => (prev || []).map((p) => p.id === produtoAtualizado.id ? produtoAtualizado : p));
+      setMovs((prev) => prev.map((m) => (m.id === id ? movimentacaoAtualizada : m)));
+      setAllProdutos((prev) => prev.map((p) => p.id === produtoAtualizado.id ? produtoAtualizado : p));
 
       const entregasRes = await fetch(`${API_URL}/entregas`);
       const entregasData = await entregasRes.json();
-      setEntregas((entregasData || []).map(normalizeEntrega));
+      setEntregas(entregasData.map(normalizeEntrega));
     } catch (err) { console.error('Erro ao atualizar movimentação:', err); }
   }
 
@@ -257,12 +242,12 @@ export default function App() {
       if (!response.ok) throw new Error('Falha ao excluir movimentação');
       const { produtoAtualizado } = await response.json();
         
-      setMovs((prev) => (prev || []).filter((m) => m.id !== id));
-      setAllProdutos((prev) => (prev || []).map((p) => p.id === produtoAtualizado.id ? produtoAtualizado : p));
+      setMovs((prev) => prev.filter((m) => m.id !== id));
+      setAllProdutos((prev) => prev.map((p) => p.id === produtoAtualizado.id ? produtoAtualizado : p));
 
       const entregasRes = await fetch(`${API_URL}/entregas`);
       const entregasData = await entregasRes.json();
-      setEntregas((entregasData || []).map(normalizeEntrega));
+      setEntregas(entregasData.map(normalizeEntrega));
     } catch (err) { console.error(err); }
   }
 
@@ -293,9 +278,9 @@ export default function App() {
       const prodsData = await prodsRes.json();
       const movsData = await movsRes.json();
 
-      setEntregas((entregasData || []).map(normalizeEntrega));
-      setAllProdutos(prodsData || []);
-      setMovs(movsData || []);
+      setEntregas(entregasData.map(normalizeEntrega));
+      setAllProdutos(prodsData);
+      setMovs(movsData);
 
       setEditingEntrega(null);
       setSuccessMessage('Entrega atualizada e estoque sincronizado com sucesso!');
@@ -320,15 +305,15 @@ export default function App() {
         
         const entregasRes = await fetch(`${API_URL}/entregas`);
         const entregasData = await entregasRes.json();
-        setEntregas((entregasData || []).map(normalizeEntrega));
+        setEntregas(entregasData.map(normalizeEntrega));
 
         const prodsRes = await fetch(`${API_URL}/produtos?_limit=10000`);
         const prodsData = await prodsRes.json();
-        setAllProdutos(prodsData || []);
+        setAllProdutos(prodsData);
 
         const movsRes = await fetch(`${API_URL}/movimentacoes`);
         const movsData = await movsRes.json();
-        setMovs(movsData || []);
+        setMovs(movsData);
 
     } catch (err: any) {
         setErrorMessage(err.message);
@@ -385,7 +370,7 @@ export default function App() {
           
           const entregasRes = await fetch(`${API_URL}/entregas`);
           const entregasData = await entregasRes.json();
-          setEntregas((entregasData || []).map(normalizeEntrega));
+          setEntregas(entregasData.map(normalizeEntrega));
 
           const prodsRes = await fetch(`${API_URL}/produtos?_limit=10000`);
           setAllProdutos(await prodsRes.json());
@@ -408,12 +393,12 @@ export default function App() {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ status })
           });
-          setEntregas(prev => (prev || []).map(e => e.id === id ? { ...e, status } : e));
+          setEntregas(prev => prev.map(e => e.id === id ? { ...e, status } : e));
       } catch (err) { console.error(err); }
   }
 
   const handleBulkStatusChange = (newStatus: string) => {
-    if ((selectedEntregaIds || []).length === 0) return;
+    if (selectedEntregaIds.length === 0) return;
     setBulkTargetStatus(newStatus);
     setShowBulkConfirmModal(true);
   };
@@ -421,7 +406,7 @@ export default function App() {
   const confirmBulkStatusChange = async () => {
     try {
         setLoading(true);
-        await Promise.all((selectedEntregaIds || []).map(id => 
+        await Promise.all(selectedEntregaIds.map(id => 
             fetch(`${API_URL}/entregas/${id}/status`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
@@ -431,7 +416,7 @@ export default function App() {
 
         const entregasRes = await fetch(`${API_URL}/entregas`);
         const entregasData = await entregasRes.json();
-        setEntregas((entregasData || []).map(normalizeEntrega));
+        setEntregas(entregasData.map(normalizeEntrega));
 
         setSelectedEntregaIds([]);
         setShowBulkConfirmModal(false);
@@ -447,12 +432,12 @@ export default function App() {
     
   const handleSelectEntrega = (id: string) => {
     setSelectedEntregaIds(prev => 
-      (prev || []).includes(id) ? (prev || []).filter(item => item !== id) : [...(prev || []), id]
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
     );
   };
 
   const filteredDeliveries = useMemo(() => {
-    let data = entregas || [];
+    let data = entregas;
     if (rotaDateFilter) {
         data = data.filter(d => {
             const itemDate = new Date(d.dataHoraSolicitacao).toLocaleDateString('en-CA');
@@ -466,7 +451,7 @@ export default function App() {
 
   const handleSelectAllEntregas = (isChecked: boolean) => {
     if (isChecked) {
-        const activeIds = (filteredDeliveries || []).map(e => e.id);
+        const activeIds = filteredDeliveries.map(e => e.id);
         setSelectedEntregaIds(activeIds);
     } else {
         setSelectedEntregaIds([]);
@@ -474,14 +459,14 @@ export default function App() {
   };
 
   const handleGenerateDeliveryReport = () => {
-    if ((selectedEntregaIds || []).length === 0) {
+    if (selectedEntregaIds.length === 0) {
       setErrorMessage('Selecione ao menos uma entrega para gerar o relatório.');
       setShowErrorModal(true);
       return;
     }
 
-    const selectedDeliveries = (entregas || [])
-      .filter(d => (selectedEntregaIds || []).includes(d.id))
+    const selectedDeliveries = entregas
+      .filter(d => selectedEntregaIds.includes(d.id))
       .filter(d => !isDelivered(d.status)) 
       .sort((a, b) => new Date(a.dataHoraSolicitacao).getTime() - new Date(b.dataHoraSolicitacao).getTime());
 
@@ -576,15 +561,15 @@ export default function App() {
   };
 
   const handleReprogramDeliveries = async () => {
-    if ((selectedEntregaIds || []).length === 0) return;
+    if (selectedEntregaIds.length === 0) return;
     if (!newDeliveryDate) {
       setErrorMessage('Escolha uma nova data.');
       setShowErrorModal(true);
       return;
     }
 
-    const validIdsToReprogram = (selectedEntregaIds || []).filter(id => {
-        const delivery = (entregas || []).find(e => e.id === id);
+    const validIdsToReprogram = selectedEntregaIds.filter(id => {
+        const delivery = entregas.find(e => e.id === id);
         return delivery && !isDelivered(delivery.status);
     });
 
@@ -597,7 +582,7 @@ export default function App() {
 
     try {
         await Promise.all(validIdsToReprogram.map(id => {
-            const entrega = (entregas || []).find(e => e.id === id);
+            const entrega = entregas.find(e => e.id === id);
             if (!entrega) return Promise.resolve();
             const timePart = entrega.dataHoraSolicitacao.split('T')[1] || '08:00:00';
             const newDateTime = `${newDeliveryDate}T${timePart}`;
@@ -617,7 +602,7 @@ export default function App() {
         
         const entregasRes = await fetch(`${API_URL}/entregas`);
         const entregasData = await entregasRes.json();
-        setEntregas((entregasData || []).map(normalizeEntrega));
+        setEntregas(entregasData.map(normalizeEntrega));
 
     } catch (e) { 
         console.error(e);
@@ -626,17 +611,17 @@ export default function App() {
     }
   };
 
+  // Cálculo dos produtos abaixo do mínimo para o Alerta Visual
   const produtosAbaixoMinimo = useMemo(() => {
-    if (!allProdutos || !Array.isArray(allProdutos)) return [];
     return allProdutos.filter(p => p.estoqueMinimo != null && p.quantidade <= p.estoqueMinimo);
   }, [allProdutos]);
 
-  const categorias = useMemo(() => Array.from(new Set((allProdutos || []).map((p) => p.categoria || '').filter(Boolean))), [allProdutos]);
-  const locaisArmazenamento = useMemo(() => Array.from(new Set((allProdutos || []).map((p) => p.localArmazenamento || '').filter(Boolean))), [allProdutos]);
+  const categorias = useMemo(() => Array.from(new Set(allProdutos.map((p) => p.categoria || '').filter(Boolean))), [allProdutos]);
+  const locaisArmazenamento = useMemo(() => Array.from(new Set(allProdutos.map((p) => p.localArmazenamento || '').filter(Boolean))), [allProdutos]);
 
   const filteredProdutos = useMemo(() => {
-    if (loadingAll) return produtos || [];
-    let result = (allProdutos || []).filter((p) => {
+    if (loadingAll) return produtos;
+    let result = allProdutos.filter((p) => {
       const query = debouncedQ.trim().toLowerCase();
       const matchesQuery = query === '' || p.nome.toLowerCase().includes(query) || p.sku.toLowerCase().includes(query) || p.categoria?.toLowerCase().includes(query);
       const matchesCategoria = !categoriaFilter || p.categoria === categoriaFilter;
@@ -653,7 +638,7 @@ export default function App() {
 
   const paginatedProdutos = useMemo(() => {
     const startIndex = (page - 1) * ITEMS_PER_PAGE;
-    return (filteredProdutos || []).slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    return filteredProdutos.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredProdutos, page]);
 
   const scrollTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -688,40 +673,22 @@ export default function App() {
           <button className={`nav-item-clean ${view === 'rotas' ? 'active' : ''}`} onClick={() => { setView('rotas'); scrollTop(); }}><Truck /> Rotas & Entregas</button>
           <button className={`nav-item-clean ${view === 'entradas_saidas' ? 'active' : ''}`} onClick={() => { setView('entradas_saidas'); scrollTop(); }}><ArrowLeftRight /> Entrada / Saída</button>
         </nav>
-        
-        {/* Botão de Toggle Dark Mode na Sidebar (Desktop) */}
-        <div className="mt-auto pt-4 border-top" style={{ borderColor: 'var(--border-color)' }}>
-          <button className="nav-item-clean w-100" onClick={() => setIsDarkMode(!isDarkMode)}>
-            {isDarkMode ? <SunFill className="text-warning" /> : <MoonFill />}
-            <span>{isDarkMode ? 'Modo Claro' : 'Modo Escuro'}</span>
-          </button>
-        </div>
       </aside>
 
       <div className="mobile-header d-lg-none d-flex justify-content-between align-items-center px-3">
         <img src={meuLogo} alt="Logo" style={{height: '32px'}} />
-        <div className="d-flex align-items-center gap-3">
-          {/* Toggle Dark Mode Mobile */}
-          <div 
-            className="position-relative cursor-pointer" 
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            style={{ cursor: 'pointer' }}
-          >
-            {isDarkMode ? <SunFill size={22} className="text-warning" /> : <MoonFill size={22} className="text-secondary" />}
-          </div>
-          {/* Sino Mobile */}
-          <div 
-            className="position-relative cursor-pointer" 
-            onClick={() => setShowLowStockModal(true)}
-            style={{ cursor: 'pointer' }}
-          >
-            <BellFill size={22} className="text-secondary" />
-            {produtosAbaixoMinimo?.length > 0 && (
-              <Badge pill bg="danger" className="position-absolute top-0 start-100 translate-middle border border-light rounded-circle">
-                {produtosAbaixoMinimo.length}
-              </Badge>
-            )}
-          </div>
+        {/* Sino de Notificação em Mobile */}
+        <div 
+          className="position-relative cursor-pointer" 
+          onClick={() => setShowLowStockModal(true)}
+          style={{ cursor: 'pointer' }}
+        >
+          <BellFill size={22} className="text-secondary" />
+          {produtosAbaixoMinimo.length > 0 && (
+            <Badge pill bg="danger" className="position-absolute top-0 start-100 translate-middle border border-light rounded-circle">
+              {produtosAbaixoMinimo.length}
+            </Badge>
+          )}
         </div>
       </div>
 
@@ -734,20 +701,19 @@ export default function App() {
                 {view === 'entradas_saidas' && 'Lançamento de Entradas e Saídas'}
             </h1>
             
-            <div className="d-flex align-items-center gap-2">
-              <div 
-                className="position-relative p-2 rounded-circle shadow-sm border d-flex align-items-center justify-content-center" 
-                onClick={() => setShowLowStockModal(true)}
-                style={{ cursor: 'pointer', width: '45px', height: '45px', backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-color)' }}
-                title="Alertas de Stock"
-              >
-                <BellFill size={20} className={produtosAbaixoMinimo?.length > 0 ? "text-danger" : "text-secondary"} />
-                {produtosAbaixoMinimo?.length > 0 && (
-                  <Badge pill bg="danger" className="position-absolute top-0 start-100 translate-middle border border-light rounded-circle">
-                    {produtosAbaixoMinimo.length}
-                  </Badge>
-                )}
-              </div>
+            {/* Sino de Notificação em Desktop */}
+            <div 
+              className="position-relative bg-white p-2 rounded-circle shadow-sm border d-flex align-items-center justify-content-center" 
+              onClick={() => setShowLowStockModal(true)}
+              style={{ cursor: 'pointer', width: '45px', height: '45px' }}
+              title="Alertas de Stock"
+            >
+              <BellFill size={20} className={produtosAbaixoMinimo.length > 0 ? "text-danger" : "text-secondary"} />
+              {produtosAbaixoMinimo.length > 0 && (
+                <Badge pill bg="danger" className="position-absolute top-0 start-100 translate-middle border border-light rounded-circle">
+                  {produtosAbaixoMinimo.length}
+                </Badge>
+              )}
             </div>
         </header>
 
@@ -789,9 +755,9 @@ export default function App() {
               <hr className="my-4 text-muted opacity-25" />
 
               <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                <ValorTotalEstoque allProdutos={allProdutos || []} />
+                <ValorTotalEstoque allProdutos={allProdutos} />
                 <div className="d-flex gap-2">
-                  <Relatorios produtos={allProdutos || []} categoriaSelecionada={categoriaFilter} />
+                  <Relatorios produtos={allProdutos} categoriaSelecionada={categoriaFilter} />
                   <BotaoNovoProduto onCreate={addProduto} categorias={categorias} locais={locaisArmazenamento} />
                 </div>
               </div>
@@ -803,17 +769,17 @@ export default function App() {
                 <p className="mt-2 text-muted">Carregando estoque...</p>
               </div>
             ) : (
-              <ProdutosTable produtos={paginatedProdutos || []} onEdit={updateProduto} onDelete={deleteProduto} onAddMov={addMov} onTogglePrioritario={togglePrioritario} categorias={categorias} locais={locaisArmazenamento} sortOrder={sortOrder} onToggleSort={handleToggleSort} />
+              <ProdutosTable produtos={paginatedProdutos} onEdit={updateProduto} onDelete={deleteProduto} onAddMov={addMov} onTogglePrioritario={togglePrioritario} categorias={categorias} locais={locaisArmazenamento} sortOrder={sortOrder} onToggleSort={handleToggleSort} />
             )}
 
             <div className="mt-4 d-flex justify-content-center">
-              {!loading && !loadingAll && <Paginacao totalItems={(filteredProdutos || []).length} itemsPerPage={ITEMS_PER_PAGE} currentPage={page} onPageChange={setPage} />}
+              {!loading && !loadingAll && <Paginacao totalItems={filteredProdutos.length} itemsPerPage={ITEMS_PER_PAGE} currentPage={page} onPageChange={setPage} />}
             </div>
 
             <div className="mt-5">
                 <h6 className="text-uppercase text-muted fw-bold mb-3 small tracking-wider">Últimas Movimentações</h6>
                 <div className="card-modern p-0 overflow-hidden">
-                    <div className="p-3"><MovsList movs={(movs || []).slice(0, 5)} produtos={allProdutos || []} /></div>
+                    <div className="p-3"><MovsList movs={movs.slice(0, 5)} produtos={allProdutos} /></div>
                 </div>
             </div>
           </div>
@@ -821,7 +787,7 @@ export default function App() {
 
         {view === 'movimentacoes' && (
           <div className="card-modern animate-fade-in">
-            <ConsultaMovimentacoes movs={movs || []} produtos={allProdutos || []} onDelete={deleteMov} onEdit={updateMov} />
+            <ConsultaMovimentacoes movs={movs} produtos={allProdutos} onDelete={deleteMov} onEdit={updateMov} />
           </div>
         )}
 
@@ -831,7 +797,7 @@ export default function App() {
               <div className="col-lg-4">
                 <div className="card-modern h-180">
                     <h5 className="mb-4 fw-bold text-primary">{editingEntrega ? 'Editar Agendamento' : 'Novo Agendamento'}</h5>
-                    <DeliveryForm onSave={handleSaveDelivery} produtosDisponiveis={allProdutos || []} deliveryToEdit={editingEntrega} onCancelEdit={() => setEditingEntrega(null)} historicoEntregas={entregas || []} />
+                    <DeliveryForm onSave={handleSaveDelivery} produtosDisponiveis={allProdutos} deliveryToEdit={editingEntrega} onCancelEdit={() => setEditingEntrega(null)} historicoEntregas={entregas} />
                 </div>
               </div>
 
@@ -851,20 +817,20 @@ export default function App() {
 
                     <div className="bg-white p-3 rounded-4 border d-flex flex-wrap gap-3 justify-content-between align-items-center shadow-sm">
                         <div className="d-flex align-items-center gap-2">
-                             <span className="badge bg-light text-dark border me-2">{(selectedEntregaIds || []).length} selecionados</span>
-                             <Button variant="outline-success" size="sm" onClick={() => handleBulkStatusChange('Entregue')} disabled={(selectedEntregaIds || []).length === 0}><CheckCircleFill className="me-1" /> Entregue</Button>
-                             <Button variant="outline-warning" size="sm" className="text-dark" onClick={() => handleBulkStatusChange('Pendente')} disabled={(selectedEntregaIds || []).length === 0}><ArrowCounterclockwise className="me-1" /> Pendente</Button>
+                             <span className="badge bg-light text-dark border me-2">{selectedEntregaIds.length} selecionados</span>
+                             <Button variant="outline-success" size="sm" onClick={() => handleBulkStatusChange('Entregue')} disabled={selectedEntregaIds.length === 0}><CheckCircleFill className="me-1" /> Entregue</Button>
+                             <Button variant="outline-warning" size="sm" className="text-dark" onClick={() => handleBulkStatusChange('Pendente')} disabled={selectedEntregaIds.length === 0}><ArrowCounterclockwise className="me-1" /> Pendente</Button>
                         </div>
                         
                         <div className="d-flex gap-2">
-                             <Button variant="outline-primary" size="sm" disabled={(selectedEntregaIds || []).length === 0} onClick={() => setShowReprogramModal(true)}><CalendarWeek className="me-2"/> Reprogramar</Button>
-                             <Button variant="secondary" size="sm" disabled={(selectedEntregaIds || []).length === 0} onClick={handleGenerateDeliveryReport}><ClipboardData className="me-2"/> PDF</Button>
+                             <Button variant="outline-primary" size="sm" disabled={selectedEntregaIds.length === 0} onClick={() => setShowReprogramModal(true)}><CalendarWeek className="me-2"/> Reprogramar</Button>
+                             <Button variant="secondary" size="sm" disabled={selectedEntregaIds.length === 0} onClick={handleGenerateDeliveryReport}><ClipboardData className="me-2"/> PDF</Button>
                         </div>
                     </div>
                 </div>
 
                 <div className="card-modern p-0 overflow-hidden">
-                    <DeliveryTable deliveries={filteredDeliveries || []} onDelete={(id) => setEntregaToDeleteId(id)} onEdit={(item: any) => { const ent = normalizeEntrega(item); if(!isDelivered(ent.status)) { setEditingEntrega(ent); scrollTop(); } else { setErrorMessage("Itens entregues não podem ser editados."); setShowErrorModal(true); } }} onStatusChange={updateEntregaStatus} selectedIds={selectedEntregaIds || []} onSelectItem={handleSelectEntrega} onSelectAll={handleSelectAllEntregas} />
+                    <DeliveryTable deliveries={filteredDeliveries} onDelete={(id) => setEntregaToDeleteId(id)} onEdit={(item: any) => { const ent = normalizeEntrega(item); if(!isDelivered(ent.status)) { setEditingEntrega(ent); scrollTop(); } else { setErrorMessage("Itens entregues não podem ser editados."); setShowErrorModal(true); } }} onStatusChange={updateEntregaStatus} selectedIds={selectedEntregaIds} onSelectItem={handleSelectEntrega} onSelectAll={handleSelectAllEntregas} />
                 </div>
               </div>
             </div>
@@ -874,7 +840,7 @@ export default function App() {
         {view === 'entradas_saidas' && (
           <div className="animate-fade-in">
             <EntradaSaidaForm 
-              produtos={allProdutos || []} 
+              produtos={allProdutos} 
               onSubmit={handleEntradaSaidaSubmit} 
             />
           </div>
@@ -894,13 +860,13 @@ export default function App() {
         </button>
       )}
 
-      {showLowStockModal && (
+     {showLowStockModal && (
         <ModalComponent title="Alertas de Stock" onClose={() => setShowLowStockModal(false)}>
            <div className="p-2">
               <h6 className="text-muted mb-4">
-                Produtos abaixo da quantidade mínima ({produtosAbaixoMinimo?.length || 0}):
+                Produtos abaixo da quantidade mínima ({produtosAbaixoMinimo.length}):
               </h6>
-              {(!produtosAbaixoMinimo || produtosAbaixoMinimo.length === 0) ? (
+              {produtosAbaixoMinimo.length === 0 ? (
                 <div className="text-center my-5">
                     <CheckCircleFill size={40} className="text-success mb-3" />
                     <p className="text-muted fw-bold">Stock estabilizado!</p>
@@ -936,7 +902,7 @@ export default function App() {
       {showReprogramModal && (
         <ModalComponent title="Reprogramar Entregas" onClose={() => setShowReprogramModal(false)}>
             <div className="p-2">
-                <p>Reprogramar <strong>{(selectedEntregaIds || []).length}</strong> entrega(s).</p>
+                <p>Reprogramar <strong>{selectedEntregaIds.length}</strong> entrega(s).</p>
                 <Form.Group>
                     <Form.Label>Nova Data</Form.Label>
                     <Form.Control type="date" value={newDeliveryDate} onChange={(e) => setNewDeliveryDate(e.target.value)} className="mb-3" />
@@ -953,7 +919,7 @@ export default function App() {
         <ModalComponent title="Confirmar Alteração" onClose={() => setShowBulkConfirmModal(false)}>
            <div className="p-3 text-center">
               <ExclamationTriangleFill className="text-warning mb-3" size={40} />
-              <p>Marcar <strong>{(selectedEntregaIds || []).length}</strong> item(ns) como <strong>"{bulkTargetStatus}"</strong>?</p>
+              <p>Marcar <strong>{selectedEntregaIds.length}</strong> item(ns) como <strong>"{bulkTargetStatus}"</strong>?</p>
               <div className="d-flex justify-content-center gap-2 mt-4">
                  <Button variant="secondary" onClick={() => setShowBulkConfirmModal(false)}>Cancelar</Button>
                  <Button variant="primary" onClick={confirmBulkStatusChange}>Confirmar</Button>
