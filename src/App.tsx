@@ -194,15 +194,42 @@ export default function App() {
       const motivoFinal = motivoBase.length > 0 ? motivoBase.join(' | ') : `Movimentação em lote (${dados.tipo})`;
 
       for (const item of dados.itens) {
-        await addMov({
-          produtoId: item.produtoId,
-          tipo: dados.tipo,
-          quantidade: item.quantidade,
-          motivo: motivoFinal
-        });
+        const currentProduct = allProdutos.find(p => p.id === item.produtoId);
+
+        if (dados.tipo === 'entrada' && currentProduct) {
+          // Lógica de Média Ponderada
+          const qtdAtual = currentProduct.quantidade || 0;
+          const precoMedioAtual = currentProduct.valorUnitario || 0;
+          const qtdEntrada = item.quantidade;
+          const precoUnitarioNovo = item.valorUnitario || 0;
+
+          const novoPrecoMedio = ((qtdAtual * precoMedioAtual) + (qtdEntrada * precoUnitarioNovo)) / (qtdAtual + qtdEntrada);
+
+          // 1. Registra a movimentação e atualiza a quantidade (enviando custoEntrada)
+          await addMov({
+            produtoId: item.produtoId,
+            tipo: dados.tipo,
+            quantidade: item.quantidade,
+            motivo: motivoFinal
+          }, precoUnitarioNovo);
+
+          // 2. Dispara a atualização direta do produto para salvar a nova Média Ponderada no campo valorUnitario
+          await updateProduto(item.produtoId, { 
+            valorUnitario: Number(novoPrecoMedio.toFixed(2)) 
+          });
+
+        } else {
+          // Em caso de SAÍDA, apenas registra a movimentação sem valor
+          await addMov({
+            produtoId: item.produtoId,
+            tipo: dados.tipo,
+            quantidade: item.quantidade,
+            motivo: motivoFinal
+          });
+        }
       }
       
-      setSuccessMessage('Movimentações registradas com sucesso!');
+      setSuccessMessage('Movimentações registradas e preços médios atualizados com sucesso!');
       setShowSuccessModal(true);
       setView('estoque'); 
       scrollTop();

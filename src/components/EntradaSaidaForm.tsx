@@ -6,6 +6,7 @@ import type { Produto } from '../types';
 interface ProdutoSelecionado {
   produtoId: string;
   quantidade: number;
+  valorUnitario?: number;
 }
 
 interface EntradaSaidaFormProps {
@@ -22,7 +23,9 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
   const [ordemCompra, setOrdemCompra] = useState('');
   const [nomeObra, setNomeObra] = useState('');
   const [tipo, setTipo] = useState<'entrada' | 'saida'>('entrada');
-  const [selecionados, setSelecionados] = useState<Record<string, number>>({});
+  
+  // Agora armazenamos quantidade e valorUnitario por produto selecionado
+  const [selecionados, setSelecionados] = useState<Record<string, { quantidade: number, valorUnitario: number }>>({});
   const [busca, setBusca] = useState('');
 
   // Filtra os produtos: se for saída, mostra apenas os que têm estoque > 0
@@ -34,13 +37,13 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
     });
   }, [produtos, tipo, busca]);
 
-  const handleToggleProduto = (id: string) => {
+  const handleToggleProduto = (p: Produto) => {
     setSelecionados(prev => {
       const novo = { ...prev };
-      if (novo[id]) {
-        delete novo[id];
+      if (novo[p.id]) {
+        delete novo[p.id];
       } else {
-        novo[id] = 1; // Quantidade inicial padrão
+        novo[p.id] = { quantidade: 1, valorUnitario: p.valorUnitario || 0 };
       }
       return novo;
     });
@@ -48,14 +51,21 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
 
   const handleChangeQuantidade = (id: string, qtd: number) => {
     if (qtd <= 0) return;
-    setSelecionados(prev => ({ ...prev, [id]: qtd }));
+    setSelecionados(prev => ({ ...prev, [id]: { ...prev[id], quantidade: qtd } }));
+  };
+
+  const handleChangeValor = (id: string, valor: number) => {
+    if (valor < 0) return;
+    setSelecionados(prev => ({ ...prev, [id]: { ...prev[id], valorUnitario: valor } }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const itens = Object.entries(selecionados).map(([produtoId, quantidade]) => ({
+    const itens = Object.entries(selecionados).map(([produtoId, dados]) => ({
       produtoId,
-      quantidade
+      quantidade: dados.quantidade,
+      // Envia o valor apenas se for entrada
+      valorUnitario: tipo === 'entrada' ? dados.valorUnitario : undefined
     }));
     
     onSubmit({ ordemCompra, nomeObra, tipo, itens });
@@ -125,13 +135,14 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
               />
             </InputGroup>
             
-            <div className="border rounded-3 overflow-auto" style={{ maxHeight: '300px' }}>
+            <div className="border rounded-3 overflow-auto" style={{ maxHeight: '350px' }}>
               <ListGroup variant="flush">
                 {produtosDisponiveis.length === 0 ? (
                   <ListGroup.Item className="text-center text-muted py-4">Nenhum produto disponível para esta operação.</ListGroup.Item>
                 ) : (
                   produtosDisponiveis.map(p => {
-                    const isSelected = !!selecionados[p.id];
+                    const selecionado = selecionados[p.id];
+                    const isSelected = !!selecionado;
                     return (
                       <ListGroup.Item key={p.id} className={`d-flex align-items-center justify-content-between ${isSelected ? 'bg-light' : ''}`}>
                         <Form.Check 
@@ -141,25 +152,45 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
                             <div>
                               <span className="fw-medium">{p.nome}</span>
                               <div className="text-muted small">
-                                SKU: {p.sku} | Estoque Atual: {p.quantidade} {p.unidade}
+                                SKU: {p.sku} | Estoque: {p.quantidade} {p.unidade} 
+                                {tipo === 'saida' && p.valorUnitario !== undefined && ` | Preço Médio: R$ ${p.valorUnitario.toFixed(2)}`}
                               </div>
                             </div>
                           }
                           checked={isSelected}
-                          onChange={() => handleToggleProduto(p.id)}
+                          onChange={() => handleToggleProduto(p)}
                         />
                         {isSelected && (
-                          <div style={{ width: '120px' }}>
-                            <InputGroup size="sm">
-                              <Form.Control 
-                                type="number" 
-                                min="1" 
-                                max={tipo === 'saida' ? p.quantidade : undefined}
-                                value={selecionados[p.id]} 
-                                onChange={(e) => handleChangeQuantidade(p.id, Number(e.target.value))}
-                              />
-                              <InputGroup.Text>{p.unidade}</InputGroup.Text>
-                            </InputGroup>
+                          <div className="d-flex gap-2 align-items-center flex-wrap justify-content-end">
+                            {/* Campo de Valor aparece apenas na ENTRADA */}
+                            {tipo === 'entrada' && (
+                              <div style={{ width: '160px' }}>
+                                <InputGroup size="sm">
+                                  <InputGroup.Text>R$</InputGroup.Text>
+                                  <Form.Control 
+                                    type="number" 
+                                    step="0.01"
+                                    min="0"
+                                    value={selecionado.valorUnitario || ''} 
+                                    onChange={(e) => handleChangeValor(p.id, Number(e.target.value))}
+                                    placeholder="Valor Unit."
+                                  />
+                                </InputGroup>
+                              </div>
+                            )}
+                            
+                            <div style={{ width: '130px' }}>
+                              <InputGroup size="sm">
+                                <Form.Control 
+                                  type="number" 
+                                  min="1" 
+                                  max={tipo === 'saida' ? p.quantidade : undefined}
+                                  value={selecionado.quantidade} 
+                                  onChange={(e) => handleChangeQuantidade(p.id, Number(e.target.value))}
+                                />
+                                <InputGroup.Text>{p.unidade}</InputGroup.Text>
+                              </InputGroup>
+                            </div>
                           </div>
                         )}
                       </ListGroup.Item>
