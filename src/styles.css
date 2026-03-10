@@ -482,3 +482,63 @@ body {
   }
 }
 
+/* Botão de engrenagem discreto */
+.btn-icon-subtle {
+  background: transparent;
+  border: none;
+  color: #94a3b8; /* Cinza suave */
+  padding: 4px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.btn-icon-subtle:hover {
+  color: var(--brand-primary);
+  background: #f1f5f9;
+}
+
+/* Melhor acabamento para o Modal */
+.modal-content {
+  border-radius: 20px !important; /* Bordas mais orgânicas */
+  overflow: hidden;
+}
+
+.modal-header {
+  border-bottom: 1px solid #f1f5f9;
+  padding: 1.25rem 1.5rem;
+  background-color: #ffffff;
+}
+
+.modal-title {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text-main);
+  letter-spacing: -0.3px;
+}
+
+/* Lista interna do modal (Substituindo a tabela bruta) */
+.history-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  margin-bottom: 0.5rem;
+  background: #f8fafc;
+  border: 1px solid #edf2f7;
+  transition: background 0.2s;
+}
+
+.history-list-item:hover {
+  background: #f1f5f9;
+}
+
+.history-list-item .item-text {
+  font-weight: 500;
+  color: #334155;
+  font-size: 0.9rem;
+}

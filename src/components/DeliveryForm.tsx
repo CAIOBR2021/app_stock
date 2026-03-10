@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Form, Row, Col, Button, FloatingLabel, Modal } from 'react-bootstrap';
-import { CalendarEventFill, Save, XCircle, GearFill, Trash } from 'react-bootstrap-icons';
+import { CalendarEventFill, Save, XCircle, GearFill, Trash3Fill } from 'react-bootstrap-icons';
 import Select from 'react-select';
 import type { StylesConfig } from 'react-select';
 
@@ -11,6 +11,53 @@ interface DeliveryFormProps {
   produtosDisponiveis: any[];
   historicoEntregas?: any[];
 }
+
+/**
+ * Estilos inline para o botão discreto e melhorias no modal
+ * Você também pode mover estes estilos para seu arquivo CSS global.
+ */
+const customFormStyles = `
+  .btn-manage-discreet {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    border-radius: 8px;
+    height: 58px;
+  }
+  .btn-manage-discreet:hover {
+    color: #0d6efd;
+    background-color: #f1f5f9;
+  }
+  .modern-modal .modal-content {
+    border-radius: 20px;
+    border: none;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  }
+  .history-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #f8fafc;
+    border: 1px solid #edf2f7;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    transition: background 0.2s;
+  }
+  .history-item-row:hover {
+    background: #f1f5f9;
+  }
+  .history-item-text {
+    font-weight: 500;
+    color: #334155;
+    font-size: 0.95rem;
+  }
+`;
 
 export function DeliveryForm({
   onSave,
@@ -41,7 +88,7 @@ export function DeliveryForm({
   const [hora, setHora] = useState('08:00');
   const [selectedOption, setSelectedOption] = useState<any>(null);
 
-  // --- GERENCIAMENTO DE HISTÓRICO (ENGRENAGEM) ---
+  // --- GERENCIAMENTO DE HISTÓRICO ---
   const [showManageModal, setShowManageModal] = useState(false);
   const [manageField, setManageField] = useState<'origens' | 'destinos' | 'responsaveis' | null>(null);
   const [hiddenOptions, setHiddenOptions] = useState<Record<string, string[]>>(() => {
@@ -54,16 +101,14 @@ export function DeliveryForm({
   }, [hiddenOptions]);
 
   const handleRemoveOption = (field: 'origens' | 'destinos' | 'responsaveis', value: string) => {
-    if (window.confirm(`Remover "${value}" das sugestões?`)) {
-      setHiddenOptions((prev) => ({
-        ...prev,
-        [field]: [...(prev[field] || []), value],
-      }));
-    }
+    setHiddenOptions((prev) => ({
+      ...prev,
+      [field]: [...(prev[field] || []), value],
+    }));
   };
 
   const handleClearAllOptions = (field: 'origens' | 'destinos' | 'responsaveis') => {
-    if (window.confirm('Tem certeza que deseja limpar todo o histórico de sugestões deste campo?')) {
+    if (window.confirm('Deseja limpar todo o histórico visível deste campo?')) {
       const currentVisible = sugestoes[field];
       setHiddenOptions((prev) => ({
         ...prev,
@@ -82,9 +127,9 @@ export function DeliveryForm({
     return v;
   };
 
-  // --- PREPARAÇÃO DE DATALISTS (FILTRADO) ---
+  // --- PREPARAÇÃO DE DATALISTS ---
   const sugestoes = useMemo(() => {
-    const origens = new Set<string>(['Almoxarifado Central', 'Pátio 04', 'Galpão Externo']); // Padrões
+    const origens = new Set<string>(['Almoxarifado Central', 'Pátio 04', 'Galpão Externo']);
     const destinos = new Set<string>();
     const responsaveis = new Set<string>();
     const telefones = new Set<string>();
@@ -93,7 +138,6 @@ export function DeliveryForm({
     historicoEntregas?.forEach((entrega) => {
       if (entrega.localArmazenagem) origens.add(entrega.localArmazenagem);
       if (entrega.localObra) destinos.add(entrega.localObra);
-      
       if (entrega.responsavelNome) {
         responsaveis.add(entrega.responsavelNome);
         if (entrega.responsavelTelefone) {
@@ -147,15 +191,8 @@ export function DeliveryForm({
   useEffect(() => {
     if (deliveryToEdit) {
       const dataObj = new Date(deliveryToEdit.dataHoraSolicitacao);
-      const yyyy = dataObj.getFullYear();
-      const mm = String(dataObj.getMonth() + 1).padStart(2, '0');
-      const dd = String(dataObj.getDate()).padStart(2, '0');
-      const hh = String(dataObj.getHours()).padStart(2, '0');
-      const min = String(dataObj.getMinutes()).padStart(2, '0');
-
-      setData(`${yyyy}-${mm}-${dd}`);
-      setHora(`${hh}:${min}`);
-
+      setData(`${dataObj.getFullYear()}-${String(dataObj.getMonth() + 1).padStart(2, '0')}-${String(dataObj.getDate()).padStart(2, '0')}`);
+      setHora(`${String(dataObj.getHours()).padStart(2, '0')}:${String(dataObj.getMinutes()).padStart(2, '0')}`);
       setFormData({
         localArmazenagem: deliveryToEdit.localArmazenagem || '',
         localObra: deliveryToEdit.localObra || '',
@@ -165,7 +202,6 @@ export function DeliveryForm({
         responsavelNome: deliveryToEdit.responsavelNome || '',
         responsavelTelefone: formatPhone(deliveryToEdit.responsavelTelefone || ''),
       });
-
       const foundOption = options.find((opt) => opt.value === deliveryToEdit.produtoId);
       setSelectedOption(foundOption || null);
     }
@@ -173,40 +209,24 @@ export function DeliveryForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!formData.produtoId || !selectedOption) {
       alert('Por favor, selecione um produto da lista.');
       return;
     }
-
     const dataLocal = new Date(`${data}T${hora}:00`);
-    const dataHoraIso = dataLocal.toISOString();
-
     onSave({
       ...formData,
       produtoId: selectedOption.value,
       itemNome: selectedOption.nomeProduto,
-      dataHoraSolicitacao: dataHoraIso,
+      dataHoraSolicitacao: dataLocal.toISOString(),
     });
-
     if (!deliveryToEdit) {
-      setFormData({
-        localArmazenagem: '',
-        localObra: '',
-        produtoId: '',
-        itemNome: '',
-        itemQuantidade: 1,
-        responsavelNome: '',
-        responsavelTelefone: '',
-      });
+      setFormData({ localArmazenagem: '', localObra: '', produtoId: '', itemNome: '', itemQuantidade: 1, responsavelNome: '', responsavelTelefone: '' });
       setSelectedOption(null);
     }
   };
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
-    field: string,
-  ) => {
+  const handleInputChange = (e: React.ChangeEvent<any>, field: string) => {
     let valor = e.target.value;
     if (field === 'responsavelTelefone') valor = formatPhone(valor);
     setFormData({ ...formData, [field]: valor });
@@ -214,79 +234,55 @@ export function DeliveryForm({
 
   const handleResponsavelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const nomeDigitado = e.target.value;
-    let telefoneSugerido = formData.responsavelTelefone;
     const telefoneEncontrado = sugestoes.mapaTelefonePorNome[nomeDigitado.toLowerCase()];
-    if (telefoneEncontrado) telefoneSugerido = telefoneEncontrado;
-
     setFormData({
       ...formData,
       responsavelNome: nomeDigitado,
-      responsavelTelefone: telefoneSugerido,
+      responsavelTelefone: telefoneEncontrado || formData.responsavelTelefone,
     });
   };
 
-  const handleSelectChange = (option: any) => {
-    setSelectedOption(option);
-    if (option) {
-      setFormData({
-        ...formData,
-        produtoId: option.value,
-        itemNome: option.nomeProduto,
-      });
-    } else {
-      setFormData({ ...formData, produtoId: '', itemNome: '' });
-    }
+  const openManage = (field: 'origens' | 'destinos' | 'responsaveis') => {
+    setManageField(field);
+    setShowManageModal(true);
   };
 
   return (
     <>
-      <Form
-        onSubmit={handleSubmit}
-        className="p-4 border rounded bg-white shadow-sm h-100 d-flex flex-column"
-      >
-        <h5 className="mb-3 border-bottom pb-2 text-primary d-flex align-items-center">
+      <style>{customFormStyles}</style>
+      
+      <Form onSubmit={handleSubmit} className="p-4 border rounded bg-white shadow-sm h-100 d-flex flex-column">
+        <h5 className="mb-4 border-bottom pb-2 text-primary d-flex align-items-center fw-bold">
           <CalendarEventFill className="me-2" />
           {deliveryToEdit ? 'Editar Entrega' : 'Agendar Nova Entrega'}
         </h5>
 
-        <Row className="g-2 mb-3">
+        <Row className="g-3 mb-3">
           <Col md={6}>
             <FloatingLabel label="Data">
-              <Form.Control
-                type="date"
-                value={data}
-                onChange={(e) => setData(e.target.value)}
-                required
-              />
+              <Form.Control type="date" value={data} onChange={(e) => setData(e.target.value)} required />
             </FloatingLabel>
           </Col>
           <Col md={6}>
             <FloatingLabel label="Hora">
-              <Form.Control
-                type="time"
-                value={hora}
-                onChange={(e) => setHora(e.target.value)}
-                required
-              />
+              <Form.Control type="time" value={hora} onChange={(e) => setHora(e.target.value)} required />
             </FloatingLabel>
           </Col>
         </Row>
 
-        <Row className="g-2 mb-3">
+        <Row className="g-3 mb-3">
           <Col md={8}>
-            <div style={{ position: 'relative' }}>
-              <Form.Label className="d-none">Produto</Form.Label>
-              <Select
-                value={selectedOption}
-                onChange={handleSelectChange}
-                options={options}
-                placeholder="Selecione o Produto..."
-                isClearable
-                required
-                noOptionsMessage={() => 'Nenhum produto encontrado'}
-                styles={customStyles}
-              />
-            </div>
+            <Select
+              value={selectedOption}
+              onChange={(opt) => {
+                setSelectedOption(opt);
+                setFormData({ ...formData, produtoId: opt?.value || '', itemNome: opt?.nomeProduto || '' });
+              }}
+              options={options}
+              placeholder="Selecione o Produto..."
+              isClearable
+              styles={customStyles}
+            />
           </Col>
           <Col md={4}>
             <FloatingLabel label="Quantidade">
@@ -295,107 +291,75 @@ export function DeliveryForm({
                 min="0.01"
                 step="0.01"
                 value={formData.itemQuantidade}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    itemQuantidade: Number(e.target.value),
-                  })
-                }
+                onChange={(e) => setFormData({ ...formData, itemQuantidade: Number(e.target.value) })}
                 required
               />
             </FloatingLabel>
           </Col>
         </Row>
 
-        <Row className="g-2 mb-3">
+        <Row className="g-3 mb-3">
           <Col md={6}>
-            <div className="d-flex gap-2">
-              <div className="flex-grow-1">
-                <FloatingLabel label="Origem (Armazém)">
-                  <Form.Control
-                    value={formData.localArmazenagem}
-                    onChange={(e) => handleInputChange(e, 'localArmazenagem')}
-                    required
-                    list="origens-list"
-                    placeholder="Selecione..."
-                    autoComplete="off"
-                  />
-                  <datalist id="origens-list">
-                    {sugestoes.origens.map((o, i) => (
-                      <option key={i} value={o} />
-                    ))}
-                  </datalist>
-                </FloatingLabel>
-              </div>
-              <Button 
-                variant="outline-secondary" 
-                onClick={() => { setManageField('origens'); setShowManageModal(true); }}
-                style={{ width: '58px' }}
-                title="Gerenciar histórico de origens"
-              >
-                <GearFill />
-              </Button>
+            <div className="d-flex align-items-center">
+              <FloatingLabel label="Origem (Armazém)" className="flex-grow-1">
+                <Form.Control
+                  value={formData.localArmazenagem}
+                  onChange={(e) => handleInputChange(e, 'localArmazenagem')}
+                  required
+                  list="origens-list"
+                  placeholder="Selecione..."
+                  autoComplete="off"
+                />
+                <datalist id="origens-list">
+                  {sugestoes.origens.map((o, i) => <option key={i} value={o} />)}
+                </datalist>
+              </FloatingLabel>
+              <button type="button" className="btn-manage-discreet" onClick={() => openManage('origens')} title="Gerenciar histórico">
+                <GearFill size={18} />
+              </button>
             </div>
           </Col>
           
           <Col md={6}>
-            <div className="d-flex gap-2">
-              <div className="flex-grow-1">
-                <FloatingLabel label="Destino (Obra/Local)">
-                  <Form.Control
-                    value={formData.localObra}
-                    onChange={(e) => handleInputChange(e, 'localObra')}
-                    required
-                    list="destinos-list"
-                    placeholder="Ex: Bloco A"
-                    autoComplete="off"
-                  />
-                  <datalist id="destinos-list">
-                    {sugestoes.destinos.map((d, i) => (
-                      <option key={i} value={d} />
-                    ))}
-                  </datalist>
-                </FloatingLabel>
-              </div>
-              <Button 
-                variant="outline-secondary" 
-                onClick={() => { setManageField('destinos'); setShowManageModal(true); }}
-                style={{ width: '58px' }}
-                title="Gerenciar histórico de destinos"
-              >
-                <GearFill />
-              </Button>
+            <div className="d-flex align-items-center">
+              <FloatingLabel label="Destino (Obra/Local)" className="flex-grow-1">
+                <Form.Control
+                  value={formData.localObra}
+                  onChange={(e) => handleInputChange(e, 'localObra')}
+                  required
+                  list="destinos-list"
+                  placeholder="Ex: Bloco A"
+                  autoComplete="off"
+                />
+                <datalist id="destinos-list">
+                  {sugestoes.destinos.map((d, i) => <option key={i} value={d} />)}
+                </datalist>
+              </FloatingLabel>
+              <button type="button" className="btn-manage-discreet" onClick={() => openManage('destinos')} title="Gerenciar histórico">
+                <GearFill size={18} />
+              </button>
             </div>
           </Col>
         </Row>
 
-        <Row className="g-2 mb-3">
+        <Row className="g-3 mb-3">
           <Col md={6}>
-            <div className="d-flex gap-2">
-              <div className="flex-grow-1">
-                <FloatingLabel label="Responsável">
-                  <Form.Control
-                    value={formData.responsavelNome}
-                    onChange={handleResponsavelChange}
-                    list="responsaveis-list"
-                    placeholder="Nome"
-                    autoComplete="off"
-                  />
-                  <datalist id="responsaveis-list">
-                    {sugestoes.responsaveis.map((r, i) => (
-                      <option key={i} value={r} />
-                    ))}
-                  </datalist>
-                </FloatingLabel>
-              </div>
-              <Button 
-                variant="outline-secondary" 
-                onClick={() => { setManageField('responsaveis'); setShowManageModal(true); }}
-                style={{ width: '58px' }}
-                title="Gerenciar histórico de responsáveis"
-              >
-                <GearFill />
-              </Button>
+            <div className="d-flex align-items-center">
+              <FloatingLabel label="Responsável" className="flex-grow-1">
+                <Form.Control
+                  value={formData.responsavelNome}
+                  onChange={handleResponsavelChange}
+                  list="responsaveis-list"
+                  placeholder="Nome"
+                  autoComplete="off"
+                />
+                <datalist id="responsaveis-list">
+                  {sugestoes.responsaveis.map((r, i) => <option key={i} value={r} />)}
+                </datalist>
+              </FloatingLabel>
+              <button type="button" className="btn-manage-discreet" onClick={() => openManage('responsaveis')} title="Gerenciar histórico">
+                <GearFill size={18} />
+              </button>
             </div>
           </Col>
           <Col md={6}>
@@ -409,68 +373,72 @@ export function DeliveryForm({
                 maxLength={15}
               />
               <datalist id="telefones-list">
-                {sugestoes.telefones.map((t, i) => (
-                  <option key={i} value={t} />
-                ))}
+                {sugestoes.telefones.map((t, i) => <option key={i} value={t} />)}
               </datalist>
             </FloatingLabel>
           </Col>
         </Row>
 
-        <div className="d-flex justify-content-end gap-2 mt-auto pt-3">
+        <div className="d-flex justify-content-end gap-2 mt-auto pt-4">
           {onCancelEdit && (
-            <Button variant="outline-secondary" onClick={onCancelEdit}>
-              <XCircle className="me-1" /> Cancelar
+            <Button variant="outline-secondary" onClick={onCancelEdit} className="px-4">
+              <XCircle className="me-2" /> Cancelar
             </Button>
           )}
-          <Button type="submit" variant="primary">
-            <Save className="me-1" /> {deliveryToEdit ? 'Salvar' : 'Agendar'}
+          <Button type="submit" variant="primary" className="px-4 fw-bold">
+            <Save className="me-2" /> {deliveryToEdit ? 'Salvar Alterações' : 'Confirmar Agendamento'}
           </Button>
         </div>
       </Form>
 
-      {/* MODAL DE GERENCIAMENTO DE HISTÓRICO - FORMATO TABELA */}
-      <Modal show={showManageModal} onHide={() => setShowManageModal(false)} centered>
-        <Modal.Header closeButton className="border-bottom-0 pb-0">
-          <Modal.Title className="fs-5">Gerenciamento de Histórico</Modal.Title>
+      {/* MODAL DE GERENCIAMENTO REFINADO */}
+      <Modal 
+        show={showManageModal} 
+        onHide={() => setShowManageModal(false)} 
+        centered 
+        className="modern-modal"
+      >
+        <Modal.Header closeButton className="border-0 px-4 pt-4">
+          <Modal.Title className="fw-bold">Gerenciar Histórico</Modal.Title>
         </Modal.Header>
-        <Modal.Body className="pt-2">
-          <div className="table-responsive" style={{ maxHeight: '50vh', overflowY: 'auto' }}>
-            <table className="table table-hover align-middle mb-0 border">
-              <thead className="table-light sticky-top">
-                <tr>
-                  <th className="border-bottom text-secondary" style={{ fontSize: '0.85rem' }}>VALOR SALVO</th>
-                  <th className="border-bottom text-end text-secondary" style={{ fontSize: '0.85rem' }}>AÇÃO</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(manageField ? sugestoes[manageField] : []).map((item, idx) => (
-                  <tr key={idx}>
-                    <td className="fw-medium">{item}</td>
-                    <td className="text-end">
-                      <Button variant="danger" size="sm" onClick={() => handleRemoveOption(manageField!, item)} title="Remover">
-                        <Trash />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-                {(manageField ? sugestoes[manageField] : []).length === 0 && (
-                  <tr>
-                    <td colSpan={2} className="text-center text-muted py-4">
-                      Nenhuma opção visível salva no histórico.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+        <Modal.Body className="px-4 pb-2">
+          <p className="text-muted small mb-3">
+            Remova itens que você não deseja mais que apareçam como sugestão neste campo.
+          </p>
+          <div style={{ maxHeight: '45vh', overflowY: 'auto' }} className="pe-1">
+            {manageField && sugestoes[manageField].length > 0 ? (
+              sugestoes[manageField].map((item, idx) => (
+                <div key={idx} className="history-item-row">
+                  <span className="history-item-text">{item}</span>
+                  <Button 
+                    variant="link" 
+                    className="text-danger p-0"
+                    onClick={() => handleRemoveOption(manageField!, item)}
+                  >
+                    <Trash3Fill size={18} />
+                  </Button>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-5">
+                <div className="text-muted opacity-50 mb-2">
+                   <GearFill size={40} />
+                </div>
+                <p className="text-muted small">Nenhum item encontrado no histórico.</p>
+              </div>
+            )}
           </div>
         </Modal.Body>
-        <Modal.Footer className="justify-content-between border-top-0 pt-0 mt-3">
-          <Button variant="danger" onClick={() => handleClearAllOptions(manageField!)}>
-            Limpar Histórico
+        <Modal.Footer className="border-0 px-4 pb-4 justify-content-between">
+          <Button 
+            variant="link" 
+            className="text-danger text-decoration-none fw-bold p-0" 
+            onClick={() => handleClearAllOptions(manageField!)}
+          >
+            Limpar tudo
           </Button>
-          <Button variant="secondary" onClick={() => setShowManageModal(false)}>
-            Fechar
+          <Button variant="primary" onClick={() => setShowManageModal(false)} className="px-4 rounded-pill fw-bold">
+            Concluído
           </Button>
         </Modal.Footer>
       </Modal>
