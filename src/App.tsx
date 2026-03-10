@@ -1,14 +1,8 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Form, Button } from 'react-bootstrap';
 import { 
-  ClipboardData, 
-  CalendarWeek, 
-  XCircle, 
-  BoxSeam, 
-  Truck, 
-  CheckCircleFill, 
-  ArrowCounterclockwise, 
-  ExclamationTriangleFill 
+  ClipboardData, CalendarWeek, XCircle, BoxSeam, Truck, 
+  CheckCircleFill, ArrowCounterclockwise, ExclamationTriangleFill 
 } from 'react-bootstrap-icons'; 
 
 import meuLogo from './assets/logo.png';
@@ -16,1690 +10,17 @@ import { DeliveryForm } from './components/DeliveryForm';
 import { DeliveryTable } from './components/DeliveryTable';
 import './styles.css';
 
-// Adiciona jspdf ao objeto window para o TypeScript
-declare global {
-  interface Window {
-    jspdf: any;
-  }
-}
+// Importações dos novos módulos
+import type { Produto, Movimentacao, Entrega } from './types';
+import { API_URL, ITEMS_PER_PAGE } from './constants';
+import { isDelivered, normalizeEntrega, formatPhoneNumber } from './utils';
+import { useDebounce } from './hooks';
+import { ModalComponent, Paginacao } from './components/Shared';
+import { ValorTotalEstoque, Relatorios, BotaoNovoProduto, ProdutosTable } from './components/Estoque';
+import { ConsultaMovimentacoes, MovsList } from './components/Movimentacoes';
+
+type UUID = string;
 
-// --- DEFINIÇÕES DE TIPO ---
-export type UUID = string;
-
-export interface Produto {
-  id: UUID;
-  sku: string;
-  nome: string;
-  descricao?: string;
-  categoria?: string;
-  unidade: string;
-  quantidade: number;
-  estoqueMinimo?: number;
-  localArmazenamento?: string;
-  fornecedor?: string;
-  criadoEm: string;
-  atualizadoEm?: string;
-  prioritario?: boolean;
-  valorUnitario?: number;
-}
-
-export type TipoMov = 'entrada' | 'saida' | 'ajuste';
-
-export interface Movimentacao {
-  id: UUID;
-  produtoId: UUID;
-  tipo: TipoMov;
-  quantidade: number;
-  motivo?: string;
-  criadoEm: string;
-}
-
-export interface Entrega {
-    id: UUID;
-    dataHoraSolicitacao: string;
-    localArmazenagem: string; 
-    localArmazenamento?: string; 
-    localObra: string;
-    produtoId: UUID;
-    itemNome?: string;
-    sku?: string;
-    itemQuantidade: number;
-    itemUnidadeMedida?: string;
-    responsavelNome?: string;
-    responsavelTelefone?: string;
-    status: string;
-}
-
-// --- CONSTANTES E HOOKS ---
-const API_URL = "https://app-stock-back.onrender.com/api";
-
-const ITEMS_PER_PAGE = 30;
-
-// Função auxiliar para verificar se está entregue (Normalização de string)
-const isDelivered = (status: string | undefined) => {
-    return status?.trim().toLowerCase() === 'entregue';
-};
-
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-  return debouncedValue;
-}
-
-// --- FUNÇÃO AUXILIAR PARA NORMALIZAR DADOS DA API ---
-const normalizeEntrega = (e: any): Entrega => {
-  return {
-    ...e,
-    // Garante produtoId CamelCase
-    produtoId: e.produtoId || e.produtoid || '',
-    // Garante campo de armazenamento
-    localArmazenagem: e.localArmazenagem || e.localArmazenamento || '',
-    // Garante data string
-    dataHoraSolicitacao: e.dataHoraSolicitacao || new Date().toISOString()
-  };
-};
-
-// --- COMPONENTES REUTILIZÁVEIS ---
-
-function ModalComponent({
-  children,
-  title,
-  onClose,
-}: {
-  children: React.ReactNode;
-  title: string;
-  onClose: () => void;
-}) {
-  useEffect(() => {
-    const handleEsc = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, [onClose]);
-  return (
-    <div
-      className="modal"
-      style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 9999 }} // Z-INDEX AUMENTADO
-      onClick={onClose}
-    >
-      <div
-        className="modal-dialog modal-dialog-centered"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="modal-content shadow-lg border-0">
-          <div className="modal-header">
-            <h5 className="modal-title">{title}</h5>
-            <button
-              type="button"
-              className="btn-close"
-              onClick={onClose}
-            ></button>
-          </div>
-          <div className="modal-body">{children}</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PasswordEntryModal({
-  onClose,
-  onSubmit,
-  loading,
-  error,
-  title,
-  message,
-  submitText = 'Confirmar',
-}: {
-  onClose: () => void;
-  onSubmit: (password: string) => void;
-  loading: boolean;
-  error: string;
-  title: string;
-  message: string;
-  submitText?: string;
-}) {
-  const [password, setPassword] = useState('');
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      onSubmit(password);
-    }
-  };
-
-  return (
-    <ModalComponent title={title} onClose={onClose}>
-      <div>
-        <p>{message}</p>
-        <div className="mb-3">
-          <input
-            type="password"
-            className="form-control"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onKeyPress={handleKeyPress}
-            autoFocus
-          />
-        </div>
-        {error && <div className="alert alert-danger">{error}</div>}
-        <div className="text-end">
-          <button
-            type="button"
-            className="btn btn-secondary me-2"
-            onClick={onClose}
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            className="btn btn-primary"
-            disabled={loading}
-            onClick={() => onSubmit(password)}
-          >
-            {loading ? 'Verificando...' : submitText}
-          </button>
-        </div>
-      </div>
-    </ModalComponent>
-  );
-}
-
-// --- COMPONENTES DA PÁGINA DE ESTOQUE ---
-
-function ValorTotalEstoque({ allProdutos }: { allProdutos: Produto[] }) {
-  const [valorTotal, setValorTotal] = useState<number | null>(null);
-  const [isVisible, setIsVisible] = useState(false);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (isVisible && allProdutos.length > 0) {
-      const total = allProdutos.reduce((acc, p) => {
-        if (p.valorUnitario && p.quantidade) {
-          return acc + p.valorUnitario * p.quantidade;
-        }
-        return acc;
-      }, 0);
-      setValorTotal(total);
-    }
-  }, [allProdutos, isVisible]);
-
-  const handlePasswordSubmit = async (password: string) => {
-    setLoading(true);
-    setError('');
-
-    try {
-      const response = await fetch(`${API_URL}/produtos/valor-total`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Senha incorreta.');
-        }
-        throw new Error('Falha ao buscar o valor total.');
-      }
-
-      const data = await response.json();
-      setValorTotal(data.valorTotal);
-      setIsVisible(true);
-      setShowPasswordModal(false);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const toggleVisibility = () => {
-    if (isVisible) {
-      setIsVisible(false);
-      setValorTotal(null);
-    } else {
-      setError('');
-      setShowPasswordModal(true);
-    }
-  };
-
-  return (
-    <div className="d-flex align-items-center gap-2">
-      {isVisible && valorTotal !== null && (
-        <span className="badge bg-light text-dark p-2 total-value-badge border">
-          Valor Total:{' '}
-          <strong>
-            {valorTotal.toLocaleString('pt-BR', {
-              style: 'currency',
-              currency: 'BRL',
-            })}
-          </strong>
-        </span>
-      )}
-      <button
-        className="btn btn-outline-secondary btn-sm"
-        onClick={toggleVisibility}
-        title={isVisible ? 'Ocultar valor total' : 'Mostrar valor total'}
-      >
-        <i className={`bi ${isVisible ? 'bi-eye-slash' : 'bi-eye'}`}></i>
-      </button>
-
-      {showPasswordModal && (
-        <PasswordEntryModal
-          title="Acesso Restrito"
-          message="Digite a senha de administrador para visualizar o valor total do estoque."
-          submitText="Revelar"
-          onClose={() => setShowPasswordModal(false)}
-          onSubmit={handlePasswordSubmit}
-          loading={loading}
-          error={error}
-        />
-      )}
-    </div>
-  );
-}
-
-function BotaoNovoProduto({
-  onCreate,
-  categorias,
-  locais,
-}: {
-  onCreate: (
-    p: Omit<Produto, 'id' | 'criadoEm' | 'atualizadoEm' | 'sku'>,
-  ) => void;
-  categorias: string[];
-  locais: string[];
-}) {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <button className="btn btn-primary d-flex align-items-center gap-2" onClick={() => setOpen(true)}>
-        <i className="bi bi-plus-lg"></i>
-        Novo Produto
-      </button>
-      {open && (
-        <ModalComponent title="Novo Produto" onClose={() => setOpen(false)}>
-          <ProdutoForm
-            onCancel={() => setOpen(false)}
-            onSave={(p) => {
-              onCreate(p);
-              setOpen(false);
-            }}
-            categorias={categorias}
-            locais={locais}
-          />
-        </ModalComponent>
-      )}
-    </>
-  );
-}
-
-function ProdutoForm({
-  onCancel,
-  onSave,
-  produto,
-  categorias,
-  locais,
-}: {
-  onCancel: () => void;
-  onSave: (p: any) => void;
-  produto?: Produto;
-  categorias: string[];
-  locais: string[];
-}) {
-  const [nome, setNome] = useState(produto?.nome ?? '');
-  const [descricao, setDescricao] = useState(produto?.descricao ?? '');
-  const [categoria, setCategoria] = useState(produto?.categoria ?? '');
-  const [unidade, setUnidade] = useState(produto?.unidade ?? 'un');
-  const [quantidade, setQuantidade] = useState<number>(
-    produto?.quantidade ?? 0,
-  );
-  const [estoqueMinimo, setEstoqueMinimo] = useState<number | undefined>(
-    produto?.estoqueMinimo ?? undefined,
-  );
-  const [localArmazenamento, setLocalArmazenamento] = useState(
-    produto?.localArmazenamento ?? '',
-  );
-  const [fornecedor, setFornecedor] = useState(produto?.fornecedor ?? '');
-  const [valorUnitario, setValorUnitario] = useState<number | undefined>(
-    produto?.valorUnitario ?? undefined,
-  );
-
-  let valorTotalDisplay = '---';
-  const quantidadeParaCalculo = produto ? produto.quantidade : quantidade;
-
-  const valorUnitarioNumerico =
-    valorUnitario != null && !isNaN(parseFloat(String(valorUnitario)))
-      ? parseFloat(String(valorUnitario))
-      : null;
-
-  if (
-    typeof quantidadeParaCalculo === 'number' &&
-    typeof valorUnitarioNumerico === 'number'
-  ) {
-    const total = quantidadeParaCalculo * valorUnitarioNumerico;
-    valorTotalDisplay = total.toLocaleString('pt-BR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-  }
-
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!nome.trim()) return;
-    const baseData = {
-      nome: nome.trim(),
-      descricao: descricao.trim(),
-      categoria: categoria.trim() || undefined,
-      unidade,
-      estoqueMinimo,
-      localArmazenamento: localArmazenamento.trim() || undefined,
-      fornecedor: fornecedor.trim() || undefined,
-      valorUnitario: valorUnitario,
-    };
-    const finalData = !produto ? { ...baseData, quantidade } : baseData;
-    onSave(finalData);
-  }
-
-  return (
-    <form onSubmit={submit}>
-      <div className="row g-3">
-        {produto && (
-          <div className="col-md-4">
-            <label className="form-label">SKU</label>
-            <input
-              className="form-control"
-              value={produto.sku}
-              readOnly
-              disabled
-            />
-          </div>
-        )}
-        <div className={produto ? 'col-md-8' : 'col-md-12'}>
-          <label className="form-label">Nome *</label>
-          <input
-            className="form-control"
-            placeholder="Ex: Parafuso Sextavado"
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
-            required
-          />
-        </div>
-        <div className="col-12">
-          <label className="form-label">Descrição</label>
-          <textarea
-            className="form-control"
-            placeholder="Detalhes do produto (opcional)"
-            value={descricao}
-            onChange={(e) => setDescricao(e.target.value)}
-          />
-        </div>
-        <div className="col-12 col-md-6">
-          <label className="form-label">Categoria</label>
-          <input
-            className="form-control"
-            placeholder="Ex: Ferragens"
-            value={categoria}
-            onChange={(e) => setCategoria(e.target.value)}
-            list="cats"
-          />
-          <datalist id="cats">
-            {categorias.map((c) => (
-              <option key={c} value={c} />
-            ))}
-          </datalist>
-        </div>
-        <div className="col-12 col-md-6">
-          <label className="form-label">Local de Armazenamento</label>
-          <input
-            className="form-control"
-            placeholder="Ex: Pátio 04"
-            value={localArmazenamento}
-            onChange={(e) => setLocalArmazenamento(e.target.value)}
-            list="locais"
-          />
-          <datalist id="locais">
-            {locais.map((l) => (
-              <option key={l} value={l} />
-            ))}
-          </datalist>
-        </div>
-        <div className="col-12 col-sm-4">
-          <label className="form-label">Unidade de Medida</label>
-          <input
-            className="form-control"
-            placeholder="un, kg, m, L"
-            value={unidade}
-            onChange={(e) => setUnidade(e.target.value)}
-            required
-          />
-        </div>
-        <div className="col-12 col-sm-4">
-          <label className="form-label">Quantidade Inicial</label>
-          <input
-            type="number"
-            min={0}
-            className="form-control"
-            value={quantidade}
-            onChange={(e) => setQuantidade(Number(e.target.value))}
-            disabled={!!produto}
-          />
-        </div>
-        <div className="col-12 col-sm-4">
-          <label className="form-label">Estoque Mínimo</label>
-          <input
-            type="number"
-            min={0}
-            className="form-control"
-            value={estoqueMinimo ?? ''}
-            onChange={(e) =>
-              setEstoqueMinimo(
-                e.target.value === '' ? undefined : Number(e.target.value),
-              )
-            }
-          />
-        </div>
-        <div className="col-12 col-md-6">
-          <label className="form-label">Valor Unitário (R$)</label>
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            className="form-control"
-            placeholder="opcional"
-            value={valorUnitario ?? ''}
-            onChange={(e) =>
-              setValorUnitario(
-                e.target.value === '' ? undefined : Number(e.target.value),
-              )
-            }
-          />
-        </div>
-
-        <div className="col-12 col-md-6">
-          <label className="form-label">Valor Total em Estoque (R$)</label>
-          <input
-            type="text"
-            className="form-control"
-            readOnly
-            disabled
-            value={valorTotalDisplay}
-          />
-        </div>
-
-        <div className="col-md-12">
-          <label className="form-label">Fornecedor</label>
-          <input
-            className="form-control"
-            placeholder="Nome do fornecedor (opcional)"
-            value={fornecedor}
-            onChange={(e) => setFornecedor(e.target.value)}
-          />
-        </div>
-      </div>
-
-      <div className="text-end mt-4">
-        <button
-          type="button"
-          className="btn btn-secondary me-2"
-          onClick={onCancel}
-        >
-          <i className="bi bi-x-circle d-none d-lg-inline-block me-1"></i>
-          Cancelar
-        </button>
-        <button type="submit" className="btn btn-primary">
-          <i className="bi bi-check2-circle d-none d-lg-inline-block me-1"></i>
-          Salvar
-        </button>
-      </div>
-    </form>
-  );
-}
-
-function ProdutoCard({
-  produto,
-  onMovimentar,
-  onEditar,
-  onExcluir,
-  onTogglePrioritario,
-}: {
-  produto: Produto;
-  onMovimentar: () => void;
-  onEditar: () => void;
-  onExcluir: () => void;
-  onTogglePrioritario: () => void;
-}) {
-  const isBelowMin =
-    produto.estoqueMinimo != null &&
-    produto.quantidade <= produto.estoqueMinimo;
-
-  return (
-    <div
-      className={`card h-100 product-card ${
-        isBelowMin ? 'border-warning' : ''
-      }`}
-    >
-      <div className="card-body d-flex flex-column p-3 position-relative">
-        <div className="card-indicators">
-          {isBelowMin && (
-            <i
-              className="bi bi-exclamation-triangle-fill text-warning"
-              title="Estoque abaixo do mínimo!"
-            ></i>
-          )}
-          {produto.prioritario && (
-            /* ATUALIZADO: Usando as classes novas da Flag */
-            <i
-              className="bi bi-flag-fill priority-flag is-priority"
-              title="Item prioritário!"
-            ></i>
-          )}
-          {/* Ícone de etiqueta/tag para indicar valor unitário preenchido (se > 0) */}
-          {produto.valorUnitario != null && produto.valorUnitario > 0 && (
-            <i
-              className="bi bi-tag-fill text-success"
-              title="Valor unitário registrado"
-            ></i>
-          )}
-        </div>
-
-        <h6 className="card-title card-title-clamp mb-2 fw-bold">
-          {produto.nome}
-        </h6>
-
-        <div className="card-info-grid my-2">
-          <div>
-            <strong>Estoque</strong>
-            <span>
-              {produto.quantidade} {produto.unidade}
-            </span>
-          </div>
-          <div>
-            <strong>Local</strong>
-            <span>{produto.localArmazenamento || '-'}</span>
-          </div>
-          <div>
-            <strong>Categoria</strong>
-            <span>{produto.categoria || '-'}</span>
-          </div>
-          <div>
-            <strong>SKU</strong>
-            <span className="sku">{produto.sku}</span>
-          </div>
-        </div>
-
-        <div className="mt-auto dropdown">
-          <button
-            className="btn btn-sm btn-secondary dropdown-toggle w-100"
-            type="button"
-            data-bs-toggle="dropdown"
-            aria-expanded="false"
-          >
-            <i className="bi bi-gear-fill me-1"></i> Ações
-          </button>
-          <ul className="dropdown-menu">
-            <li>
-              <button className="dropdown-item" onClick={onMovimentar}>
-                <i className="bi bi-arrows-move me-2"></i>Movimentar
-              </button>
-            </li>
-            <li>
-              <button className="dropdown-item" onClick={onEditar}>
-                <i className="bi bi-pencil-square me-2"></i>Editar
-              </button>
-            </li>
-            <li>
-              <button className="dropdown-item" onClick={onTogglePrioritario}>
-                <i className="bi bi-flag me-2"></i>
-                {produto.prioritario
-                  ? 'Desmarcar Prioridade'
-                  : 'Marcar Prioridade'}
-              </button>
-            </li>
-            <li>
-              <hr className="dropdown-divider" />
-            </li>
-            <li>
-              <button className="dropdown-item text-danger" onClick={onExcluir}>
-                <i className="bi bi-trash me-2"></i>Excluir
-              </button>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ProdutosTable({
-  produtos,
-  onEdit,
-  onDelete,
-  onAddMov,
-  onTogglePrioritario,
-  categorias,
-  locais,
-  sortOrder,
-  onToggleSort
-}: {
-  produtos: Produto[];
-  onEdit: (id: UUID, patch: Partial<Produto>) => void;
-  onDelete: (id: UUID) => void;
-  // ATUALIZADO: Agora aceita o segundo parâmetro opcional custo
-  onAddMov: (m: Omit<Movimentacao, 'id' | 'criadoEm'>, custo?: number) => void;
-  onTogglePrioritario: (id: UUID, currentState: boolean) => void;
-  categorias: string[];
-  locais: string[];
-  sortOrder?: 'asc' | 'desc' | null;
-  onToggleSort?: () => void;
-}) {
-  const [editingId, setEditingId] = useState<UUID | null>(null);
-  const [movProdId, setMovProdId] = useState<UUID | null>(null);
-  const [deleteId, setDeleteId] = useState<UUID | null>(null);
-
-  const produtoParaEditar = useMemo(
-    () => produtos.find((p) => p.id === editingId),
-    [editingId, produtos],
-  );
-  const produtoParaMov = useMemo(
-    () => produtos.find((p) => p.id === movProdId),
-    [movProdId, produtos],
-  );
-  const produtoParaDeletar = useMemo(
-    () => produtos.find((p) => p.id === deleteId),
-    [deleteId, produtos],
-  );
-
-  return (
-    <>
-      <div className="d-none d-lg-block products-table">
-        <div className="table-responsive">
-          <table className="table table-hover align-middle mb-0">
-            <thead>
-              <tr>
-                <th style={{ width: '4%' }}></th> {/* Prioridade */}
-                <th style={{ width: '12%' }}>SKU</th>
-                <th 
-                  style={{ width: '36%', cursor: 'pointer', userSelect: 'none' }} 
-                  onClick={onToggleSort}
-                  title="Clique para ordenar por nome"
-                >
-                  Nome
-                  {sortOrder === 'asc' && <i className="bi bi-sort-alpha-down ms-2"></i>}
-                  {sortOrder === 'desc' && <i className="bi bi-sort-alpha-down-alt ms-2"></i>}
-                  {!sortOrder && <i className="bi bi-filter ms-2 text-muted" style={{fontSize: '0.8em', opacity: 0.5}}></i>}
-                </th>
-                <th style={{ width: '12%' }}>Categoria</th>
-                <th style={{ width: '8%' }}>Qtd.</th>
-                <th style={{ width: '8%' }}>Est. Mín.</th>
-                <th style={{ width: '12%' }}>Local</th>
-                <th style={{ width: '12%' }} className="text-end">
-                  Ações
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {produtos.map((p) => (
-                <tr
-                  key={p.id}
-                  className={
-                    p.estoqueMinimo != null && p.quantidade <= p.estoqueMinimo
-                      ? 'table-warning'
-                      : ''
-                  }
-                >
-                  <td className="text-center">
-                    <button
-                      className="btn-icon"
-                      onClick={() => onTogglePrioritario(p.id, !!p.prioritario)}
-                      title={
-                        p.prioritario
-                          ? 'Desmarcar como prioritário'
-                          : 'Marcar como prioritário'
-                      }
-                    >
-                      <i
-                        className={`bi bi-flag-fill fs-5 priority-flag ${
-                          p.prioritario ? 'is-priority' : ''
-                        }`}
-                      ></i>
-                    </button>
-                  </td>
-                  <td>
-                    <span className="sku">{p.sku}</span>
-                  </td>
-                  <td>
-                    <span className="product-name">{p.nome}</span>
-                    {p.estoqueMinimo != null &&
-                      p.quantidade <= p.estoqueMinimo && (
-                        <i
-                          className="bi bi-exclamation-triangle-fill text-warning ms-2"
-                          title="Estoque abaixo do mínimo!"
-                        ></i>
-                      )}
-                    {/* Ícone de etiqueta/tag para indicar valor unitário preenchido (se > 0) */}
-                    {p.valorUnitario != null && p.valorUnitario > 0 && (
-                      <i
-                        className="bi bi-tag-fill text-success ms-2"
-                        title="Valor unitário registrado"
-                      ></i>
-                    )}
-                  </td>
-                  <td>{p.categoria ?? '-'}</td>
-                  <td>
-                    {p.quantidade}{' '}
-                    <small className="text-muted">{p.unidade}</small>
-                  </td>
-                  <td>{p.estoqueMinimo ?? '-'}</td>
-                  <td>{p.localArmazenamento ?? '-'}</td>
-                  <td className="text-end">
-                    <div className="btn-group btn-group-sm action-buttons-group" role="group">
-                      <button
-                        type="button"
-                        className="btn btn-movimentar"
-                        onClick={() => setMovProdId(p.id)}
-                        title="Movimentar"
-                      >
-                        <i className="bi bi-arrows-move"></i>
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-editar"
-                        onClick={() => setEditingId(p.id)}
-                        title="Editar"
-                      >
-                        <i className="bi bi-pencil-square"></i>
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-excluir"
-                        onClick={() => setDeleteId(p.id)}
-                        title="Excluir"
-                      >
-                        <i className="bi bi-trash"></i>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {produtos.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="text-center py-5">
-                    <h5>Nenhum produto encontrado</h5>
-                    <p className="text-muted">
-                      Tente ajustar seus filtros ou busca.
-                    </p>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="d-lg-none">
-        <div className="row g-3">
-          {produtos.map((p) => (
-            <div key={p.id} className="col-12 col-md-6">
-              <ProdutoCard
-                produto={p}
-                onMovimentar={() => setMovProdId(p.id)}
-                onEditar={() => setEditingId(p.id)}
-                onExcluir={() => setDeleteId(p.id)}
-                onTogglePrioritario={() =>
-                  onTogglePrioritario(p.id, !!p.prioritario)
-                }
-              />
-            </div>
-          ))}
-          {produtos.length === 0 && (
-            <div className="col-12 text-center text-muted py-5">
-              <h5>Nenhum produto encontrado</h5>
-              <p className="text-muted">Tente ajustar seus filtros ou busca.</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {produtoParaEditar && (
-        <ModalComponent
-          title={`Editar: ${produtoParaEditar.nome}`}
-          onClose={() => setEditingId(null)}
-        >
-          <ProdutoForm
-            produto={produtoParaEditar}
-            onCancel={() => setEditingId(null)}
-            onSave={(vals) => {
-              onEdit(editingId!, vals);
-              setEditingId(null);
-            }}
-            categorias={categorias}
-            locais={locais}
-          />
-        </ModalComponent>
-      )}
-      {produtoParaMov && (
-        <ModalComponent
-          title={`Movimentar: ${produtoParaMov.nome}`}
-          onClose={() => setMovProdId(null)}
-        >
-          <MovimentacaoForm
-            produto={produtoParaMov}
-            onCancel={() => setMovProdId(null)}
-            // ATUALIZADO: Passa 'custo' para onAddMov
-            onSave={(m, custo) => {
-              onAddMov(m, custo);
-              setMovProdId(null);
-            }}
-          />
-        </ModalComponent>
-      )}
-      {produtoParaDeletar && (
-        <ModalComponent title="Confirmar Exclusão" onClose={() => setDeleteId(null)}>
-          <p>
-            Você tem certeza que deseja excluir o produto{' '}
-            <strong>{produtoParaDeletar.nome}</strong>?
-          </p>
-          <p>
-            Esta ação não pode ser desfeita e removerá todas as movimentações
-            associadas.
-          </p>
-          <div className="text-end mt-4">
-            <button
-              className="btn btn-secondary me-2"
-              onClick={() => setDeleteId(null)}
-            >
-              Cancelar
-            </button>
-            <button
-              className="btn btn-danger"
-              onClick={() => {
-                onDelete(deleteId!);
-                setDeleteId(null);
-              }}
-            >
-              Confirmar Exclusão
-            </button>
-          </div>
-        </ModalComponent>
-      )}
-    </>
-  );
-}
-
-function MovimentacaoForm({
-  produto,
-  onCancel,
-  onSave,
-}: {
-  produto: Produto;
-  onCancel: () => void;
-  // ATUALIZADO: Aceita custo opcional
-  onSave: (m: Omit<Movimentacao, 'id' | 'criadoEm'>, custoEntrada?: number) => void;
-}) {
-  const [tipo, setTipo] = useState<TipoMov>('saida');
-  const [quantidade, setQuantidade] = useState<number>(1);
-  const [motivo, setMotivo] = useState<string>('');
-  
-  // NOVO: Estado para custo de entrada
-  const [custoEntrada, setCustoEntrada] = useState<number | undefined>(undefined);
-
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (quantidade <= 0) return;
-    onSave({
-      produtoId: produto.id,
-      tipo,
-      quantidade,
-      motivo: motivo.trim() || undefined,
-    }, custoEntrada);
-  }
-  
-  // Limpa o custo se não for entrada
-  useEffect(() => {
-    if (tipo !== 'entrada') {
-      setCustoEntrada(undefined);
-    }
-  }, [tipo]);
-
-  return (
-    <form onSubmit={submit}>
-      <div className="mb-3">
-        Estoque atual:{' '}
-        <strong>
-          {produto.quantidade} {produto.unidade}
-        </strong>
-        {/* CORREÇÃO DO BUG: Usamos '!= null' para permitir que o 0 seja formatado corretamente como R$ 0,00 e não exiba "0" solto */}
-        {produto.valorUnitario != null && (
-            <span className="ms-2 text-muted">
-                (Valor Unit. Atual: R$ {Number(produto.valorUnitario).toLocaleString('pt-BR', {minimumFractionDigits: 2})})
-            </span>
-        )}
-      </div>
-      <div className="row g-3">
-        <div className="col-md-4">
-          <label className="form-label">Tipo</label>
-          <select
-            className="form-select"
-            value={tipo}
-            onChange={(e) => setTipo(e.target.value as TipoMov)}
-          >
-            <option value="saida">Saída</option>
-            <option value="entrada">Entrada</option>
-            <option value="ajuste">Ajuste de Estoque</option>
-          </select>
-        </div>
-        <div className="col-md-4">
-          <label className="form-label">
-            {tipo === 'ajuste' ? 'Nova Quantidade' : 'Quantidade'}
-          </label>
-          <input
-            type="number"
-            min={1}
-            className="form-control"
-            value={quantidade}
-            onChange={(e) => setQuantidade(Number(e.target.value))}
-            required
-          />
-        </div>
-
-        {/* NOVO CAMPO: Custo Unitário na Entrada */}
-        {tipo === 'entrada' && (
-          <div className="col-md-4">
-            <label className="form-label">Custo Unit. (Novo)</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              className="form-control"
-              placeholder="R$"
-              value={custoEntrada ?? ''}
-              onChange={(e) => setCustoEntrada(e.target.value === '' ? undefined : Number(e.target.value))}
-            />
-            <small className="text-muted" style={{fontSize: '0.75rem'}}>
-               Atualiza média ponderada
-            </small>
-          </div>
-        )}
-
-        <div className="col-md-12">
-          <label className="form-label">Motivo (opcional)</label>
-          <input
-            className="form-control"
-            value={motivo}
-            onChange={(e) => setMotivo(e.target.value)}
-            placeholder="Ex: Uso na obra, Requisição"
-          />
-        </div>
-      </div>
-      <div className="text-end mt-4">
-        <button
-          type="button"
-          className="btn btn-secondary me-2"
-          onClick={onCancel}
-        >
-          <i className="bi bi-x-circle d-none d-lg-inline-block me-1"></i>
-          Cancelar
-        </button>
-        <button type="submit" className="btn btn-primary">
-          <i className="bi bi-check2-circle d-none d-lg-inline-block me-1"></i>
-          Salvar Movimentação
-        </button>
-      </div>
-    </form>
-  );
-}
-
-function MovsList({
-  movs,
-  produtos,
-}: {
-  movs: Movimentacao[];
-  produtos: Produto[];
-}) {
-  const produtoMap = useMemo(
-    () => new Map(produtos.map((p) => [p.id, p])),
-    [produtos],
-  );
-  const getProdutoNome = (id: UUID) => produtoMap.get(id)?.nome ?? 'N/A';
-
-  if (movs.length === 0)
-    return (
-      <div className="text-center text-muted py-3">
-        Nenhuma movimentação registrada ainda.
-      </div>
-    );
-
-  return (
-    <ul className="list-group">
-      {movs.map((m) => (
-        <li
-          key={m.id}
-          className="list-group-item d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2"
-        >
-          <div>
-            <span
-              className={`badge me-2 bg-${
-                m.tipo === 'entrada'
-                  ? 'success'
-                  : m.tipo === 'saida'
-                  ? 'danger'
-                  : 'warning'
-              }`}
-            >
-              {m.tipo.toUpperCase()}
-            </span>
-            <strong>{m.quantidade}</strong> para o produto{' '}
-            <strong>{getProdutoNome(m.produtoId)}</strong>
-            {m.motivo && (
-              <small className="d-block text-muted">Motivo: {m.motivo}</small>
-            )}
-          </div>
-          <small className="text-muted align-self-start align-self-sm-center">
-            {new Date(m.criadoEm).toLocaleString('pt-BR')}
-          </small>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function Relatorios({
-  produtos,
-  categoriaSelecionada,
-}: {
-  produtos: Produto[];
-  categoriaSelecionada: string;
-}) {
-  const [loading, setLoading] = useState(false);
-  const handleGenerate = () => {
-    setLoading(true);
-    try {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-
-      const produtosParaRelatorio = categoriaSelecionada
-        ? produtos.filter((p) => p.categoria === categoriaSelecionada)
-        : produtos;
-      const itemsToReorder = produtosParaRelatorio
-        .filter(
-          (p) =>
-            p.estoqueMinimo !== undefined && p.quantidade < p.estoqueMinimo,
-        )
-        .map((p) => ({ ...p, qtdRepor: p.estoqueMinimo! - p.quantidade }));
-      if (itemsToReorder.length === 0) {
-        alert(
-          `Nenhum item precisa de reposição${
-            categoriaSelecionada
-              ? ` na categoria "${categoriaSelecionada}"`
-              : ''
-          }.`,
-        );
-        setLoading(false);
-        return;
-      }
-
-      const title = `Relatório de Reposição${
-        categoriaSelecionada ? `: ${categoriaSelecionada}` : ''
-      }`;
-      doc.text(title, 14, 22);
-      doc.setFontSize(10);
-      doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 14, 28);
-      (doc as any).autoTable({
-        startY: 35,
-        head: [
-          ['SKU', 'Nome', 'Estoque Atual', 'Estoque Mínimo', 'Qtd. a Repor'],
-        ],
-        body: itemsToReorder.map((item) => [
-          item.sku,
-          item.nome,
-          `${item.quantidade} ${item.unidade}`,
-          `${item.estoqueMinimo} ${item.unidade}`,
-          `${item.qtdRepor} ${item.unidade}`,
-        ]),
-        headStyles: { fillColor: [41, 128, 185], textColor: 255 },
-        alternateRowStyles: { fillColor: 245 },
-      });
-      doc.save(
-        `relatorio-reposicao-${
-          categoriaSelecionada || 'geral'
-        }-${Date.now()}.pdf`,
-      );
-    } catch (error) {
-      console.error('Erro ao gerar relatório:', error);
-      alert('Ocorreu um erro ao gerar o relatório. Tente novamente.');
-    } finally {
-      setLoading(false);
-    }
-  };
-  return (
-    <button
-      className="btn btn-outline-secondary d-flex align-items-center gap-2"
-      onClick={handleGenerate}
-      disabled={loading}
-    >
-      <i className="bi bi-file-earmark-arrow-down"></i>
-      Gerar Relatório
-    </button>
-  );
-}
-
-function Paginacao({
-  totalItems,
-  itemsPerPage,
-  currentPage,
-  onPageChange,
-}: {
-  totalItems: number;
-  itemsPerPage: number;
-  currentPage: number;
-  onPageChange: (page: number) => void;
-}) {
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  if (totalPages <= 1) {
-    return null;
-  }
-  const handlePageClick = (page: number) => {
-    if (page < 1 || page > totalPages || page === currentPage) return;
-    onPageChange(page);
-  };
-  const renderPageNumbers = () => {
-    const pageNumbers: (number | string)[] = [];
-    const pagesToShow = 3;
-    if (totalPages <= pagesToShow + 4) {
-      for (let i = 1; i <= totalPages; i++) {
-        pageNumbers.push(i);
-      }
-    } else {
-      pageNumbers.push(1);
-      let startPage = Math.max(2, currentPage - 1);
-      let endPage = Math.min(totalPages - 1, currentPage + 1);
-      if (currentPage <= 3) {
-        startPage = 2;
-        endPage = 3;
-      }
-      if (currentPage >= totalPages - 2) {
-        startPage = totalPages - 2;
-        endPage = totalPages - 1;
-      }
-      if (startPage > 2) {
-        pageNumbers.push('...');
-      }
-      for (let i = startPage; i <= endPage; i++) {
-        pageNumbers.push(i);
-      }
-      if (endPage < totalPages - 1) {
-        pageNumbers.push('...');
-      }
-      pageNumbers.push(totalPages);
-    }
-    return pageNumbers.map((page, index) => (
-      <li
-        key={index}
-        className={`page-item ${page === '...' ? 'disabled' : ''} ${
-          currentPage === page ? 'active' : ''
-        }`}
-      >
-        <button
-          className="page-link"
-          onClick={() => typeof page === 'number' && handlePageClick(page)}
-        >
-          {page}
-        </button>
-      </li>
-    ));
-  };
-  return (
-    <nav className="d-flex flex-column flex-sm-row justify-content-between align-items-center flex-wrap gap-2 w-100">
-      <div>
-        {totalItems > 0 && (
-          <span className="text-muted small">
-            Exibindo{' '}
-            {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} -{' '}
-            {Math.min(currentPage * itemsPerPage, totalItems)} de {totalItems}
-          </span>
-        )}
-      </div>
-      <ul className="pagination m-0">
-        <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-          <button
-            className="page-link"
-            onClick={() => handlePageClick(currentPage - 1)}
-            aria-label="Anterior"
-          >
-            &lt;
-          </button>
-        </li>
-        {renderPageNumbers()}
-        <li
-          className={`page-item ${
-            currentPage === totalPages ? 'disabled' : ''
-          }`}
-        >
-          <button
-            className="page-link"
-            onClick={() => handlePageClick(currentPage + 1)}
-            aria-label="Próxima"
-          >
-            &gt;
-          </button>
-        </li>
-      </ul>
-    </nav>
-  );
-}
-
-// --- COMPONENTES DA PÁGINA DE MOVIMENTAÇÕES ---
-
-function ConsultaMovimentacoes({
-  movs,
-  produtos,
-  onDelete,
-  onEdit,
-}: {
-  movs: Movimentacao[];
-  produtos: Produto[];
-  onDelete: (id: UUID) => void;
-  onEdit: (id: UUID, patch: { quantidade: number; motivo?: string }) => void;
-}) {
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
-  const [categoria, setCategoria] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(30);
-  const [deleteId, setDeleteId] = useState<UUID | null>(null);
-  const [editId, setEditId] = useState<UUID | null>(null);
-
-  const produtoMap = useMemo(
-    () => new Map(produtos.map((p) => [p.id, p])),
-    [produtos],
-  );
-  const categorias = useMemo(
-    () =>
-      Array.from(
-        new Set(produtos.map((p) => p.categoria || '').filter(Boolean)),
-      ),
-    [produtos],
-  );
-
-  const motivosUnicos = useMemo(() => {
-    const motivos = movs
-      .map((m) => m.motivo)
-      .filter((m) => m && m.trim().length > 0) as string[];
-    return Array.from(new Set(motivos)).sort();
-  }, [movs]);
-
-  const filteredMovs = useMemo(() => {
-    return movs.filter((mov) => {
-      const movDate = new Date(mov.criadoEm);
-      if (dataInicio && movDate < new Date(`${dataInicio}T00:00:00`)) return false;
-      if (dataFim) {
-        const fimDate = new Date(`${dataFim}T00:00:00`);
-        fimDate.setHours(23, 59, 59, 999);
-        if (movDate > fimDate) return false;
-      }
-      if (categoria) {
-        const produto = produtoMap.get(mov.produtoId);
-        if (!produto || produto.categoria !== categoria) return false;
-      }
-      return true;
-    });
-  }, [movs, produtoMap, dataInicio, dataFim, categoria]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filteredMovs.length, itemsPerPage]);
-
-  const paginatedMovs = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredMovs.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredMovs, currentPage, itemsPerPage]);
-
-  const movParaDeletar = useMemo(
-    () => movs.find((m) => m.id === deleteId),
-    [deleteId, movs],
-  );
-  const movParaEditar = useMemo(
-    () => movs.find((m) => m.id === editId),
-    [editId, movs],
-  );
-
-  const resetFilters = () => {
-    setDataInicio('');
-    setDataFim('');
-    setCategoria('');
-  };
-
-  return (
-    <div>
-      <h3 className="border-bottom pb-2 mb-4">Consulta de Movimentações</h3>
-      <div className="filter-panel mb-4">
-        <div className="row g-3 align-items-end">
-          <div className="col-12 col-sm-6 col-lg-3">
-            <label htmlFor="dataInicio" className="form-label fw-bold">
-              Data de Início
-            </label>
-            <input
-              type="date"
-              id="dataInicio"
-              className="form-control"
-              value={dataInicio}
-              onChange={(e) => setDataInicio(e.target.value)}
-            />
-          </div>
-          <div className="col-12 col-sm-6 col-lg-3">
-            <label htmlFor="dataFim" className="form-label fw-bold">
-              Data de Fim
-            </label>
-            <input
-              type="date"
-              id="dataFim"
-              className="form-control"
-              value={dataFim}
-              onChange={(e) => setDataFim(e.target.value)}
-            />
-          </div>
-          <div className="col-12 col-sm-6 col-lg-2">
-            <label htmlFor="catFilter" className="form-label fw-bold">
-              Categoria
-            </label>
-            <select
-              id="catFilter"
-              className="form-select"
-              value={categoria}
-              onChange={(e) => setCategoria(e.target.value)}
-            >
-              <option value="">Todas</option>
-              {categorias.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="col-12 col-sm-6 col-lg-2">
-            <label htmlFor="itemsPerPage" className="form-label fw-bold">
-              Itens por pág.
-            </label>
-            <select
-              id="itemsPerPage"
-              className="form-select"
-              value={itemsPerPage}
-              onChange={(e) => setItemsPerPage(Number(e.target.value))}
-            >
-              <option value={30}>30</option>
-              <option value={70}>70</option>
-              <option value={100}>100</option>
-            </select>
-          </div>
-          <div className="col-12 col-lg-2">
-            <button
-              className="btn btn-outline-secondary d-flex align-items-center w-100 justify-content-center"
-              onClick={resetFilters}
-            >
-              <i className="bi bi-x-lg me-2"></i>Limpar
-            </button>
-          </div>
-        </div>
-      </div>
-      <div className="products-table">
-        <div className="table-responsive">
-          <table className="table table-hover align-middle mb-0">
-            <thead /*className="table-light"*/>
-              <tr>
-                <th>Data/Hora</th>
-                <th>Produto</th>
-                <th>Tipo</th>
-                <th>Quantidade</th>
-                <th className="d-none d-md-table-cell">Motivo</th>
-                <th className="text-end">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedMovs.map((m) => (
-                <tr key={m.id}>
-                  <td>{new Date(m.criadoEm).toLocaleString('pt-BR')}</td>
-                  <td>{produtoMap.get(m.produtoId)?.nome ?? 'N/A'}</td>
-                  <td>
-                    <span
-                      className={`badge bg-${
-                        m.tipo === 'entrada'
-                          ? 'success'
-                          : m.tipo === 'saida'
-                          ? 'danger'
-                          : 'warning'
-                      }`}
-                    >
-                      {m.tipo.toUpperCase()}
-                    </span>
-                  </td>
-                  <td>
-                    {m.quantidade}{' '}
-                    <small className="text-muted">
-                      {produtoMap.get(m.produtoId)?.unidade}
-                    </small>
-                  </td>
-                  <td className="d-none d-md-table-cell">{m.motivo ?? '-'}</td>
-                  <td className="text-end">
-                    <button
-                      className="btn-action text-primary"
-                      onClick={() => setEditId(m.id)}
-                      disabled={m.tipo === 'ajuste'}
-                      title={
-                        m.tipo === 'ajuste'
-                          ? 'Não é possível editar movimentações de ajuste'
-                          : 'Editar movimentação'
-                      }
-                    >
-                      <i className="bi bi-pencil-square"></i>
-                    </button>
-                    <button
-                      className="btn-action text-danger"
-                      onClick={() => setDeleteId(m.id)}
-                      disabled={m.tipo === 'ajuste'}
-                      title={
-                        m.tipo === 'ajuste'
-                          ? 'Não é possível excluir movimentações de ajuste'
-                          : 'Excluir movimentação'
-                      }
-                    >
-                      <i className="bi bi-trash"></i>
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {filteredMovs.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="text-center py-4">
-                    Nenhuma movimentação encontrada com os filtros aplicados.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div className="mt-3">
-        <Paginacao
-          totalItems={filteredMovs.length}
-          itemsPerPage={itemsPerPage}
-          currentPage={currentPage}
-          onPageChange={setCurrentPage}
-        />
-      </div>
-      {movParaDeletar && (
-        <ModalComponent title="Confirmar Exclusão" onClose={() => setDeleteId(null)}>
-          <p>Você tem certeza que deseja excluir esta movimentação?</p>
-          <ul className="list-group mb-3">
-            <li className="list-group-item">
-              <strong>Produto:</strong>{' '}
-              {produtoMap.get(movParaDeletar.produtoId)?.nome}
-            </li>
-            <li className="list-group-item">
-              <strong>Tipo:</strong> {movParaDeletar.tipo.toUpperCase()}
-            </li>
-            <li className="list-group-item">
-              <strong>Quantidade:</strong> {movParaDeletar.quantidade}
-            </li>
-            <li className="list-group-item">
-              <strong>Data:</strong>{' '}
-              {new Date(movParaDeletar.criadoEm).toLocaleString('pt-BR')}
-            </li>
-          </ul>
-          <p className="text-danger">
-            Esta ação não pode ser desfeita e irá reverter a alteração no
-            estoque do produto.
-          </p>
-          <div className="text-end mt-4">
-            <button
-              className="btn btn-secondary me-2"
-              onClick={() => setDeleteId(null)}
-            >
-              <i className="bi bi-x-circle d-none d-lg-inline-block me-1"></i>
-              Cancelar
-            </button>
-            <button
-              className="btn btn-danger"
-              onClick={() => {
-                onDelete(deleteId!);
-                setDeleteId(null);
-              }}
-            >
-              <i className="bi bi-trash-fill d-none d-lg-inline-block me-1"></i>
-              Confirmar Exclusão
-            </button>
-          </div>
-        </ModalComponent>
-      )}
-      {movParaEditar && (
-        <ModalComponent title="Editar Movimentação" onClose={() => setEditId(null)}>
-          <MovimentacaoEditForm
-            movimentacao={movParaEditar}
-            produto={produtoMap.get(movParaEditar.produtoId)}
-            onCancel={() => setEditId(null)}
-            onSave={(patch) => {
-              onEdit(editId!, patch);
-              setEditId(null);
-            }}
-            motivosDisponiveis={motivosUnicos}
-          />
-        </ModalComponent>
-      )}
-    </div>
-  );
-}
-
-function MovimentacaoEditForm({
-  movimentacao,
-  produto,
-  onCancel,
-  onSave,
-  motivosDisponiveis = []
-}: {
-  movimentacao: Movimentacao;
-  produto?: Produto;
-  onCancel: () => void;
-  onSave: (patch: { quantidade: number; motivo?: string }) => void;
-  motivosDisponiveis?: string[];
-}) {
-  const [quantidade, setQuantidade] = useState(movimentacao.quantidade);
-  const [motivo, setMotivo] = useState(movimentacao.motivo ?? '');
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (quantidade <= 0) {
-      alert('A quantidade deve ser maior que zero.');
-      return;
-    }
-    onSave({ quantidade, motivo: motivo.trim() || undefined });
-  }
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <div className="mb-3">
-        <label className="form-label">Produto</label>
-        <input
-          className="form-control"
-          value={produto?.nome ?? 'N/A'}
-          readOnly
-          disabled
-        />
-      </div>
-      <div className="mb-3">
-        <label className="form-label">Tipo de Movimentação</label>
-        <input
-          className="form-control"
-          value={movimentacao.tipo.toUpperCase()}
-          readOnly
-          disabled
-        />
-      </div>
-      <div className="row g-3">
-        <div className="col-md-6">
-          <label htmlFor="quantidade" className="form-label">
-            Quantidade *
-          </label>
-          <input
-            type="number"
-            id="quantidade"
-            className="form-control"
-            value={quantidade}
-            onChange={(e) => setQuantidade(Number(e.target.value))}
-            min="1"
-            required
-          />
-        </div>
-        <div className="col-md-6">
-          <label htmlFor="motivo" className="form-label">
-            Motivo (opcional)
-          </label>
-          <input
-            type="text"
-            id="motivo"
-            className="form-control"
-            value={motivo}
-            onChange={(e) => setMotivo(e.target.value)}
-            list="edit-motivos-list"
-            autoComplete="off"
-          />
-          <datalist id="edit-motivos-list">
-             {motivosDisponiveis.map((m, i) => (
-                 <option key={i} value={m} />
-             ))}
-          </datalist>
-        </div>
-      </div>
-      <div className="text-end mt-4">
-        <button
-          type="button"
-          className="btn btn-secondary me-2"
-          onClick={onCancel}
-        >
-          <i className="bi bi-x-circle d-none d-lg-inline-block me-1"></i>
-          Cancelar
-        </button>
-        <button type="submit" className="btn btn-primary">
-          <i className="bi bi-check2-circle d-none d-lg-inline-block me-1"></i>
-          Salvar Alterações
-        </button>
-      </div>
-    </form>
-  );
-}
-
-// --- COMPONENTE PRINCIPAL (ATUALIZADO PARA PROPOSTA CLEAN) ---
 export default function App() {
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [allProdutos, setAllProdutos] = useState<Produto[]>([]);
@@ -1708,16 +29,13 @@ export default function App() {
   const [editingEntrega, setEditingEntrega] = useState<Entrega | null>(null);
 
   const [entregaToDeleteId, setEntregaToDeleteId] = useState<string | null>(null);
-
   const [showBulkConfirmModal, setShowBulkConfirmModal] = useState(false);
   const [bulkTargetStatus, setBulkTargetStatus] = useState('');
    
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-
   const [showStockLimitModal, setShowStockLimitModal] = useState(false);
   const [pendingDeliveryData, setPendingDeliveryData] = useState<any>(null);
 
@@ -1726,12 +44,9 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
     
   const [view, setView] = useState<'estoque' | 'movimentacoes' | 'rotas'>('estoque');
-    
   const [showScroll, setShowScroll] = useState(false);
-
   const [q, setQ] = useState('');
   const [categoriaFilter, setCategoriaFilter] = useState('');
-   
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null);
 
   const [mostrarAbaixoMin, setMostrarAbaixoMin] = useState(false);
@@ -1756,9 +71,7 @@ export default function App() {
     async function fetchInitialData() {
       try {
         setLoading(true);
-        const firstPageRes = await fetch(
-          `${API_URL}/produtos?_page=1&_limit=${ITEMS_PER_PAGE}`,
-        );
+        const firstPageRes = await fetch(`${API_URL}/produtos?_page=1&_limit=${ITEMS_PER_PAGE}`);
         if (!firstPageRes.ok) throw new Error('Falha ao buscar dados iniciais.');
         const firstPageData = await firstPageRes.json();
         setProdutos(firstPageData);
@@ -1799,9 +112,7 @@ export default function App() {
     return () => window.removeEventListener('scroll', checkScrollTop);
   }, []);
 
-  async function addProduto(
-    p: Omit<Produto, 'id' | 'criadoEm' | 'atualizadoEm' | 'sku'>,
-  ) {
+  async function addProduto(p: Omit<Produto, 'id' | 'criadoEm' | 'atualizadoEm' | 'sku'>) {
     try {
       const response = await fetch(`${API_URL}/produtos`, {
         method: 'POST',
@@ -1811,15 +122,10 @@ export default function App() {
       if (!response.ok) throw new Error('Falha ao criar produto');
       const novoProduto = await response.json();
       setAllProdutos((prev) => [novoProduto, ...prev]);
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   }
 
-  async function updateProduto(
-    id: UUID,
-    patch: Partial<Omit<Produto, 'id' | 'sku' | 'criadoEm'>>,
-  ) {
+  async function updateProduto(id: UUID, patch: Partial<Omit<Produto, 'id' | 'sku' | 'criadoEm'>>) {
     try {
       const response = await fetch(`${API_URL}/produtos/${id}`, {
         method: 'PATCH',
@@ -1828,12 +134,8 @@ export default function App() {
       });
       if (!response.ok) throw new Error('Falha ao atualizar produto');
       const produtoAtualizado = await response.json();
-      setAllProdutos((prev) =>
-        prev.map((x) => (x.id === id ? produtoAtualizado : x)),
-      );
-    } catch (err) {
-      console.error(err);
-    }
+      setAllProdutos((prev) => prev.map((x) => (x.id === id ? produtoAtualizado : x)));
+    } catch (err) { console.error(err); }
   }
 
   async function deleteProduto(id: UUID) {
@@ -1841,64 +143,39 @@ export default function App() {
       await fetch(`${API_URL}/produtos/${id}`, { method: 'DELETE' });
       setAllProdutos((prev) => prev.filter((p) => p.id !== id));
       setMovs((prev) => prev.filter((m) => m.produtoId !== id));
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   }
 
   async function togglePrioritario(id: UUID, currentState: boolean) {
-    setAllProdutos((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, prioritario: !currentState } : p)),
-    );
-
+    setAllProdutos((prev) => prev.map((p) => (p.id === id ? { ...p, prioritario: !currentState } : p)));
     try {
       const response = await fetch(`${API_URL}/produtos/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prioritario: !currentState }),
       });
-
-      if (!response.ok) {
-        throw new Error('Falha ao atualizar prioridade no servidor.');
-      }
+      if (!response.ok) throw new Error('Falha ao atualizar prioridade no servidor.');
     } catch (err) {
       console.error(err);
       setErrorMessage('Não foi possível salvar a alteração de prioridade. Verifique sua conexão.');
       setShowErrorModal(true);
-      setAllProdutos((prev) =>
-        prev.map((p) =>
-          p.id === id ? { ...p, prioritario: currentState } : p,
-        ),
-      );
+      setAllProdutos((prev) => prev.map((p) => p.id === id ? { ...p, prioritario: currentState } : p));
     }
   }
 
-  async function addMov(
-    m: Omit<Movimentacao, 'id' | 'criadoEm'>, 
-    custoEntrada?: number
-  ) {
+  async function addMov(m: Omit<Movimentacao, 'id' | 'criadoEm'>, custoEntrada?: number) {
     try {
-      const payload = {
-        ...m,
-        custoEntrada: custoEntrada
-      };
-
+      const payload = { ...m, custoEntrada: custoEntrada };
       const response = await fetch(`${API_URL}/movimentacoes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      
       if (!response.ok) throw new Error('Falha ao criar movimentação');
       
       const { movimentacao, produto } = await response.json();
-      
       setMovs((prev) => [movimentacao, ...prev]);
-      
-      setAllProdutos((prev) =>
-        prev.map((p) => (p.id === produto.id ? produto : p))
-      );
-
+      setAllProdutos((prev) => prev.map((p) => (p.id === produto.id ? produto : p)));
     } catch (err: any) {
       console.error(err);
       setErrorMessage(err.message);
@@ -1906,10 +183,7 @@ export default function App() {
     }
   }
 
-  async function updateMov(
-    id: UUID,
-    patch: { quantidade: number; motivo?: string },
-  ) {
+  async function updateMov(id: UUID, patch: { quantidade: number; motivo?: string }) {
     try {
       const response = await fetch(`${API_URL}/movimentacoes/${id}`, {
         method: 'PATCH',
@@ -1918,62 +192,39 @@ export default function App() {
       });
       if (!response.ok) throw new Error('Falha ao atualizar movimentação');
 
-      const { movimentacaoAtualizada, produtoAtualizado } =
-        await response.json();
-
-      setMovs((prev) =>
-        prev.map((m) => (m.id === id ? movimentacaoAtualizada : m)),
-      );
-
-      setAllProdutos((prev) =>
-        prev.map((p) =>
-          p.id === produtoAtualizado.id ? produtoAtualizado : p,
-        ),
-      );
+      const { movimentacaoAtualizada, produtoAtualizado } = await response.json();
+      setMovs((prev) => prev.map((m) => (m.id === id ? movimentacaoAtualizada : m)));
+      setAllProdutos((prev) => prev.map((p) => p.id === produtoAtualizado.id ? produtoAtualizado : p));
 
       const entregasRes = await fetch(`${API_URL}/entregas`);
       const entregasData = await entregasRes.json();
       setEntregas(entregasData.map(normalizeEntrega));
-
-    } catch (err) {
-      console.error('Erro ao atualizar movimentação:', err);
-    }
+    } catch (err) { console.error('Erro ao atualizar movimentação:', err); }
   }
 
   async function deleteMov(id: UUID) {
     try {
-      const response = await fetch(`${API_URL}/movimentacoes/${id}`, {
-        method: 'DELETE',
-      });
+      const response = await fetch(`${API_URL}/movimentacoes/${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Falha ao excluir movimentação');
       const { produtoAtualizado } = await response.json();
-       
+        
       setMovs((prev) => prev.filter((m) => m.id !== id));
-      setAllProdutos((prev) =>
-        prev.map((p) =>
-          p.id === produtoAtualizado.id ? produtoAtualizado : p,
-        ),
-      );
+      setAllProdutos((prev) => prev.map((p) => p.id === produtoAtualizado.id ? produtoAtualizado : p));
 
       const entregasRes = await fetch(`${API_URL}/entregas`);
       const entregasData = await entregasRes.json();
       setEntregas(entregasData.map(normalizeEntrega));
-
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   }
 
   async function updateEntregaFull(id: string, data: any) {
     try {
       setLoading(true);
-       
       const res = await fetch(`${API_URL}/entregas/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
-
       if (!res.ok) {
         const errData = await res.json();
         throw new Error(errData.error || 'Falha ao atualizar entrega');
@@ -2000,7 +251,6 @@ export default function App() {
       setEditingEntrega(null);
       setSuccessMessage('Entrega atualizada e estoque sincronizado com sucesso!');
       setShowSuccessModal(true);
-
     } catch (err: any) {
       console.error(err);
       setErrorMessage(err.message);
@@ -2050,7 +300,7 @@ export default function App() {
     if (!produto && data.itemNome) {
         produto = allProdutos.find(p => p.nome.toLowerCase() === data.itemNome.toLowerCase());
     }
-     
+      
     if (produto) {
         let estoqueDisponivel = produto.quantidade;
         if (editingEntrega && (editingEntrega.produtoId === produto.id || editingEntrega.itemNome === produto.nome)) {
@@ -2065,7 +315,6 @@ export default function App() {
             return;
         }
     }
-
     processDeliverySave(data);
   };
 
@@ -2096,7 +345,6 @@ export default function App() {
           setMovs(await movsRes.json());
 
           setEntregaToDeleteId(null);
-
       } catch (err: any) { 
           console.error(err);
           setErrorMessage(err.message);
@@ -2112,7 +360,6 @@ export default function App() {
               body: JSON.stringify({ status })
           });
           setEntregas(prev => prev.map(e => e.id === id ? { ...e, status } : e));
-
       } catch (err) { console.error(err); }
   }
 
@@ -2148,16 +395,6 @@ export default function App() {
         setLoading(false);
     }
   };
-
-  const formatPhoneNumber = (value: string) => {
-    if (!value) return "";
-    const v = value.replace(/\D/g, ''); 
-    const matchCel = v.match(/^(\d{2})(\d{5})(\d{4})$/);
-    if (matchCel) return `(${matchCel[1]}) ${matchCel[2]}-${matchCel[3]}`;
-    const matchFixo = v.match(/^(\d{2})(\d{4})(\d{4})$/);
-    if (matchFixo) return `(${matchFixo[1]}) ${matchFixo[2]}-${matchFixo[3]}`;
-    return value;
-  };
     
   const handleSelectEntrega = (id: string) => {
     setSelectedEntregaIds(prev => 
@@ -2167,14 +404,12 @@ export default function App() {
 
   const filteredDeliveries = useMemo(() => {
     let data = entregas;
-
     if (rotaDateFilter) {
         data = data.filter(d => {
             const itemDate = new Date(d.dataHoraSolicitacao).toLocaleDateString('en-CA');
             return itemDate === rotaDateFilter;
         });
     }
-
     return data.sort((a, b) => 
         new Date(a.dataHoraSolicitacao).getTime() - new Date(b.dataHoraSolicitacao).getTime()
     );
@@ -2342,70 +577,25 @@ export default function App() {
     }
   };
 
-  // --- Filtros ---
-  const categorias = useMemo(
-    () =>
-      Array.from(
-        new Set(allProdutos.map((p) => p.categoria || '').filter(Boolean)),
-      ),
-    [allProdutos],
-  );
-  const locaisArmazenamento = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          allProdutos.map((p) => p.localArmazenamento || '').filter(Boolean),
-        ),
-      ),
-    [allProdutos],
-  );
+  const categorias = useMemo(() => Array.from(new Set(allProdutos.map((p) => p.categoria || '').filter(Boolean))), [allProdutos]);
+  const locaisArmazenamento = useMemo(() => Array.from(new Set(allProdutos.map((p) => p.localArmazenamento || '').filter(Boolean))), [allProdutos]);
 
   const filteredProdutos = useMemo(() => {
-    if (loadingAll) {
-      return produtos;
-    }
+    if (loadingAll) return produtos;
     let result = allProdutos.filter((p) => {
       const query = debouncedQ.trim().toLowerCase();
-      const matchesQuery =
-        query === '' ||
-        p.nome.toLowerCase().includes(query) ||
-        p.sku.toLowerCase().includes(query) ||
-        p.categoria?.toLowerCase().includes(query);
-      const matchesCategoria =
-        !categoriaFilter || p.categoria === categoriaFilter;
-      const matchesAbaixoMin =
-        !mostrarAbaixoMin ||
-        (p.estoqueMinimo != null && p.quantidade <= p.estoqueMinimo);
+      const matchesQuery = query === '' || p.nome.toLowerCase().includes(query) || p.sku.toLowerCase().includes(query) || p.categoria?.toLowerCase().includes(query);
+      const matchesCategoria = !categoriaFilter || p.categoria === categoriaFilter;
+      const matchesAbaixoMin = !mostrarAbaixoMin || (p.estoqueMinimo != null && p.quantidade <= p.estoqueMinimo);
       const matchesPrioritario = !mostrarPrioritarios || p.prioritario;
-      return (
-        matchesQuery &&
-        matchesCategoria &&
-        matchesAbaixoMin &&
-        matchesPrioritario
-      );
+      return matchesQuery && matchesCategoria && matchesAbaixoMin && matchesPrioritario;
     });
 
     if (sortOrder) {
-      result = [...result].sort((a, b) => {
-        if (sortOrder === 'asc') {
-          return a.nome.localeCompare(b.nome);
-        } else {
-          return b.nome.localeCompare(a.nome);
-        }
-      });
+      result = [...result].sort((a, b) => sortOrder === 'asc' ? a.nome.localeCompare(b.nome) : b.nome.localeCompare(a.nome));
     }
-
     return result;
-  }, [
-    debouncedQ,
-    categoriaFilter,
-    mostrarAbaixoMin,
-    mostrarPrioritarios,
-    allProdutos,
-    produtos,
-    loadingAll,
-    sortOrder,
-  ]);
+  }, [debouncedQ, categoriaFilter, mostrarAbaixoMin, mostrarPrioritarios, allProdutos, produtos, loadingAll, sortOrder]);
 
   const paginatedProdutos = useMemo(() => {
     const startIndex = (page - 1) * ITEMS_PER_PAGE;
@@ -2422,8 +612,6 @@ export default function App() {
     });
   };
 
-  // --- RENDERIZAÇÃO ALTERADA PARA PROPOSTA 01 (CLEAN CORPORATE) ---
-
   if (error) {
     return (
       <div className="d-flex justify-content-center align-items-center min-vh-100 bg-light">
@@ -2438,113 +626,55 @@ export default function App() {
   return (
     <div className="app-layout">
       
-      {/* 1. SIDEBAR (DESKTOP) */}
       <aside className="sidebar">
-        <div className="sidebar-logo-area">
-          <img src={meuLogo} alt="Logo" className="sidebar-logo" />
-        </div>
-        
+        <div className="sidebar-logo-area"><img src={meuLogo} alt="Logo" className="sidebar-logo" /></div>
         <nav className="sidebar-nav">
-          <button 
-            className={`nav-item-clean ${view === 'estoque' ? 'active' : ''}`}
-            onClick={() => { setView('estoque'); scrollTop(); }}
-          >
-            <BoxSeam /> Controle de Estoque
-          </button>
-          
-          <button 
-            className={`nav-item-clean ${view === 'movimentacoes' ? 'active' : ''}`}
-            onClick={() => { setView('movimentacoes'); scrollTop(); }}
-          >
-            <ClipboardData /> Movimentações
-          </button>
-          
-          <button 
-            className={`nav-item-clean ${view === 'rotas' ? 'active' : ''}`}
-            onClick={() => { setView('rotas'); scrollTop(); }}
-          >
-            <Truck /> Rotas & Entregas
-          </button>
+          <button className={`nav-item-clean ${view === 'estoque' ? 'active' : ''}`} onClick={() => { setView('estoque'); scrollTop(); }}><BoxSeam /> Controle de Estoque</button>
+          <button className={`nav-item-clean ${view === 'movimentacoes' ? 'active' : ''}`} onClick={() => { setView('movimentacoes'); scrollTop(); }}><ClipboardData /> Movimentações</button>
+          <button className={`nav-item-clean ${view === 'rotas' ? 'active' : ''}`} onClick={() => { setView('rotas'); scrollTop(); }}><Truck /> Rotas & Entregas</button>
         </nav>
       </aside>
 
-      {/* 2. HEADER MOBILE (Apenas Logo) */}
-      <div className="mobile-header d-lg-none">
-          <img src={meuLogo} alt="Logo" style={{height: '32px'}} />
-      </div>
+      <div className="mobile-header d-lg-none"><img src={meuLogo} alt="Logo" style={{height: '32px'}} /></div>
 
-      {/* 3. MAIN CONTENT */}
       <main className="main-content">
-        
-        {/* Page Title & Context Header */}
         <header className="page-header d-none d-lg-flex">
             <h1 className="page-title">
                 {view === 'estoque' && 'Visão Geral do Estoque'}
                 {view === 'movimentacoes' && 'Histórico de Movimentações'}
                 {view === 'rotas' && 'Cronograma de Entregas'}
             </h1>
-            
         </header>
 
-        {/* --- VIEW: ESTOQUE --- */}
         {view === 'estoque' && (
           <div className="animate-fade-in">
-            {/* Painel de Filtros Redesenhado */}
             <div className="card-modern">
               <div className="row gy-3 align-items-end">
                 <div className="col-12 col-lg-5">
                   <label className="form-label fw-bold text-muted small text-uppercase">Pesquisar Produto</label>
                   <div className="input-group">
-                    <span className="input-group-text bg-white border-end-0 text-muted">
-                      <i className="bi bi-search"></i>
-                    </span>
-                    <input
-                      className="form-control border-start-0 ps-0"
-                      placeholder={loadingAll ? 'Carregando...' : 'Buscar por nome, SKU ou categoria...'}
-                      value={q}
-                      onChange={(e) => setQ(e.target.value)}
-                      disabled={loadingAll}
-                    />
-                    {q && (
-                        <button className="btn btn-light border" onClick={() => setQ('')}><i className="bi bi-x"></i></button>
-                    )}
+                    <span className="input-group-text bg-white border-end-0 text-muted"><i className="bi bi-search"></i></span>
+                    <input className="form-control border-start-0 ps-0" placeholder={loadingAll ? 'Carregando...' : 'Buscar por nome, SKU ou categoria...'} value={q} onChange={(e) => setQ(e.target.value)} disabled={loadingAll} />
+                    {q && <button className="btn btn-light border" onClick={() => setQ('')}><i className="bi bi-x"></i></button>}
                   </div>
                 </div>
                 
                 <div className="col-12 col-md-4 col-lg-3">
                   <label className="form-label fw-bold text-muted small text-uppercase">Filtrar Categoria</label>
-                  <select
-                    className="form-select"
-                    value={categoriaFilter}
-                    onChange={(e) => setCategoriaFilter(e.target.value)}
-                  >
+                  <select className="form-select" value={categoriaFilter} onChange={(e) => setCategoriaFilter(e.target.value)}>
                     <option value="">Todas</option>
-                    {categorias.map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
+                    {categorias.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
 
                 <div className="col-12 col-md-8 col-lg-4">
                   <div className="d-flex gap-3 align-items-center h-100 pb-2">
                     <div className="form-check form-switch">
-                      <input
-                        className="form-check-input switch-gradient switch-gradient-primary"
-                        type="checkbox"
-                        id="abaixoMin"
-                        checked={mostrarAbaixoMin}
-                        onChange={(e) => setMostrarAbaixoMin(e.target.checked)}
-                      />
+                      <input className="form-check-input switch-gradient switch-gradient-primary" type="checkbox" id="abaixoMin" checked={mostrarAbaixoMin} onChange={(e) => setMostrarAbaixoMin(e.target.checked)} />
                       <label className="form-check-label small fw-medium" htmlFor="abaixoMin">Abaixo do mín.</label>
                     </div>
                     <div className="form-check form-switch">
-                      <input
-                        className="form-check-input switch-gradient switch-gradient-primary"
-                        type="checkbox"
-                        id="prioritarios"
-                        checked={mostrarPrioritarios}
-                        onChange={(e) => setMostrarPrioritarios(e.target.checked)}
-                      />
+                      <input className="form-check-input switch-gradient switch-gradient-primary" type="checkbox" id="prioritarios" checked={mostrarPrioritarios} onChange={(e) => setMostrarPrioritarios(e.target.checked)} />
                       <label className="form-check-label small fw-medium" htmlFor="prioritarios">Prioritários</label>
                     </div>
                   </div>
@@ -2568,70 +698,35 @@ export default function App() {
                 <p className="mt-2 text-muted">Carregando estoque...</p>
               </div>
             ) : (
-              <ProdutosTable
-                produtos={paginatedProdutos}
-                onEdit={updateProduto}
-                onDelete={deleteProduto}
-                onAddMov={addMov}
-                onTogglePrioritario={togglePrioritario}
-                categorias={categorias}
-                locais={locaisArmazenamento}
-                sortOrder={sortOrder}
-                onToggleSort={handleToggleSort}
-              />
+              <ProdutosTable produtos={paginatedProdutos} onEdit={updateProduto} onDelete={deleteProduto} onAddMov={addMov} onTogglePrioritario={togglePrioritario} categorias={categorias} locais={locaisArmazenamento} sortOrder={sortOrder} onToggleSort={handleToggleSort} />
             )}
 
             <div className="mt-4 d-flex justify-content-center">
-              {!loading && !loadingAll && (
-                <Paginacao
-                  totalItems={filteredProdutos.length}
-                  itemsPerPage={ITEMS_PER_PAGE}
-                  currentPage={page}
-                  onPageChange={setPage}
-                />
-              )}
+              {!loading && !loadingAll && <Paginacao totalItems={filteredProdutos.length} itemsPerPage={ITEMS_PER_PAGE} currentPage={page} onPageChange={setPage} />}
             </div>
 
             <div className="mt-5">
                 <h6 className="text-uppercase text-muted fw-bold mb-3 small tracking-wider">Últimas Movimentações</h6>
                 <div className="card-modern p-0 overflow-hidden">
-                    <div className="p-3">
-                        <MovsList movs={movs.slice(0, 5)} produtos={allProdutos} />
-                    </div>
+                    <div className="p-3"><MovsList movs={movs.slice(0, 5)} produtos={allProdutos} /></div>
                 </div>
             </div>
           </div>
         )}
 
-        {/* --- VIEW: MOVIMENTAÇÕES --- */}
         {view === 'movimentacoes' && (
           <div className="card-modern animate-fade-in">
-            <ConsultaMovimentacoes
-              movs={movs}
-              produtos={allProdutos}
-              onDelete={deleteMov}
-              onEdit={updateMov}
-            />
+            <ConsultaMovimentacoes movs={movs} produtos={allProdutos} onDelete={deleteMov} onEdit={updateMov} />
           </div>
         )}
 
-        {/* --- VIEW: ROTAS --- */}
         {view === 'rotas' && (
           <div className="animate-fade-in">
             <div className="row g-4">
               <div className="col-lg-4">
-                {/* Form Wrapper para Card */}
                 <div className="card-modern h-180">
-                    <h5 className="mb-4 fw-bold text-primary">
-                        {editingEntrega ? 'Editar Agendamento' : 'Novo Agendamento'}
-                    </h5>
-                    <DeliveryForm 
-                        onSave={handleSaveDelivery} 
-                        produtosDisponiveis={allProdutos}
-                        deliveryToEdit={editingEntrega}
-                        onCancelEdit={() => setEditingEntrega(null)}
-                        historicoEntregas={entregas}
-                    />
+                    <h5 className="mb-4 fw-bold text-primary">{editingEntrega ? 'Editar Agendamento' : 'Novo Agendamento'}</h5>
+                    <DeliveryForm onSave={handleSaveDelivery} produtosDisponiveis={allProdutos} deliveryToEdit={editingEntrega} onCancelEdit={() => setEditingEntrega(null)} historicoEntregas={entregas} />
                 </div>
               </div>
 
@@ -2639,74 +734,32 @@ export default function App() {
                 <div className="d-flex flex-column gap-3 mb-3">
                     <div className="d-flex justify-content-between align-items-center">
                         <div className="d-flex align-items-center gap-3">
-                            {/* Filtro de Data Estilizado */}
                             <div className="input-group" style={{ maxWidth: '220px' }}>
-                                <span className="input-group-text bg-white border-end-0 text-muted">
-                                    <CalendarWeek />
-                                </span>
-                                <input 
-                                    type="date" 
-                                    className="form-control border-start-0 ps-0"
-                                    value={rotaDateFilter}
-                                    onChange={(e) => setRotaDateFilter(e.target.value)}
-                                />
+                                <span className="input-group-text bg-white border-end-0 text-muted"><CalendarWeek /></span>
+                                <input type="date" className="form-control border-start-0 ps-0" value={rotaDateFilter} onChange={(e) => setRotaDateFilter(e.target.value)} />
                                 {rotaDateFilter && (
-                                    <button 
-                                        className="btn btn-outline-secondary border-start-0"
-                                        onClick={() => setRotaDateFilter('')}
-                                        title="Limpar data"
-                                    >
-                                        <XCircle />
-                                    </button>
+                                    <button className="btn btn-outline-secondary border-start-0" onClick={() => setRotaDateFilter('')} title="Limpar data"><XCircle /></button>
                                 )}
                             </div>
                         </div>
                     </div>
 
-                    {/* Barra de Ferramentas da Tabela */}
                     <div className="bg-white p-3 rounded-4 border d-flex flex-wrap gap-3 justify-content-between align-items-center shadow-sm">
                         <div className="d-flex align-items-center gap-2">
-                             <span className="badge bg-light text-dark border me-2">
-                                {selectedEntregaIds.length} selecionados
-                             </span>
-                             <Button variant="outline-success" size="sm" onClick={() => handleBulkStatusChange('Entregue')} disabled={selectedEntregaIds.length === 0}>
-                                <CheckCircleFill className="me-1" /> Entregue
-                             </Button>
-                             <Button variant="outline-warning" size="sm" className="text-dark" onClick={() => handleBulkStatusChange('Pendente')} disabled={selectedEntregaIds.length === 0}>
-                                <ArrowCounterclockwise className="me-1" /> Pendente
-                             </Button>
+                             <span className="badge bg-light text-dark border me-2">{selectedEntregaIds.length} selecionados</span>
+                             <Button variant="outline-success" size="sm" onClick={() => handleBulkStatusChange('Entregue')} disabled={selectedEntregaIds.length === 0}><CheckCircleFill className="me-1" /> Entregue</Button>
+                             <Button variant="outline-warning" size="sm" className="text-dark" onClick={() => handleBulkStatusChange('Pendente')} disabled={selectedEntregaIds.length === 0}><ArrowCounterclockwise className="me-1" /> Pendente</Button>
                         </div>
                         
                         <div className="d-flex gap-2">
-                             <Button variant="outline-primary" size="sm" disabled={selectedEntregaIds.length === 0} onClick={() => setShowReprogramModal(true)}>
-                                <CalendarWeek className="me-2"/> Reprogramar
-                             </Button>
-                             <Button variant="secondary" size="sm" disabled={selectedEntregaIds.length === 0} onClick={handleGenerateDeliveryReport}>
-                                <ClipboardData className="me-2"/> PDF
-                             </Button>
+                             <Button variant="outline-primary" size="sm" disabled={selectedEntregaIds.length === 0} onClick={() => setShowReprogramModal(true)}><CalendarWeek className="me-2"/> Reprogramar</Button>
+                             <Button variant="secondary" size="sm" disabled={selectedEntregaIds.length === 0} onClick={handleGenerateDeliveryReport}><ClipboardData className="me-2"/> PDF</Button>
                         </div>
                     </div>
                 </div>
 
                 <div className="card-modern p-0 overflow-hidden">
-                    <DeliveryTable 
-                        deliveries={filteredDeliveries}
-                        onDelete={(id) => setEntregaToDeleteId(id)}
-                        onEdit={(item: any) => {
-                             const ent = normalizeEntrega(item);
-                             if(!isDelivered(ent.status)) {
-                                 setEditingEntrega(ent);
-                                 scrollTop();
-                             } else {
-                                 setErrorMessage("Itens entregues não podem ser editados.");
-                                 setShowErrorModal(true);
-                             }
-                        }}
-                        onStatusChange={updateEntregaStatus}
-                        selectedIds={selectedEntregaIds}
-                        onSelectItem={handleSelectEntrega}
-                        onSelectAll={handleSelectAllEntregas}
-                    />
+                    <DeliveryTable deliveries={filteredDeliveries} onDelete={(id) => setEntregaToDeleteId(id)} onEdit={(item: any) => { const ent = normalizeEntrega(item); if(!isDelivered(ent.status)) { setEditingEntrega(ent); scrollTop(); } else { setErrorMessage("Itens entregues não podem ser editados."); setShowErrorModal(true); } }} onStatusChange={updateEntregaStatus} selectedIds={selectedEntregaIds} onSelectItem={handleSelectEntrega} onSelectAll={handleSelectAllEntregas} />
                 </div>
               </div>
             </div>
@@ -2714,40 +767,14 @@ export default function App() {
         )}
       </main>
 
-      {/* 4. BOTTOM NAV (MOBILE ONLY) */}
       <nav className="bottom-nav">
-          <button 
-            className={`bottom-nav-item ${view === 'estoque' ? 'active' : ''}`}
-            onClick={() => { setView('estoque'); scrollTop(); }}
-          >
-            <BoxSeam />
-            <span>Estoque</span>
-          </button>
-          
-          <button 
-            className={`bottom-nav-item ${view === 'movimentacoes' ? 'active' : ''}`}
-            onClick={() => { setView('movimentacoes'); scrollTop(); }}
-          >
-            <ClipboardData />
-            <span>Movs</span>
-          </button>
-          
-          <button 
-            className={`bottom-nav-item ${view === 'rotas' ? 'active' : ''}`}
-            onClick={() => { setView('rotas'); scrollTop(); }}
-          >
-            <Truck />
-            <span>Rotas</span>
-          </button>
+          <button className={`bottom-nav-item ${view === 'estoque' ? 'active' : ''}`} onClick={() => { setView('estoque'); scrollTop(); }}><BoxSeam /><span>Estoque</span></button>
+          <button className={`bottom-nav-item ${view === 'movimentacoes' ? 'active' : ''}`} onClick={() => { setView('movimentacoes'); scrollTop(); }}><ClipboardData /><span>Movs</span></button>
+          <button className={`bottom-nav-item ${view === 'rotas' ? 'active' : ''}`} onClick={() => { setView('rotas'); scrollTop(); }}><Truck /><span>Rotas</span></button>
       </nav>
 
-      {/* 5. MODAIS GLOBAIS */}
       {showScroll && (
-        <button
-          className="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center"
-          onClick={scrollTop}
-          style={{ position: 'fixed', bottom: '90px', right: '20px', width: '45px', height: '45px', zIndex: 1000 }}
-        >
+        <button className="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center" onClick={scrollTop} style={{ position: 'fixed', bottom: '90px', right: '20px', width: '45px', height: '45px', zIndex: 1000 }}>
           <i className="bi bi-arrow-up fs-4"></i>
         </button>
       )}
