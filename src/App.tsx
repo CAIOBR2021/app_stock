@@ -2,12 +2,14 @@ import { useEffect, useState, useMemo } from 'react';
 import { Form, Button } from 'react-bootstrap';
 import { 
   ClipboardData, CalendarWeek, XCircle, BoxSeam, Truck, 
-  CheckCircleFill, ArrowCounterclockwise, ExclamationTriangleFill 
+  CheckCircleFill, ArrowCounterclockwise, ExclamationTriangleFill,
+  ArrowLeftRight
 } from 'react-bootstrap-icons'; 
 
 import meuLogo from './assets/logo.png';
 import { DeliveryForm } from './components/DeliveryForm';
 import { DeliveryTable } from './components/DeliveryTable';
+import { EntradaSaidaForm } from './components/EntradaSaidaForm';
 import './styles.css';
 
 // Importações dos novos módulos
@@ -43,7 +45,7 @@ export default function App() {
   const [loadingAll, setLoadingAll] = useState(true);
   const [error, setError] = useState<string | null>(null);
     
-  const [view, setView] = useState<'estoque' | 'movimentacoes' | 'rotas'>('estoque');
+  const [view, setView] = useState<'estoque' | 'movimentacoes' | 'rotas' | 'entradas_saidas'>('estoque');
   const [showScroll, setShowScroll] = useState(false);
   const [q, setQ] = useState('');
   const [categoriaFilter, setCategoriaFilter] = useState('');
@@ -182,6 +184,35 @@ export default function App() {
       setShowErrorModal(true);
     }
   }
+
+  const handleEntradaSaidaSubmit = async (dados: any) => {
+    try {
+      setLoading(true);
+      const motivoBase = [];
+      if (dados.ordemCompra) motivoBase.push(`OC: ${dados.ordemCompra}`);
+      if (dados.nomeObra) motivoBase.push(`Obra: ${dados.nomeObra}`);
+      const motivoFinal = motivoBase.length > 0 ? motivoBase.join(' | ') : `Movimentação em lote (${dados.tipo})`;
+
+      for (const item of dados.itens) {
+        await addMov({
+          produtoId: item.produtoId,
+          tipo: dados.tipo,
+          quantidade: item.quantidade,
+          motivo: motivoFinal
+        });
+      }
+      
+      setSuccessMessage('Movimentações registradas com sucesso!');
+      setShowSuccessModal(true);
+      setView('estoque'); 
+      scrollTop();
+    } catch (err) {
+      setErrorMessage('Erro ao registrar entradas/saídas.');
+      setShowErrorModal(true);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   async function updateMov(id: UUID, patch: { quantidade: number; motivo?: string }) {
     try {
@@ -632,6 +663,7 @@ export default function App() {
           <button className={`nav-item-clean ${view === 'estoque' ? 'active' : ''}`} onClick={() => { setView('estoque'); scrollTop(); }}><BoxSeam /> Controle de Estoque</button>
           <button className={`nav-item-clean ${view === 'movimentacoes' ? 'active' : ''}`} onClick={() => { setView('movimentacoes'); scrollTop(); }}><ClipboardData /> Movimentações</button>
           <button className={`nav-item-clean ${view === 'rotas' ? 'active' : ''}`} onClick={() => { setView('rotas'); scrollTop(); }}><Truck /> Rotas & Entregas</button>
+          <button className={`nav-item-clean ${view === 'entradas_saidas' ? 'active' : ''}`} onClick={() => { setView('entradas_saidas'); scrollTop(); }}><ArrowLeftRight /> Entrada / Saída</button>
         </nav>
       </aside>
 
@@ -643,6 +675,7 @@ export default function App() {
                 {view === 'estoque' && 'Visão Geral do Estoque'}
                 {view === 'movimentacoes' && 'Histórico de Movimentações'}
                 {view === 'rotas' && 'Cronograma de Entregas'}
+                {view === 'entradas_saidas' && 'Lançamento de Entradas e Saídas'}
             </h1>
         </header>
 
@@ -765,11 +798,21 @@ export default function App() {
             </div>
           </div>
         )}
+
+        {view === 'entradas_saidas' && (
+          <div className="animate-fade-in">
+            <EntradaSaidaForm 
+              produtos={allProdutos} 
+              onSubmit={handleEntradaSaidaSubmit} 
+            />
+          </div>
+        )}
       </main>
 
       <nav className="bottom-nav">
           <button className={`bottom-nav-item ${view === 'estoque' ? 'active' : ''}`} onClick={() => { setView('estoque'); scrollTop(); }}><BoxSeam /><span>Estoque</span></button>
           <button className={`bottom-nav-item ${view === 'movimentacoes' ? 'active' : ''}`} onClick={() => { setView('movimentacoes'); scrollTop(); }}><ClipboardData /><span>Movs</span></button>
+          <button className={`bottom-nav-item ${view === 'entradas_saidas' ? 'active' : ''}`} onClick={() => { setView('entradas_saidas'); scrollTop(); }}><ArrowLeftRight /><span>Fluxo</span></button>
           <button className={`bottom-nav-item ${view === 'rotas' ? 'active' : ''}`} onClick={() => { setView('rotas'); scrollTop(); }}><Truck /><span>Rotas</span></button>
       </nav>
 
