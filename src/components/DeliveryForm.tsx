@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Form, Row, Col, Button, FloatingLabel, Modal, ListGroup } from 'react-bootstrap';
+import { Form, Row, Col, Button, FloatingLabel, Modal } from 'react-bootstrap';
 import { CalendarEventFill, Save, XCircle, GearFill, Trash } from 'react-bootstrap-icons';
 import Select from 'react-select';
 import type { StylesConfig } from 'react-select';
@@ -429,34 +429,45 @@ export function DeliveryForm({
         </div>
       </Form>
 
-      {/* MODAL DE GERENCIAMENTO DE HISTÓRICO */}
+      {/* MODAL DE GERENCIAMENTO DE HISTÓRICO - FORMATO TABELA */}
       <Modal show={showManageModal} onHide={() => setShowManageModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>
-            Gerenciar Sugestões: {
-              manageField === 'origens' ? 'Origens' :
-              manageField === 'destinos' ? 'Destinos' : 'Responsáveis'
-            }
-          </Modal.Title>
+        <Modal.Header closeButton className="border-bottom-0 pb-0">
+          <Modal.Title className="fs-5">Gerenciamento de Histórico</Modal.Title>
         </Modal.Header>
-        <Modal.Body style={{ maxHeight: '60vh', overflowY: 'auto' }}>
-          <ListGroup>
-            {(manageField ? sugestoes[manageField] : []).map((item, idx) => (
-              <ListGroup.Item key={idx} className="d-flex justify-content-between align-items-center">
-                <span>{item}</span>
-                <Button variant="outline-danger" size="sm" onClick={() => handleRemoveOption(manageField!, item)}>
-                  <Trash />
-                </Button>
-              </ListGroup.Item>
-            ))}
-            {(manageField ? sugestoes[manageField] : []).length === 0 && (
-              <div className="text-center text-muted py-3">Nenhuma opção visível.</div>
-            )}
-          </ListGroup>
+        <Modal.Body className="pt-2">
+          <div className="table-responsive" style={{ maxHeight: '50vh', overflowY: 'auto' }}>
+            <table className="table table-hover align-middle mb-0 border">
+              <thead className="table-light sticky-top">
+                <tr>
+                  <th className="border-bottom text-secondary" style={{ fontSize: '0.85rem' }}>VALOR SALVO</th>
+                  <th className="border-bottom text-end text-secondary" style={{ fontSize: '0.85rem' }}>AÇÃO</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(manageField ? sugestoes[manageField] : []).map((item, idx) => (
+                  <tr key={idx}>
+                    <td className="fw-medium">{item}</td>
+                    <td className="text-end">
+                      <Button variant="danger" size="sm" onClick={() => handleRemoveOption(manageField!, item)} title="Remover">
+                        <Trash />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+                {(manageField ? sugestoes[manageField] : []).length === 0 && (
+                  <tr>
+                    <td colSpan={2} className="text-center text-muted py-4">
+                      Nenhuma opção visível salva no histórico.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </Modal.Body>
-        <Modal.Footer className="justify-content-between">
-          <Button variant="outline-danger" onClick={() => handleClearAllOptions(manageField!)}>
-            Limpar Todo o Histórico
+        <Modal.Footer className="justify-content-between border-top-0 pt-0 mt-3">
+          <Button variant="danger" onClick={() => handleClearAllOptions(manageField!)}>
+            Limpar Histórico
           </Button>
           <Button variant="secondary" onClick={() => setShowManageModal(false)}>
             Fechar

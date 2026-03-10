@@ -10,6 +10,7 @@ export function ModalComponent({ children, title, onClose }: { children: React.R
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
   }, [onClose]);
+  
   return (
     <div className="modal" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 9999 }} onClick={onClose}>
       <div className="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
@@ -22,6 +23,46 @@ export function ModalComponent({ children, title, onClose }: { children: React.R
         </div>
       </div>
     </div>
+  );
+}
+
+// --- MODAL DE GERENCIAMENTO DE HISTÓRICO COM VISUAL DE TABELA ---
+export function GerenciarHistoricoModal({ show, onClose, title, items, onRemove, onClearAll }: { show: boolean; onClose: () => void; title: string; items: string[]; onRemove: (i: string) => void; onClearAll: () => void; }) {
+  if (!show) return null;
+  return (
+    <ModalComponent title={`Gerenciar Sugestões: ${title}`} onClose={onClose}>
+      <div className="table-responsive" style={{ maxHeight: '50vh', overflowY: 'auto' }}>
+        <table className="table table-hover align-middle mb-0 border">
+          <thead className="table-light sticky-top">
+            <tr>
+              <th className="border-bottom text-secondary" style={{ fontSize: '0.85rem' }}>VALOR SALVO</th>
+              <th className="border-bottom text-end text-secondary" style={{ fontSize: '0.85rem' }}>AÇÃO</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item, idx) => (
+              <tr key={idx}>
+                <td className="fw-medium">{item}</td>
+                <td className="text-end">
+                  <button type="button" className="btn btn-sm btn-danger" onClick={() => onRemove(item)} title="Remover">
+                    <i className="bi bi-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {items.length === 0 && (
+              <tr>
+                <td colSpan={2} className="text-center text-muted py-4">Nenhuma opção visível salva no histórico.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      <div className="d-flex justify-content-between mt-4">
+        <button type="button" className="btn btn-danger" onClick={onClearAll}>Limpar Histórico</button>
+        <button type="button" className="btn btn-secondary" onClick={onClose}>Fechar</button>
+      </div>
+    </ModalComponent>
   );
 }
 
