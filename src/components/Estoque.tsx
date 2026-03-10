@@ -143,7 +143,7 @@ export function ProdutoForm({ onCancel, onSave, produto, categorias, locais }: {
   const visibleLocais = locais.filter((l) => !hiddenOptions.locais?.includes(l));
 
   const handleRemoveOption = (item: string) => {
-    if (manageField && window.confirm(`Remover "${item}" das sugestões?`)) {
+    if (manageField) {
       setHiddenOptions((prev) => ({
         ...prev,
         [manageField]: [...(prev[manageField] || []), item],
@@ -152,7 +152,7 @@ export function ProdutoForm({ onCancel, onSave, produto, categorias, locais }: {
   };
 
   const handleClearAllOptions = () => {
-    if (manageField && window.confirm('Tem certeza que deseja limpar todo o histórico de sugestões deste campo?')) {
+    if (manageField) {
       const currentVisible = manageField === 'categorias' ? visibleCategorias : visibleLocais;
       setHiddenOptions((prev) => ({
         ...prev,
