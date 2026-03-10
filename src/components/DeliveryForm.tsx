@@ -302,7 +302,7 @@ export function DeliveryForm({
       {/* Removido o h-100 fixo e adicionado h-auto para que o formulário cresça naturalmente e não esmague o botão */}
       <Form
         onSubmit={handleSubmit}
-        className="p-4 border rounded bg-white shadow-sm d-flex flex-column h-auto"
+        className="p-4 border rounded bg-white shadow-sm d-flex flex-column"
       >
         <h5 className="mb-4 border-bottom pb-2 text-primary d-flex align-items-center fw-bold">
           <CalendarEventFill className="me-2" />
@@ -477,7 +477,7 @@ export function DeliveryForm({
         </Row>
 
         {/* Adicionado mt-4 para empurrar o botão e dar respiro sem quebrar */}
-        <div className="form-actions-container d-flex flex-column flex-sm-row justify-content-end gap-2 mt-4">
+        <div className="form-actions-container d-flex flex-column flex-sm-row justify-content-end gap-2 mt-3">
           {onCancelEdit && (
             <Button
               variant="outline-secondary"
