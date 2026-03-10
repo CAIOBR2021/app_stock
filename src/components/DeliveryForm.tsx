@@ -380,7 +380,7 @@ export function DeliveryForm({
             variant="primary" 
             className="px-4 py-2 fw-bold order-1 order-sm-2 shadow-sm"
           >
-            <Save className="me-2" /> {deliveryToEdit ? 'Salvar Alterações' : 'Confirmar Agendamento'}
+            <Save className="me-2" /> {deliveryToEdit ? 'Salvar Alterações' : 'Agendar Entrega'}
           </Button>
         </div>
       </Form>
