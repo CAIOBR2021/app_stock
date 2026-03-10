@@ -12,10 +12,6 @@ interface DeliveryFormProps {
   historicoEntregas?: any[];
 }
 
-/**
- * Estilos inline para o botão discreto e melhorias no modal
- * Você também pode mover estes estilos para seu arquivo CSS global.
- */
 const customFormStyles = `
   .btn-manage-discreet {
     background: transparent;
@@ -57,6 +53,12 @@ const customFormStyles = `
     color: #334155;
     font-size: 0.95rem;
   }
+  /* Garante que o container de botões não quebre o layout */
+  .form-actions-container {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #f1f5f9;
+  }
 `;
 
 export function DeliveryForm({
@@ -88,7 +90,6 @@ export function DeliveryForm({
   const [hora, setHora] = useState('08:00');
   const [selectedOption, setSelectedOption] = useState<any>(null);
 
-  // --- GERENCIAMENTO DE HISTÓRICO ---
   const [showManageModal, setShowManageModal] = useState(false);
   const [manageField, setManageField] = useState<'origens' | 'destinos' | 'responsaveis' | null>(null);
   const [hiddenOptions, setHiddenOptions] = useState<Record<string, string[]>>(() => {
@@ -117,7 +118,6 @@ export function DeliveryForm({
     }
   };
 
-  // --- MÁSCARA DE TELEFONE ---
   const formatPhone = (value: string) => {
     if (!value) return '';
     let v = value.replace(/\D/g, '');
@@ -127,7 +127,6 @@ export function DeliveryForm({
     return v;
   };
 
-  // --- PREPARAÇÃO DE DATALISTS ---
   const sugestoes = useMemo(() => {
     const origens = new Set<string>(['Almoxarifado Central', 'Pátio 04', 'Galpão Externo']);
     const destinos = new Set<string>();
@@ -251,7 +250,8 @@ export function DeliveryForm({
     <>
       <style>{customFormStyles}</style>
       
-      <Form onSubmit={handleSubmit} className="p-4 border rounded bg-white shadow-sm h-100 d-flex flex-column">
+      {/* Removido o h-100 fixo para evitar que os botões "sumam" em telas menores ou com zoom */}
+      <Form onSubmit={handleSubmit} className="p-4 border rounded bg-white shadow-sm d-flex flex-column h-100">
         <h5 className="mb-4 border-bottom pb-2 text-primary d-flex align-items-center fw-bold">
           <CalendarEventFill className="me-2" />
           {deliveryToEdit ? 'Editar Entrega' : 'Agendar Nova Entrega'}
@@ -379,19 +379,27 @@ export function DeliveryForm({
           </Col>
         </Row>
 
-        <div className="d-flex justify-content-end gap-2 mt-auto pt-4">
+        {/* Seção de Ações Refatorada para ser resiliente ao tamanho da tela */}
+        <div className="form-actions-container d-flex flex-column flex-sm-row justify-content-end gap-2 mt-auto">
           {onCancelEdit && (
-            <Button variant="outline-secondary" onClick={onCancelEdit} className="px-4">
+            <Button 
+              variant="outline-secondary" 
+              onClick={onCancelEdit} 
+              className="px-4 py-2 order-2 order-sm-1"
+            >
               <XCircle className="me-2" /> Cancelar
             </Button>
           )}
-          <Button type="submit" variant="primary" className="px-4 fw-bold">
+          <Button 
+            type="submit" 
+            variant="primary" 
+            className="px-4 py-2 fw-bold order-1 order-sm-2 shadow-sm"
+          >
             <Save className="me-2" /> {deliveryToEdit ? 'Salvar Alterações' : 'Confirmar Agendamento'}
           </Button>
         </div>
       </Form>
 
-      {/* MODAL DE GERENCIAMENTO REFINADO */}
       <Modal 
         show={showManageModal} 
         onHide={() => setShowManageModal(false)} 
