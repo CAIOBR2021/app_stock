@@ -2,7 +2,8 @@ import { useEffect, useState, useMemo } from 'react';
 import { Form, Button } from 'react-bootstrap';
 import { 
   ClipboardData, CalendarWeek, XCircle, BoxSeam, Truck, 
-  CheckCircleFill, ArrowCounterclockwise, ExclamationTriangleFill 
+  CheckCircleFill, ArrowCounterclockwise, ExclamationTriangleFill,
+  Gear // Novo ícone importado
 } from 'react-bootstrap-icons'; 
 
 import meuLogo from './assets/logo.png';
@@ -56,6 +57,9 @@ export default function App() {
   const [selectedEntregaIds, setSelectedEntregaIds] = useState<string[]>([]);
   const [showReprogramModal, setShowReprogramModal] = useState(false);
   const [newDeliveryDate, setNewDeliveryDate] = useState('');
+
+  // ESTADO PARA CONFIGURAÇÕES
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   const [rotaDateFilter, setRotaDateFilter] = useState(() => {
     const now = new Date();
@@ -773,10 +777,56 @@ export default function App() {
           <button className={`bottom-nav-item ${view === 'rotas' ? 'active' : ''}`} onClick={() => { setView('rotas'); scrollTop(); }}><Truck /><span>Rotas</span></button>
       </nav>
 
+      {/* BOTÃO DE ENGRENAGEM DISCRETO (ESTILO FLOATING ACTION BUTTON) */}
+      <button 
+        className="btn-settings-discrete" 
+        onClick={() => setShowSettingsModal(true)}
+        title="Configurações do Sistema"
+      >
+        <Gear size={22} />
+      </button>
+
       {showScroll && (
-        <button className="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center" onClick={scrollTop} style={{ position: 'fixed', bottom: '90px', right: '20px', width: '45px', height: '45px', zIndex: 1000 }}>
+        <button className="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center btn-scroll-top" onClick={scrollTop}>
           <i className="bi bi-arrow-up fs-4"></i>
         </button>
+      )}
+
+      {/* MODAL DE CONFIGURAÇÕES COM ACABAMENTO MELHORADO */}
+      {showSettingsModal && (
+        <ModalComponent title="Configurações do Sistema" onClose={() => setShowSettingsModal(false)}>
+           <div className="settings-premium-body">
+              <p className="text-muted small mb-4">Gerencie as preferências globais da aplicação.</p>
+              
+              <div className="settings-field-group">
+                <label className="settings-field-label">Servidor API</label>
+                <input type="text" className="settings-premium-input" defaultValue={API_URL} />
+                <div className="settings-field-hint">Endereço base para sincronização de dados.</div>
+              </div>
+
+              <div className="settings-field-group mt-3">
+                <label className="settings-field-label">Paginação Padrão</label>
+                <select className="settings-premium-select">
+                  <option value="15">15 registros por página</option>
+                  <option value="30">30 registros por página</option>
+                  <option value="50">50 registros por página</option>
+                </select>
+              </div>
+
+              <div className="settings-field-group mt-3">
+                <label className="settings-field-label">Notificações</label>
+                <div className="form-check form-switch mt-2">
+                  <input className="form-check-input" type="checkbox" id="notifyStock" defaultChecked />
+                  <label className="form-check-label small" htmlFor="notifyStock">Avisar quando o estoque atingir o mínimo</label>
+                </div>
+              </div>
+
+              <div className="d-flex justify-content-end gap-2 mt-5 pt-3 border-top">
+                <button className="btn-premium-cancel" onClick={() => setShowSettingsModal(false)}>Cancelar</button>
+                <button className="btn-premium-save" onClick={() => setShowSettingsModal(false)}>Aplicar Mudanças</button>
+              </div>
+           </div>
+        </ModalComponent>
       )}
 
       {showReprogramModal && (
@@ -801,8 +851,8 @@ export default function App() {
               <ExclamationTriangleFill className="text-warning mb-3" size={40} />
               <p>Marcar <strong>{selectedEntregaIds.length}</strong> item(ns) como <strong>"{bulkTargetStatus}"</strong>?</p>
               <div className="d-flex justify-content-center gap-2 mt-4">
-                 <Button variant="secondary" onClick={() => setShowBulkConfirmModal(false)}>Cancelar</Button>
-                 <Button variant="primary" onClick={confirmBulkStatusChange}>Confirmar</Button>
+                  <Button variant="secondary" onClick={() => setShowBulkConfirmModal(false)}>Cancelar</Button>
+                  <Button variant="primary" onClick={confirmBulkStatusChange}>Confirmar</Button>
               </div>
            </div>
         </ModalComponent>
