@@ -53,11 +53,14 @@ const customFormStyles = `
     color: #334155;
     font-size: 0.95rem;
   }
-  /* Garante que o container de botões não quebre o layout */
-  .form-actions-container {
-    margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid #f1f5f9;
+  .form-actions-wrapper {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
   }
 `;
 
@@ -172,18 +175,14 @@ export function DeliveryForm({
       backgroundColor: '#fff',
       borderColor: state.isFocused ? '#86b7fe' : '#dee2e6',
       minHeight: '58px',
-      height: '58px',
       borderRadius: '0.375rem',
       boxShadow: state.isFocused ? '0 0 0 0.25rem rgba(13, 110, 253, 0.25)' : 'none',
       '&:hover': { borderColor: state.isFocused ? '#86b7fe' : '#dee2e6' },
     }),
     valueContainer: (provided) => ({
       ...provided,
-      height: '58px',
       padding: '0 12px',
-      alignContent: 'center',
     }),
-    input: (provided) => ({ ...provided, margin: '0', padding: '0' }),
     menu: (provided) => ({ ...provided, zIndex: 9999 }),
   };
 
@@ -250,8 +249,7 @@ export function DeliveryForm({
     <>
       <style>{customFormStyles}</style>
       
-      {/* Removido o h-100 fixo para evitar que os botões "sumam" em telas menores ou com zoom */}
-      <Form onSubmit={handleSubmit} className="p-4 border rounded bg-white shadow-sm d-flex flex-column h-100">
+      <Form onSubmit={handleSubmit} className="p-4 border rounded bg-white shadow-sm d-flex flex-column">
         <h5 className="mb-4 border-bottom pb-2 text-primary d-flex align-items-center fw-bold">
           <CalendarEventFill className="me-2" />
           {deliveryToEdit ? 'Editar Entrega' : 'Agendar Nova Entrega'}
@@ -379,22 +377,13 @@ export function DeliveryForm({
           </Col>
         </Row>
 
-        {/* Seção de Ações Refatorada para ser resiliente ao tamanho da tela */}
-        <div className="form-actions-container d-flex flex-column flex-sm-row justify-content-end gap-2 mt-auto">
+        <div className="form-actions-wrapper">
           {onCancelEdit && (
-            <Button 
-              variant="outline-secondary" 
-              onClick={onCancelEdit} 
-              className="px-4 py-2 order-2 order-sm-1"
-            >
+            <Button variant="outline-secondary" onClick={onCancelEdit} className="px-4 py-2">
               <XCircle className="me-2" /> Cancelar
             </Button>
           )}
-          <Button 
-            type="submit" 
-            variant="primary" 
-            className="px-4 py-2 fw-bold order-1 order-sm-2 shadow-sm"
-          >
+          <Button type="submit" variant="primary" className="px-4 py-2 fw-bold shadow-sm">
             <Save className="me-2" /> {deliveryToEdit ? 'Salvar Alterações' : 'Confirmar Agendamento'}
           </Button>
         </div>
