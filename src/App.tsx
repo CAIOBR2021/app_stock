@@ -860,10 +860,12 @@ export default function App() {
         </button>
       )}
 
-      {showLowStockModal && (
+     {showLowStockModal && (
         <ModalComponent title="Alertas de Stock" onClose={() => setShowLowStockModal(false)}>
            <div className="p-2">
-              <h6 className="text-muted mb-4">Produtos abaixo da quantidade mínima:</h6>
+              <h6 className="text-muted mb-4">
+                Produtos abaixo da quantidade mínima ({produtosAbaixoMinimo.length}):
+              </h6>
               {produtosAbaixoMinimo.length === 0 ? (
                 <div className="text-center my-5">
                     <CheckCircleFill size={40} className="text-success mb-3" />
@@ -871,7 +873,7 @@ export default function App() {
                     <p className="small text-muted">Não existem materiais em rutura no momento.</p>
                 </div>
               ) : (
-                <div className="border rounded-3 overflow-hidden" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+                <div className="border rounded-3" style={{ maxHeight: '50vh', overflowY: 'auto', overflowX: 'hidden' }}>
                     <ListGroup variant="flush">
                         {produtosAbaixoMinimo.map(p => (
                             <ListGroup.Item key={p.id} className="d-flex justify-content-between align-items-center py-3">
