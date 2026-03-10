@@ -89,8 +89,12 @@ export function MovimentacaoEditForm({ movimentacao, produto, onCancel, onSave, 
   useEffect(() => { localStorage.setItem('movimentacaoHiddenOptions', JSON.stringify(hiddenMotivos)); }, [hiddenMotivos]);
   const visibleMotivos = motivosDisponiveis.filter(m => !hiddenMotivos.includes(m));
 
-  const handleRemoveMotivo = (item: string) => { if (window.confirm(`Remover "${item}" das sugestões?`)) setHiddenMotivos(prev => [...prev, item]); };
-  const handleClearAllMotivos = () => { if (window.confirm('Tem certeza que deseja limpar todo o histórico visível de motivos?')) setHiddenMotivos(prev => [...prev, ...visibleMotivos]); };
+  const handleRemoveMotivo = (item: string) => { 
+    setHiddenMotivos(prev => [...prev, item]); 
+  };
+  const handleClearAllMotivos = () => { 
+    setHiddenMotivos(prev => [...prev, ...visibleMotivos]); 
+  };
   // -----------------------------
 
   function handleSubmit(e: React.FormEvent) {
