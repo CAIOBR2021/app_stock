@@ -142,14 +142,22 @@ export function MovimentacaoEditForm({ movimentacao, produto, onCancel, onSave, 
 
 export function ConsultaMovimentacoes({ movs, produtos, onDelete, onEdit }: { movs: Movimentacao[]; produtos: Produto[]; onDelete: (id: UUID) => void; onEdit: (id: UUID, patch: { quantidade: number; motivo?: string }) => void; }) {
   const [dataInicio, setDataInicio] = useState(''); const [dataFim, setDataFim] = useState(''); const [categoria, setCategoria] = useState('');
+  const [filtroObra, setFiltroObra] = useState(''); // Estado para o novo filtro de Obra
   const [currentPage, setCurrentPage] = useState(1); const [itemsPerPage, setItemsPerPage] = useState(30);
   const [deleteId, setDeleteId] = useState<UUID | null>(null); const [editId, setEditId] = useState<UUID | null>(null);
 
   const produtoMap = useMemo(() => new Map(produtos.map((p) => [p.id, p])), [produtos]);
   const categorias = useMemo(() => Array.from(new Set(produtos.map((p) => p.categoria || '').filter(Boolean))), [produtos]);
+  
   const motivosUnicos = useMemo(() => {
     const motivos = movs.map((m) => m.motivo).filter((m) => m && m.trim().length > 0) as string[];
     return Array.from(new Set(motivos)).sort();
+  }, [movs]);
+
+  // Extrair obras únicas para preencher o dropdown
+  const obrasUnicas = useMemo(() => {
+    const obras = movs.map((m) => m.nomeObra).filter((o) => o && o.trim().length > 0) as string[];
+    return Array.from(new Set(obras)).sort();
   }, [movs]);
 
   const filteredMovs = useMemo(() => {
@@ -158,9 +166,18 @@ export function ConsultaMovimentacoes({ movs, produtos, onDelete, onEdit }: { mo
       if (dataInicio && movDate < new Date(`${dataInicio}T00:00:00`)) return false;
       if (dataFim) { const fimDate = new Date(`${dataFim}T00:00:00`); fimDate.setHours(23, 59, 59, 999); if (movDate > fimDate) return false; }
       if (categoria) { const produto = produtoMap.get(mov.produtoId); if (!produto || produto.categoria !== categoria) return false; }
+      if (filtroObra && mov.nomeObra !== filtroObra) return false; // Aplica o filtro de obra
       return true;
     });
-  }, [movs, produtoMap, dataInicio, dataFim, categoria]);
+  }, [movs, produtoMap, dataInicio, dataFim, categoria, filtroObra]);
+
+  // CÁLCULO DO CUSTO TOTAL DA OBRA (Somando apenas as saídas)
+  const custoTotalObra = useMemo(() => {
+    if (!filtroObra) return 0;
+    return filteredMovs
+      .filter(m => m.tipo === 'saida')
+      .reduce((total, m) => total + (m.quantidade * (Number(m.custoUnitarioHistorico) || 0)), 0);
+  }, [filteredMovs, filtroObra]);
 
   useEffect(() => { setCurrentPage(1); }, [filteredMovs.length, itemsPerPage]);
 
@@ -177,17 +194,52 @@ export function ConsultaMovimentacoes({ movs, produtos, onDelete, onEdit }: { mo
       <h3 className="border-bottom pb-2 mb-4">Consulta de Movimentações</h3>
       <div className="filter-panel mb-4">
         <div className="row g-3 align-items-end">
-          <div className="col-12 col-sm-6 col-lg-3"><label className="form-label fw-bold">Data de Início</label><input type="date" className="form-control" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} /></div>
-          <div className="col-12 col-sm-6 col-lg-3"><label className="form-label fw-bold">Data de Fim</label><input type="date" className="form-control" value={dataFim} onChange={(e) => setDataFim(e.target.value)} /></div>
-          <div className="col-12 col-sm-6 col-lg-2"><label className="form-label fw-bold">Categoria</label><select className="form-select" value={categoria} onChange={(e) => setCategoria(e.target.value)}><option value="">Todas</option>{categorias.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
-          <div className="col-12 col-sm-6 col-lg-2"><label className="form-label fw-bold">Itens por pág.</label><select className="form-select" value={itemsPerPage} onChange={(e) => setItemsPerPage(Number(e.target.value))}><option value={30}>30</option><option value={70}>70</option><option value={100}>100</option></select></div>
-          <div className="col-12 col-lg-2"><button className="btn btn-outline-secondary d-flex align-items-center w-100 justify-content-center" onClick={() => {setDataInicio(''); setDataFim(''); setCategoria('');}}><i className="bi bi-x-lg me-2"></i>Limpar</button></div>
+          <div className="col-12 col-sm-6 col-lg-2"><label className="form-label fw-bold">Data Início</label><input type="date" className="form-control" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} /></div>
+          <div className="col-12 col-sm-6 col-lg-2"><label className="form-label fw-bold">Data Fim</label><input type="date" className="form-control" value={dataFim} onChange={(e) => setDataFim(e.target.value)} /></div>
+          <div className="col-12 col-sm-4 col-lg-2"><label className="form-label fw-bold">Categoria</label><select className="form-select" value={categoria} onChange={(e) => setCategoria(e.target.value)}><option value="">Todas</option>{categorias.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
+          
+          {/* NOVO CAMPO DE FILTRO DE OBRA */}
+          <div className="col-12 col-sm-4 col-lg-2">
+            <label className="form-label fw-bold">Obra</label>
+            <select className="form-select" value={filtroObra} onChange={(e) => setFiltroObra(e.target.value)}>
+              <option value="">Todas</option>
+              {obrasUnicas.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </div>
+          
+          <div className="col-12 col-sm-4 col-lg-2"><label className="form-label fw-bold">Itens/pág.</label><select className="form-select" value={itemsPerPage} onChange={(e) => setItemsPerPage(Number(e.target.value))}><option value={30}>30</option><option value={70}>70</option><option value={100}>100</option></select></div>
+          <div className="col-12 col-lg-2"><button className="btn btn-outline-secondary d-flex align-items-center w-100 justify-content-center" onClick={() => {setDataInicio(''); setDataFim(''); setCategoria(''); setFiltroObra('');}}><i className="bi bi-x-lg me-2"></i>Limpar</button></div>
         </div>
+
+        {/* NOVO PAINEL DE CUSTOS (Aparece apenas se a obra for selecionada) */}
+        {filtroObra && (
+          <div className="alert alert-info mt-3 mb-0 d-flex justify-content-between align-items-center border-0 shadow-sm rounded-3">
+            <div>
+              <h5 className="mb-0 fw-bold"><i className="bi bi-building me-2"></i>Custo em Materiais: {filtroObra}</h5>
+              <small>Total das saídas de materiais enviadas para a obra no período</small>
+            </div>
+            <h3 className="mb-0 text-primary fw-bold">
+              R$ {custoTotalObra.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </h3>
+          </div>
+        )}
       </div>
+      
       <div className="products-table">
         <div className="table-responsive">
           <table className="table table-hover align-middle mb-0">
-            <thead><tr><th>Data/Hora</th><th>Produto</th><th>Tipo</th><th>Quantidade</th><th className="d-none d-md-table-cell">Motivo</th><th className="text-end">Ações</th></tr></thead>
+            {/* ADICIONADO: Obra/OC no cabeçalho */}
+            <thead>
+              <tr>
+                <th>Data/Hora</th>
+                <th>Produto</th>
+                <th>Tipo</th>
+                <th>Quantidade</th>
+                <th className="d-none d-md-table-cell">Obra/OC</th>
+                <th className="d-none d-md-table-cell">Motivo</th>
+                <th className="text-end">Ações</th>
+              </tr>
+            </thead>
             <tbody>
               {paginatedMovs.map((m) => (
                 <tr key={m.id}>
@@ -195,6 +247,14 @@ export function ConsultaMovimentacoes({ movs, produtos, onDelete, onEdit }: { mo
                   <td>{produtoMap.get(m.produtoId)?.nome ?? 'N/A'}</td>
                   <td><span className={`badge bg-${m.tipo === 'entrada' ? 'success' : m.tipo === 'saida' ? 'danger' : 'warning'}`}>{m.tipo.toUpperCase()}</span></td>
                   <td>{m.quantidade} <small className="text-muted">{produtoMap.get(m.produtoId)?.unidade}</small></td>
+                  
+                  {/* ADICIONADO: Exibição visual da Obra e Ordem de Compra nas linhas */}
+                  <td className="d-none d-md-table-cell">
+                    {m.nomeObra && <span className="badge bg-secondary me-1" title="Obra">{m.nomeObra}</span>}
+                    {m.ordemCompra && <span className="badge bg-light text-dark border" title="Ordem de Compra">{m.ordemCompra}</span>}
+                    {!m.nomeObra && !m.ordemCompra && '-'}
+                  </td>
+                  
                   <td className="d-none d-md-table-cell">{m.motivo ?? '-'}</td>
                   <td className="text-end">
                     <button className="btn-action text-primary" onClick={() => setEditId(m.id)} disabled={m.tipo === 'ajuste'} title={m.tipo === 'ajuste' ? 'Não editável' : 'Editar'}><i className="bi bi-pencil-square"></i></button>
@@ -202,7 +262,7 @@ export function ConsultaMovimentacoes({ movs, produtos, onDelete, onEdit }: { mo
                   </td>
                 </tr>
               ))}
-              {filteredMovs.length === 0 && <tr><td colSpan={6} className="text-center py-4">Nenhuma movimentação encontrada.</td></tr>}
+              {filteredMovs.length === 0 && <tr><td colSpan={7} className="text-center py-4">Nenhuma movimentação encontrada.</td></tr>}
             </tbody>
           </table>
         </div>
