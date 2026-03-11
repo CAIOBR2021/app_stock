@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Form, Row, Col, Button, Modal } from 'react-bootstrap';
-import { CalendarEventFill, Save, XCircle, Gear, Trash3Fill, Clock } from 'react-bootstrap-icons';
+import { CalendarEventFill, Save, XCircle, Gear, Trash3Fill } from 'react-bootstrap-icons';
 import Select from 'react-select';
 import CreatableSelect from 'react-select/creatable';
 import type { StylesConfig } from 'react-select';
@@ -211,7 +211,6 @@ export function DeliveryForm({
   const handleResponsavelChange = (e: any) => {
     const nomeDigitado = e.target.value || '';
     
-    // REGRA NOVA: Se o utilizador apagar o nome, o telefone é limpo automaticamente
     if (nomeDigitado.trim() === '') {
       setFormData({
         ...formData,
@@ -256,10 +255,7 @@ export function DeliveryForm({
             <Form.Control type="date" value={data} onChange={(e) => setData(e.target.value)} required />
           </Col>
           <Col xs={6}>
-            {/* NOVO: Ícone de relógio ao lado da label Hora */}
-            <Form.Label className="text-muted small fw-bold mb-1 d-flex align-items-center">
-              <Clock size={13} className="me-1" /> Hora
-            </Form.Label>
+            <Form.Label className="text-muted small fw-bold mb-1">Hora</Form.Label>
             <Form.Control type="time" value={hora} onChange={(e) => setHora(e.target.value)} required />
           </Col>
         </Row>
@@ -298,7 +294,6 @@ export function DeliveryForm({
           <Col xs={12}>
             <div className="d-flex justify-content-between align-items-center mb-1">
               <Form.Label className="text-muted small fw-bold mb-0">Origem (Armazém) *</Form.Label>
-              {/* NOVO: Ícone de engrenagem vazado (Gear) e na cor cinza */}
               <button type="button" className="btn-icon-subtle p-1 text-muted border-0 bg-transparent" onClick={() => openManage('origens')} title="Gerenciar histórico">
                 <Gear size={15} className="text-secondary" />
               </button>
