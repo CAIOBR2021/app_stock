@@ -232,32 +232,31 @@ export function DeliveryForm({
     <>
       <style>{customFormStyles}</style>
       
+      {/* Container flex com h-100 para esticar na barra lateral */}
       <Form onSubmit={handleSubmit} className="p-4 border rounded bg-white shadow-sm d-flex flex-column h-100">
+        
+        {/* Título */}
         <h5 className="mb-4 border-bottom pb-2 text-primary d-flex align-items-center fw-bold">
           <CalendarEventFill className="me-2" />
-          {deliveryToEdit ? 'Editar Entrega' : 'Agendar Nova Entrega'}
+          {deliveryToEdit ? 'Editar Entrega' : 'Nova Entrega'}
         </h5>
 
+        {/* Data e Hora ficam na mesma linha pois são pequenos (Col xs=6) */}
         <Row className="g-3 mb-3">
-          <Col md={6}>
-            <div className="d-flex align-items-center mb-1" style={{ minHeight: '28px' }}>
-              <Form.Label className="text-muted small fw-bold mb-0">Data</Form.Label>
-            </div>
+          <Col xs={6}>
+            <Form.Label className="text-muted small fw-bold mb-1">Data</Form.Label>
             <Form.Control type="date" value={data} onChange={(e) => setData(e.target.value)} required />
           </Col>
-          <Col md={6}>
-            <div className="d-flex align-items-center mb-1" style={{ minHeight: '28px' }}>
-              <Form.Label className="text-muted small fw-bold mb-0">Hora</Form.Label>
-            </div>
+          <Col xs={6}>
+            <Form.Label className="text-muted small fw-bold mb-1">Hora</Form.Label>
             <Form.Control type="time" value={hora} onChange={(e) => setHora(e.target.value)} required />
           </Col>
         </Row>
 
+        {/* Daqui em diante, todos ocupam 100% (xs={12}) para evitar esmagamento */}
         <Row className="g-3 mb-3">
-          <Col md={8}>
-            <div className="d-flex align-items-center mb-1" style={{ minHeight: '28px' }}>
-              <Form.Label className="text-muted small fw-bold mb-0">Produto</Form.Label>
-            </div>
+          <Col xs={12}>
+            <Form.Label className="text-muted small fw-bold mb-1">Produto *</Form.Label>
             <Select
               value={selectedOption}
               onChange={(opt: any) => {
@@ -271,10 +270,9 @@ export function DeliveryForm({
               menuPortalTarget={document.body}
             />
           </Col>
-          <Col md={4}>
-            <div className="d-flex align-items-center mb-1" style={{ minHeight: '28px' }}>
-              <Form.Label className="text-muted small fw-bold mb-0">Quantidade</Form.Label>
-            </div>
+          
+          <Col xs={12}>
+            <Form.Label className="text-muted small fw-bold mb-1">Quantidade *</Form.Label>
             <Form.Control
               type="number"
               min="0.01"
@@ -287,10 +285,10 @@ export function DeliveryForm({
         </Row>
 
         <Row className="g-3 mb-3">
-          <Col md={6}>
-            <div className="d-flex justify-content-between align-items-center mb-1" style={{ minHeight: '28px' }}>
-              <Form.Label className="text-muted small fw-bold mb-0">Origem (Armazém)</Form.Label>
-              <button type="button" className="btn-icon-subtle p-1" onClick={() => openManage('origens')} title="Gerenciar histórico">
+          <Col xs={12}>
+            <div className="d-flex justify-content-between align-items-center mb-1">
+              <Form.Label className="text-muted small fw-bold mb-0">Origem (Armazém) *</Form.Label>
+              <button type="button" className="btn-icon-subtle p-1 text-muted border-0 bg-transparent" onClick={() => openManage('origens')} title="Gerenciar histórico">
                 <GearFill size={14} />
               </button>
             </div>
@@ -306,10 +304,10 @@ export function DeliveryForm({
             />
           </Col>
           
-          <Col md={6}>
-            <div className="d-flex justify-content-between align-items-center mb-1" style={{ minHeight: '28px' }}>
-              <Form.Label className="text-muted small fw-bold mb-0">Destino (Obra/Local)</Form.Label>
-              <button type="button" className="btn-icon-subtle p-1" onClick={() => openManage('destinos')} title="Gerenciar histórico">
+          <Col xs={12}>
+            <div className="d-flex justify-content-between align-items-center mb-1">
+              <Form.Label className="text-muted small fw-bold mb-0">Destino (Obra) *</Form.Label>
+              <button type="button" className="btn-icon-subtle p-1 text-muted border-0 bg-transparent" onClick={() => openManage('destinos')} title="Gerenciar histórico">
                 <GearFill size={14} />
               </button>
             </div>
@@ -327,10 +325,10 @@ export function DeliveryForm({
         </Row>
 
         <Row className="g-3 mb-3">
-          <Col md={6}>
-            <div className="d-flex justify-content-between align-items-center mb-1" style={{ minHeight: '28px' }}>
+          <Col xs={12}>
+            <div className="d-flex justify-content-between align-items-center mb-1">
               <Form.Label className="text-muted small fw-bold mb-0">Responsável</Form.Label>
-              <button type="button" className="btn-icon-subtle p-1" onClick={() => openManage('responsaveis')} title="Gerenciar histórico">
+              <button type="button" className="btn-icon-subtle p-1 text-muted border-0 bg-transparent" onClick={() => openManage('responsaveis')} title="Gerenciar histórico">
                 <GearFill size={14} />
               </button>
             </div>
@@ -339,17 +337,15 @@ export function DeliveryForm({
               options={responsaveisOptions}
               value={formData.responsavelNome ? { value: formData.responsavelNome, label: formData.responsavelNome } : null}
               onChange={(newValue: any) => handleResponsavelChange({ target: { value: newValue?.value || '' } } as any)}
-              placeholder="Nome do responsável"
+              placeholder="Nome de quem recebe"
               formatCreateLabel={(inputValue: string) => `Usar "${inputValue}"`}
               styles={customStyles}
               menuPortalTarget={document.body}
             />
           </Col>
           
-          <Col md={6}>
-            <div className="d-flex align-items-center mb-1" style={{ minHeight: '28px' }}>
-              <Form.Label className="text-muted small fw-bold mb-0">Telefone</Form.Label>
-            </div>
+          <Col xs={12}>
+            <Form.Label className="text-muted small fw-bold mb-1">Telefone</Form.Label>
             <CreatableSelect
                isClearable
                options={telefonesOptions}
@@ -363,26 +359,29 @@ export function DeliveryForm({
           </Col>
         </Row>
 
-        <div className="form-actions-container d-flex flex-column flex-sm-row justify-content-end gap-2 mt-auto">
-          {onCancelEdit && (
+        {/* Botões empilhados (w-100) ou lado a lado */}
+        <div className="form-actions-container d-flex flex-column gap-2 mt-auto">
+          <Button 
+            type="submit" 
+            variant="primary" 
+            className="w-100 py-2 fw-bold shadow-sm"
+          >
+            <Save className="me-2" /> {deliveryToEdit ? 'Salvar Alterações' : 'Agendar Entrega'}
+          </Button>
+          
+          {deliveryToEdit && (
             <Button 
               variant="outline-secondary" 
               onClick={onCancelEdit} 
-              className="px-4 py-2 order-2 order-sm-1"
+              className="w-100 py-2"
             >
               <XCircle className="me-2" /> Cancelar
             </Button>
           )}
-          <Button 
-            type="submit" 
-            variant="primary" 
-            className="px-4 py-2 fw-bold order-1 order-sm-2 shadow-sm"
-          >
-            <Save className="me-2" /> {deliveryToEdit ? 'Salvar Alterações' : 'Agendar Entrega'}
-          </Button>
         </div>
       </Form>
 
+      {/* Modal de Gerenciamento do Histórico */}
       <Modal 
         show={showManageModal} 
         onHide={() => setShowManageModal(false)} 
