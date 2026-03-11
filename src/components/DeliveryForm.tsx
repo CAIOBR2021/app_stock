@@ -161,7 +161,6 @@ export function DeliveryForm({
       '&:hover': { borderColor: state.isFocused ? '#86b7fe' : '#dee2e6' },
     }),
     menu: (provided) => ({ ...provided, zIndex: 9999 }),
-    // SOLUÇÃO 2: Garantir que o portal do menu (quando jogado para o body) tenha um zIndex alto
     menuPortal: (base) => ({ ...base, zIndex: 9999 })
   };
 
@@ -261,7 +260,7 @@ export function DeliveryForm({
             </div>
             <Select
               value={selectedOption}
-              onChange={(opt) => {
+              onChange={(opt: any) => {
                 setSelectedOption(opt);
                 setFormData({ ...formData, produtoId: opt?.value || '', itemNome: opt?.nomeProduto || '' });
               }}
@@ -269,7 +268,7 @@ export function DeliveryForm({
               placeholder="Selecione o Produto..."
               isClearable
               styles={customStyles}
-              menuPortalTarget={document.body} /* SOLUÇÃO 2 APLICADA */
+              menuPortalTarget={document.body}
             />
           </Col>
           <Col md={4}>
@@ -301,9 +300,9 @@ export function DeliveryForm({
               value={formData.localArmazenagem ? { value: formData.localArmazenagem, label: formData.localArmazenagem } : null}
               onChange={(newValue: any) => handleInputChange({ target: { value: newValue?.value || '' } } as any, 'localArmazenagem')}
               placeholder="Selecione ou digite..."
-              formatCreateLabel={(inputValue) => `Usar "${inputValue}"`}
+              formatCreateLabel={(inputValue: string) => `Usar "${inputValue}"`}
               styles={customStyles}
-              menuPortalTarget={document.body} /* SOLUÇÃO 2 APLICADA */
+              menuPortalTarget={document.body}
             />
           </Col>
           
@@ -320,9 +319,9 @@ export function DeliveryForm({
               value={formData.localObra ? { value: formData.localObra, label: formData.localObra } : null}
               onChange={(newValue: any) => handleInputChange({ target: { value: newValue?.value || '' } } as any, 'localObra')}
               placeholder="Ex: Bloco A"
-              formatCreateLabel={(inputValue) => `Usar "${inputValue}"`}
+              formatCreateLabel={(inputValue: string) => `Usar "${inputValue}"`}
               styles={customStyles}
-              menuPortalTarget={document.body} /* SOLUÇÃO 2 APLICADA */
+              menuPortalTarget={document.body}
             />
           </Col>
         </Row>
@@ -341,9 +340,9 @@ export function DeliveryForm({
               value={formData.responsavelNome ? { value: formData.responsavelNome, label: formData.responsavelNome } : null}
               onChange={(newValue: any) => handleResponsavelChange({ target: { value: newValue?.value || '' } } as any)}
               placeholder="Nome do responsável"
-              formatCreateLabel={(inputValue) => `Usar "${inputValue}"`}
+              formatCreateLabel={(inputValue: string) => `Usar "${inputValue}"`}
               styles={customStyles}
-              menuPortalTarget={document.body} /* SOLUÇÃO 2 APLICADA */
+              menuPortalTarget={document.body}
             />
           </Col>
           
@@ -357,9 +356,9 @@ export function DeliveryForm({
                value={formData.responsavelTelefone ? { value: formData.responsavelTelefone, label: formData.responsavelTelefone } : null}
                onChange={(newValue: any) => handleInputChange({ target: { value: newValue?.value || '' } } as any, 'responsavelTelefone')}
                placeholder="(27) ..."
-               formatCreateLabel={(inputValue) => `Usar "${inputValue}"`}
+               formatCreateLabel={(inputValue: string) => `Usar "${inputValue}"`}
                styles={customStyles}
-               menuPortalTarget={document.body} /* SOLUÇÃO 2 APLICADA */
+               menuPortalTarget={document.body}
             />
           </Col>
         </Row>

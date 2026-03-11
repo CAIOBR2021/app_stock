@@ -20,6 +20,8 @@ import { useDebounce } from './hooks';
 import { ModalComponent, Paginacao } from './components/Shared';
 import { ValorTotalEstoque, Relatorios, BotaoNovoProduto, ProdutosTable } from './components/Estoque';
 import { ConsultaMovimentacoes, MovsList } from './components/Movimentacoes';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 type UUID = string;
 
@@ -34,10 +36,6 @@ export default function App() {
   const [showBulkConfirmModal, setShowBulkConfirmModal] = useState(false);
   const [bulkTargetStatus, setBulkTargetStatus] = useState('');
    
-  const [showErrorModal, setShowErrorModal] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
   const [showStockLimitModal, setShowStockLimitModal] = useState(false);
   const [pendingDeliveryData, setPendingDeliveryData] = useState<any>(null);
   
@@ -162,8 +160,7 @@ export default function App() {
       if (!response.ok) throw new Error('Falha ao atualizar prioridade no servidor.');
     } catch (err) {
       console.error(err);
-      setErrorMessage('Não foi possível salvar a alteração de prioridade. Verifique sua conexão.');
-      setShowErrorModal(true);
+      toast.error('Não foi possível salvar a alteração de prioridade. Verifique sua conexão.');
       setAllProdutos((prev) => prev.map((p) => p.id === id ? { ...p, prioritario: currentState } : p));
     }
   }
@@ -183,8 +180,7 @@ export default function App() {
       setAllProdutos((prev) => prev.map((p) => (p.id === produto.id ? produto : p)));
     } catch (err: any) {
       console.error(err);
-      setErrorMessage(err.message);
-      setShowErrorModal(true);
+      toast.error(err.message);
     }
   }
 
@@ -205,13 +201,11 @@ export default function App() {
         }, item.valorUnitario); 
       }
       
-      setSuccessMessage('Movimentações registradas e preços atualizados com sucesso!');
-      setShowSuccessModal(true);
+      toast.success('Movimentações registradas e preços atualizados com sucesso!');
       setView('estoque'); 
       scrollTop();
     } catch (err) {
-      setErrorMessage('Erro ao registrar entradas/saídas.');
-      setShowErrorModal(true);
+      toast.error('Erro ao registrar entradas/saídas.');
     } finally {
       setLoading(false);
     }
@@ -283,12 +277,10 @@ export default function App() {
       setMovs(movsData);
 
       setEditingEntrega(null);
-      setSuccessMessage('Entrega atualizada e estoque sincronizado com sucesso!');
-      setShowSuccessModal(true);
+      toast.success('Entrega atualizada e estoque sincronizado com sucesso!');
     } catch (err: any) {
       console.error(err);
-      setErrorMessage(err.message);
-      setShowErrorModal(true);
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -315,9 +307,9 @@ export default function App() {
         const movsData = await movsRes.json();
         setMovs(movsData);
 
+        toast.success('Agendamento criado com sucesso!');
     } catch (err: any) {
-        setErrorMessage(err.message);
-        setShowErrorModal(true);
+        toast.error(err.message);
     }
   }
 
@@ -379,10 +371,10 @@ export default function App() {
           setMovs(await movsRes.json());
 
           setEntregaToDeleteId(null);
+          toast.success('Entrega excluída com sucesso.');
       } catch (err: any) { 
           console.error(err);
-          setErrorMessage(err.message);
-          setShowErrorModal(true);
+          toast.error(err.message);
       }
   }
 
@@ -394,7 +386,11 @@ export default function App() {
               body: JSON.stringify({ status })
           });
           setEntregas(prev => prev.map(e => e.id === id ? { ...e, status } : e));
-      } catch (err) { console.error(err); }
+          toast.success(`Status atualizado para ${status}.`);
+      } catch (err) { 
+          console.error(err);
+          toast.error('Erro ao atualizar status.');
+      }
   }
 
   const handleBulkStatusChange = (newStatus: string) => {
@@ -420,11 +416,10 @@ export default function App() {
 
         setSelectedEntregaIds([]);
         setShowBulkConfirmModal(false);
-        
+        toast.success(`Entregas marcadas como ${bulkTargetStatus}.`);
     } catch (err) {
         console.error(err);
-        setErrorMessage('Ocorreu um erro ao atualizar os status em massa.');
-        setShowErrorModal(true);
+        toast.error('Ocorreu um erro ao atualizar os status em massa.');
     } finally {
         setLoading(false);
     }
@@ -460,8 +455,7 @@ export default function App() {
 
   const handleGenerateDeliveryReport = () => {
     if (selectedEntregaIds.length === 0) {
-      setErrorMessage('Selecione ao menos uma entrega para gerar o relatório.');
-      setShowErrorModal(true);
+      toast.error('Selecione ao menos uma entrega para gerar o relatório.');
       return;
     }
 
@@ -471,8 +465,7 @@ export default function App() {
       .sort((a, b) => new Date(a.dataHoraSolicitacao).getTime() - new Date(b.dataHoraSolicitacao).getTime());
 
     if (selectedDeliveries.length === 0) {
-        setErrorMessage("Não existem itens pendentes selecionados para gerar o relatório. Itens já entregues não são incluídos.");
-        setShowErrorModal(true);
+        toast.error("Não existem itens pendentes selecionados para gerar o relatório. Itens já entregues não são incluídos.");
         return;
     }
 
@@ -563,8 +556,7 @@ export default function App() {
   const handleReprogramDeliveries = async () => {
     if (selectedEntregaIds.length === 0) return;
     if (!newDeliveryDate) {
-      setErrorMessage('Escolha uma nova data.');
-      setShowErrorModal(true);
+      toast.error('Escolha uma nova data.');
       return;
     }
 
@@ -574,8 +566,7 @@ export default function App() {
     });
 
     if (validIdsToReprogram.length === 0) {
-        setErrorMessage("Itens marcados como 'Entregue' não podem ser reprogramados. Por favor, selecione apenas itens pendentes ou altere o status antes.");
-        setShowErrorModal(true);
+        toast.error("Itens marcados como 'Entregue' não podem ser reprogramados. Por favor, selecione apenas itens pendentes ou altere o status antes.");
         setShowReprogramModal(false);
         return;
     }
@@ -594,8 +585,7 @@ export default function App() {
             });
         }));
         
-        setSuccessMessage(`${validIdsToReprogram.length} entrega(s) reprogramada(s) com sucesso!`);
-        setShowSuccessModal(true);
+        toast.success(`${validIdsToReprogram.length} entrega(s) reprogramada(s) com sucesso!`);
         
         setShowReprogramModal(false);
         setNewDeliveryDate('');
@@ -606,8 +596,7 @@ export default function App() {
 
     } catch (e) { 
         console.error(e);
-        setErrorMessage('Erro ao reprogramar entregas.');
-        setShowErrorModal(true);
+        toast.error('Erro ao reprogramar entregas.');
     }
   };
 
@@ -677,7 +666,6 @@ export default function App() {
 
       <div className="mobile-header d-lg-none d-flex justify-content-between align-items-center px-3">
         <img src={meuLogo} alt="Logo" style={{height: '32px'}} />
-        {/* Sino de Notificação em Mobile */}
         <div 
           className="position-relative cursor-pointer" 
           onClick={() => setShowLowStockModal(true)}
@@ -701,7 +689,6 @@ export default function App() {
                 {view === 'entradas_saidas' && 'Lançamento de Entradas e Saídas'}
             </h1>
             
-            {/* Sino de Notificação em Desktop */}
             <div 
               className="position-relative bg-white p-2 rounded-circle shadow-sm border d-flex align-items-center justify-content-center" 
               onClick={() => setShowLowStockModal(true)}
@@ -830,7 +817,7 @@ export default function App() {
                 </div>
 
                 <div className="card-modern p-0 overflow-hidden">
-                    <DeliveryTable deliveries={filteredDeliveries} onDelete={(id) => setEntregaToDeleteId(id)} onEdit={(item: any) => { const ent = normalizeEntrega(item); if(!isDelivered(ent.status)) { setEditingEntrega(ent); scrollTop(); } else { setErrorMessage("Itens entregues não podem ser editados."); setShowErrorModal(true); } }} onStatusChange={updateEntregaStatus} selectedIds={selectedEntregaIds} onSelectItem={handleSelectEntrega} onSelectAll={handleSelectAllEntregas} />
+                    <DeliveryTable deliveries={filteredDeliveries} onDelete={(id) => setEntregaToDeleteId(id)} onEdit={(item: any) => { const ent = normalizeEntrega(item); if(!isDelivered(ent.status)) { setEditingEntrega(ent); scrollTop(); } else { toast.error("Itens entregues não podem ser editados."); } }} onStatusChange={updateEntregaStatus} selectedIds={selectedEntregaIds} onSelectItem={handleSelectEntrega} onSelectAll={handleSelectAllEntregas} />
                 </div>
               </div>
             </div>
@@ -860,6 +847,7 @@ export default function App() {
         </button>
       )}
 
+      {/* MODAL DE ALERTAS DE STOCK */}
      {showLowStockModal && (
         <ModalComponent title="Alertas de Stock" onClose={() => setShowLowStockModal(false)}>
            <div className="p-2">
@@ -899,6 +887,7 @@ export default function App() {
         </ModalComponent>
       )}
 
+      {/* MODAL DE REPROGRAMAR ENTREGAS */}
       {showReprogramModal && (
         <ModalComponent title="Reprogramar Entregas" onClose={() => setShowReprogramModal(false)}>
             <div className="p-2">
@@ -915,6 +904,7 @@ export default function App() {
         </ModalComponent>
       )}
 
+      {/* MODAL DE MUDANÇA EM MASSA */}
       {showBulkConfirmModal && (
         <ModalComponent title="Confirmar Alteração" onClose={() => setShowBulkConfirmModal(false)}>
            <div className="p-3 text-center">
@@ -928,16 +918,7 @@ export default function App() {
         </ModalComponent>
       )}
 
-      {showErrorModal && (
-        <ModalComponent title="Atenção" onClose={() => setShowErrorModal(false)}>
-           <div className="p-3 text-center">
-              <XCircle className="text-danger mb-3" size={40} />
-              <p>{errorMessage}</p>
-              <div className="mt-4"><Button variant="secondary" onClick={() => setShowErrorModal(false)}>Fechar</Button></div>
-           </div>
-        </ModalComponent>
-      )}
-
+      {/* MODAL DE ESTOQUE INSUFICIENTE */}
       {showStockLimitModal && (
         <ModalComponent title="Estoque Insuficiente" onClose={() => setShowStockLimitModal(false)}>
            <div className="p-3 text-center">
@@ -952,16 +933,7 @@ export default function App() {
         </ModalComponent>
       )}
 
-      {showSuccessModal && (
-        <ModalComponent title="Sucesso" onClose={() => setShowSuccessModal(false)}>
-           <div className="p-3 text-center">
-              <CheckCircleFill className="text-success mb-3" size={40} />
-              <p>{successMessage}</p>
-              <div className="mt-4"><Button variant="success" onClick={() => setShowSuccessModal(false)}>OK</Button></div>
-           </div>
-        </ModalComponent>
-      )}
-
+      {/* MODAL DE CONFIRMAR EXCLUSÃO */}
       {entregaToDeleteId && (
         <ModalComponent title="Confirmar Exclusão" onClose={() => setEntregaToDeleteId(null)}>
             <p>Deseja excluir esta entrega? O estoque será devolvido.</p>
@@ -972,6 +944,19 @@ export default function App() {
         </ModalComponent>
       )}
 
+      {/* CONTAINER DOS TOASTS (NOTIFICAÇÕES FLUTUANTES) */}
+      <ToastContainer 
+        position="top-right" 
+        autoClose={3000} 
+        hideProgressBar={false} 
+        newestOnTop={false} 
+        closeOnClick 
+        rtl={false} 
+        pauseOnFocusLoss 
+        draggable 
+        pauseOnHover 
+        theme="colored" 
+      />
     </div>
   );
 }
