@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Form, Row, Col, Button, Modal } from 'react-bootstrap';
-import { CalendarEventFill, Save, XCircle, GearFill, Trash3Fill } from 'react-bootstrap-icons';
+import { CalendarEventFill, Save, XCircle, Gear, Trash3Fill, Clock } from 'react-bootstrap-icons';
 import Select from 'react-select';
 import CreatableSelect from 'react-select/creatable';
 import type { StylesConfig } from 'react-select';
@@ -208,8 +208,19 @@ export function DeliveryForm({
     setFormData({ ...formData, [field]: valor });
   };
 
-  const handleResponsavelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const nomeDigitado = e.target.value;
+  const handleResponsavelChange = (e: any) => {
+    const nomeDigitado = e.target.value || '';
+    
+    // REGRA NOVA: Se o utilizador apagar o nome, o telefone é limpo automaticamente
+    if (nomeDigitado.trim() === '') {
+      setFormData({
+        ...formData,
+        responsavelNome: '',
+        responsavelTelefone: '',
+      });
+      return;
+    }
+
     const telefoneEncontrado = sugestoes.mapaTelefonePorNome[nomeDigitado.toLowerCase()];
     setFormData({
       ...formData,
@@ -232,28 +243,27 @@ export function DeliveryForm({
     <>
       <style>{customFormStyles}</style>
       
-      {/* Container flex com h-100 para esticar na barra lateral */}
       <Form onSubmit={handleSubmit} className="p-4 border rounded bg-white shadow-sm d-flex flex-column h-100">
         
-        {/* Título */}
         <h5 className="mb-4 border-bottom pb-2 text-primary d-flex align-items-center fw-bold">
           <CalendarEventFill className="me-2" />
           {deliveryToEdit ? 'Editar Entrega' : 'Nova Entrega'}
         </h5>
 
-        {/* Data e Hora ficam na mesma linha pois são pequenos (Col xs=6) */}
         <Row className="g-3 mb-3">
           <Col xs={6}>
             <Form.Label className="text-muted small fw-bold mb-1">Data</Form.Label>
             <Form.Control type="date" value={data} onChange={(e) => setData(e.target.value)} required />
           </Col>
           <Col xs={6}>
-            <Form.Label className="text-muted small fw-bold mb-1">Hora</Form.Label>
+            {/* NOVO: Ícone de relógio ao lado da label Hora */}
+            <Form.Label className="text-muted small fw-bold mb-1 d-flex align-items-center">
+              <Clock size={13} className="me-1" /> Hora
+            </Form.Label>
             <Form.Control type="time" value={hora} onChange={(e) => setHora(e.target.value)} required />
           </Col>
         </Row>
 
-        {/* Daqui em diante, todos ocupam 100% (xs={12}) para evitar esmagamento */}
         <Row className="g-3 mb-3">
           <Col xs={12}>
             <Form.Label className="text-muted small fw-bold mb-1">Produto *</Form.Label>
@@ -288,8 +298,9 @@ export function DeliveryForm({
           <Col xs={12}>
             <div className="d-flex justify-content-between align-items-center mb-1">
               <Form.Label className="text-muted small fw-bold mb-0">Origem (Armazém) *</Form.Label>
+              {/* NOVO: Ícone de engrenagem vazado (Gear) e na cor cinza */}
               <button type="button" className="btn-icon-subtle p-1 text-muted border-0 bg-transparent" onClick={() => openManage('origens')} title="Gerenciar histórico">
-                <GearFill size={14} />
+                <Gear size={15} className="text-secondary" />
               </button>
             </div>
             <CreatableSelect
@@ -308,7 +319,7 @@ export function DeliveryForm({
             <div className="d-flex justify-content-between align-items-center mb-1">
               <Form.Label className="text-muted small fw-bold mb-0">Destino (Obra) *</Form.Label>
               <button type="button" className="btn-icon-subtle p-1 text-muted border-0 bg-transparent" onClick={() => openManage('destinos')} title="Gerenciar histórico">
-                <GearFill size={14} />
+                <Gear size={15} className="text-secondary" />
               </button>
             </div>
             <CreatableSelect
@@ -329,7 +340,7 @@ export function DeliveryForm({
             <div className="d-flex justify-content-between align-items-center mb-1">
               <Form.Label className="text-muted small fw-bold mb-0">Responsável</Form.Label>
               <button type="button" className="btn-icon-subtle p-1 text-muted border-0 bg-transparent" onClick={() => openManage('responsaveis')} title="Gerenciar histórico">
-                <GearFill size={14} />
+                <Gear size={15} className="text-secondary" />
               </button>
             </div>
             <CreatableSelect
@@ -351,7 +362,7 @@ export function DeliveryForm({
                options={telefonesOptions}
                value={formData.responsavelTelefone ? { value: formData.responsavelTelefone, label: formData.responsavelTelefone } : null}
                onChange={(newValue: any) => handleInputChange({ target: { value: newValue?.value || '' } } as any, 'responsavelTelefone')}
-               placeholder="(27) ..."
+               placeholder="(00) 00000-0000"
                formatCreateLabel={(inputValue: string) => `Usar "${inputValue}"`}
                styles={customStyles}
                menuPortalTarget={document.body}
@@ -359,7 +370,6 @@ export function DeliveryForm({
           </Col>
         </Row>
 
-        {/* Botões empilhados (w-100) ou lado a lado */}
         <div className="form-actions-container d-flex flex-column gap-2 mt-auto">
           <Button 
             type="submit" 
@@ -381,7 +391,6 @@ export function DeliveryForm({
         </div>
       </Form>
 
-      {/* Modal de Gerenciamento do Histórico */}
       <Modal 
         show={showManageModal} 
         onHide={() => setShowManageModal(false)} 
@@ -412,7 +421,7 @@ export function DeliveryForm({
             ) : (
               <div className="text-center py-5">
                 <div className="text-muted opacity-50 mb-2">
-                   <GearFill size={40} />
+                   <Gear size={40} className="text-secondary" />
                 </div>
                 <p className="text-muted small">Nenhum item encontrado no histórico.</p>
               </div>
