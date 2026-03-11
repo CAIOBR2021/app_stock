@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Form, Row, Col, Button, FloatingLabel, Modal } from 'react-bootstrap';
 import { CalendarEventFill, Save, XCircle, GearFill, Trash3Fill } from 'react-bootstrap-icons';
 import Select from 'react-select';
-// NOVA IMPORTAÇÃO: CreatableSelect para permitir que o usuário digite novos valores
 import CreatableSelect from 'react-select/creatable';
 import type { StylesConfig } from 'react-select';
 
@@ -298,7 +297,7 @@ export function DeliveryForm({
                   isClearable
                   options={origensOptions}
                   value={formData.localArmazenagem ? { value: formData.localArmazenagem, label: formData.localArmazenagem } : null}
-                  onChange={(newValue) => handleInputChange({ target: { value: newValue?.value || '' } } as any, 'localArmazenagem')}
+                  onChange={(newValue: any) => handleInputChange({ target: { value: newValue?.value || '' } } as any, 'localArmazenagem')}
                   placeholder="Selecione ou digite..."
                   formatCreateLabel={(inputValue) => `Usar "${inputValue}"`}
                   styles={customStyles}
@@ -318,7 +317,7 @@ export function DeliveryForm({
                   isClearable
                   options={destinosOptions}
                   value={formData.localObra ? { value: formData.localObra, label: formData.localObra } : null}
-                  onChange={(newValue) => handleInputChange({ target: { value: newValue?.value || '' } } as any, 'localObra')}
+                  onChange={(newValue: any) => handleInputChange({ target: { value: newValue?.value || '' } } as any, 'localObra')}
                   placeholder="Ex: Bloco A"
                   formatCreateLabel={(inputValue) => `Usar "${inputValue}"`}
                   styles={customStyles}
@@ -340,7 +339,7 @@ export function DeliveryForm({
                   isClearable
                   options={responsaveisOptions}
                   value={formData.responsavelNome ? { value: formData.responsavelNome, label: formData.responsavelNome } : null}
-                  onChange={(newValue) => handleResponsavelChange({ target: { value: newValue?.value || '' } } as any)}
+                  onChange={(newValue: any) => handleResponsavelChange({ target: { value: newValue?.value || '' } } as any)}
                   placeholder="Nome do responsável"
                   formatCreateLabel={(inputValue) => `Usar "${inputValue}"`}
                   styles={customStyles}
@@ -358,7 +357,7 @@ export function DeliveryForm({
                isClearable
                options={telefonesOptions}
                value={formData.responsavelTelefone ? { value: formData.responsavelTelefone, label: formData.responsavelTelefone } : null}
-               onChange={(newValue) => handleInputChange({ target: { value: newValue?.value || '' } } as any, 'responsavelTelefone')}
+               onChange={(newValue: any) => handleInputChange({ target: { value: newValue?.value || '' } } as any, 'responsavelTelefone')}
                placeholder="(27) ..."
                formatCreateLabel={(inputValue) => `Usar "${inputValue}"`}
                styles={customStyles}
@@ -366,7 +365,6 @@ export function DeliveryForm({
           </Col>
         </Row>
 
-        {/* Seção de Ações Refatorada para ser resiliente ao tamanho da tela */}
         <div className="form-actions-container d-flex flex-column flex-sm-row justify-content-end gap-2 mt-auto">
           {onCancelEdit && (
             <Button 
