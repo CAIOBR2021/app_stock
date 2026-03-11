@@ -161,6 +161,8 @@ export function DeliveryForm({
       '&:hover': { borderColor: state.isFocused ? '#86b7fe' : '#dee2e6' },
     }),
     menu: (provided) => ({ ...provided, zIndex: 9999 }),
+    // SOLUÇÃO 2: Garantir que o portal do menu (quando jogado para o body) tenha um zIndex alto
+    menuPortal: (base) => ({ ...base, zIndex: 9999 })
   };
 
   useEffect(() => {
@@ -267,6 +269,7 @@ export function DeliveryForm({
               placeholder="Selecione o Produto..."
               isClearable
               styles={customStyles}
+              menuPortalTarget={document.body} /* SOLUÇÃO 2 APLICADA */
             />
           </Col>
           <Col md={4}>
@@ -300,6 +303,7 @@ export function DeliveryForm({
               placeholder="Selecione ou digite..."
               formatCreateLabel={(inputValue) => `Usar "${inputValue}"`}
               styles={customStyles}
+              menuPortalTarget={document.body} /* SOLUÇÃO 2 APLICADA */
             />
           </Col>
           
@@ -318,6 +322,7 @@ export function DeliveryForm({
               placeholder="Ex: Bloco A"
               formatCreateLabel={(inputValue) => `Usar "${inputValue}"`}
               styles={customStyles}
+              menuPortalTarget={document.body} /* SOLUÇÃO 2 APLICADA */
             />
           </Col>
         </Row>
@@ -338,6 +343,7 @@ export function DeliveryForm({
               placeholder="Nome do responsável"
               formatCreateLabel={(inputValue) => `Usar "${inputValue}"`}
               styles={customStyles}
+              menuPortalTarget={document.body} /* SOLUÇÃO 2 APLICADA */
             />
           </Col>
           
@@ -353,6 +359,7 @@ export function DeliveryForm({
                placeholder="(27) ..."
                formatCreateLabel={(inputValue) => `Usar "${inputValue}"`}
                styles={customStyles}
+               menuPortalTarget={document.body} /* SOLUÇÃO 2 APLICADA */
             />
           </Col>
         </Row>
