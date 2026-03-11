@@ -192,35 +192,75 @@ export function ConsultaMovimentacoes({ movs, produtos, onDelete, onEdit }: { mo
   return (
     <div>
       <h3 className="border-bottom pb-2 mb-4">Consulta de Movimentações</h3>
-      <div className="filter-panel mb-4">
+      
+      {/* PAINEL DE FILTROS MODERNIZADO */}
+      <div className="bg-white p-4 mb-4 border-0 shadow-sm rounded-4">
+        <h6 className="text-uppercase text-muted fw-bold mb-3 small tracking-wider">
+          <i className="bi bi-funnel me-2"></i>Filtros de Pesquisa
+        </h6>
+        
         <div className="row g-3 align-items-end">
-          <div className="col-12 col-sm-6 col-lg-2"><label className="form-label fw-bold">Data Início</label><input type="date" className="form-control" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} /></div>
-          <div className="col-12 col-sm-6 col-lg-2"><label className="form-label fw-bold">Data Fim</label><input type="date" className="form-control" value={dataFim} onChange={(e) => setDataFim(e.target.value)} /></div>
-          <div className="col-12 col-sm-4 col-lg-2"><label className="form-label fw-bold">Categoria</label><select className="form-select" value={categoria} onChange={(e) => setCategoria(e.target.value)}><option value="">Todas</option>{categorias.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
-          
-          {/* NOVO CAMPO DE FILTRO DE OBRA */}
+          <div className="col-12 col-sm-6 col-lg-2">
+            <label className="form-label fw-bold text-muted small text-uppercase">Data Início</label>
+            <input type="date" className="form-control" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} />
+          </div>
+          <div className="col-12 col-sm-6 col-lg-2">
+            <label className="form-label fw-bold text-muted small text-uppercase">Data Fim</label>
+            <input type="date" className="form-control" value={dataFim} onChange={(e) => setDataFim(e.target.value)} />
+          </div>
           <div className="col-12 col-sm-4 col-lg-2">
-            <label className="form-label fw-bold">Obra</label>
-            <select className="form-select" value={filtroObra} onChange={(e) => setFiltroObra(e.target.value)}>
+            <label className="form-label fw-bold text-muted small text-uppercase">Categoria</label>
+            <select className="form-select" value={categoria} onChange={(e) => setCategoria(e.target.value)}>
               <option value="">Todas</option>
+              {categorias.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          
+          <div className="col-12 col-sm-4 col-lg-3">
+            <label className="form-label fw-bold text-primary small text-uppercase">
+              <i className="bi bi-building me-1"></i> Obra (Relatório)
+            </label>
+            <select className="form-select border-primary bg-light" value={filtroObra} onChange={(e) => setFiltroObra(e.target.value)}>
+              <option value="">Selecione uma obra...</option>
               {obrasUnicas.map((o) => <option key={o} value={o}>{o}</option>)}
             </select>
           </div>
           
-          <div className="col-12 col-sm-4 col-lg-2"><label className="form-label fw-bold">Itens/pág.</label><select className="form-select" value={itemsPerPage} onChange={(e) => setItemsPerPage(Number(e.target.value))}><option value={30}>30</option><option value={70}>70</option><option value={100}>100</option></select></div>
-          <div className="col-12 col-lg-2"><button className="btn btn-outline-secondary d-flex align-items-center w-100 justify-content-center" onClick={() => {setDataInicio(''); setDataFim(''); setCategoria(''); setFiltroObra('');}}><i className="bi bi-x-lg me-2"></i>Limpar</button></div>
+          <div className="col-12 col-sm-4 col-lg-1">
+            <label className="form-label fw-bold text-muted small text-uppercase">Itens</label>
+            <select className="form-select" value={itemsPerPage} onChange={(e) => setItemsPerPage(Number(e.target.value))}>
+              <option value={30}>30</option>
+              <option value={70}>70</option>
+              <option value={100}>100</option>
+            </select>
+          </div>
+          <div className="col-12 col-lg-2">
+            <button className="btn btn-light border d-flex align-items-center w-100 justify-content-center text-muted fw-medium shadow-sm" onClick={() => {setDataInicio(''); setDataFim(''); setCategoria(''); setFiltroObra('');}}>
+              <i className="bi bi-eraser me-2"></i>Limpar
+            </button>
+          </div>
         </div>
 
-        {/* NOVO PAINEL DE CUSTOS (Aparece apenas se a obra for selecionada) */}
+        {/* WIDGET DE CUSTOS PREMIUM */}
         {filtroObra && (
-          <div className="alert alert-info mt-3 mb-0 d-flex justify-content-between align-items-center border-0 shadow-sm rounded-3">
-            <div>
-              <h5 className="mb-0 fw-bold"><i className="bi bi-building me-2"></i>Custo em Materiais: {filtroObra}</h5>
-              <small>Total das saídas de materiais enviadas para a obra no período</small>
+          <div className="mt-4 p-4 rounded-4" style={{ background: 'linear-gradient(135deg, #f0f8ff 0%, #e6f2ff 100%)', border: '1px solid #cce5ff' }}>
+            <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+              <div className="d-flex align-items-center gap-3">
+                <div className="bg-white rounded-circle shadow-sm d-flex align-items-center justify-content-center text-primary" style={{ width: '56px', height: '56px' }}>
+                  <i className="bi bi-cone-striped fs-3"></i>
+                </div>
+                <div>
+                  <h5 className="mb-1 fw-bold text-dark" style={{ letterSpacing: '-0.5px' }}>{filtroObra}</h5>
+                  <span className="text-muted small fw-medium">Custo total em materiais alocados no período</span>
+                </div>
+              </div>
+              <div className="text-md-end bg-white px-4 py-2 rounded-3 shadow-sm border border-light">
+                <p className="mb-0 text-muted small fw-bold text-uppercase tracking-wider">Total Calculado</p>
+                <h2 className="mb-0 text-primary fw-bolder" style={{ letterSpacing: '-1px' }}>
+                  R$ {custoTotalObra.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </h2>
+              </div>
             </div>
-            <h3 className="mb-0 text-primary fw-bold">
-              R$ {custoTotalObra.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </h3>
           </div>
         )}
       </div>
