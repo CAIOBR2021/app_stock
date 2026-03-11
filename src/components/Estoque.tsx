@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import type { Produto, Movimentacao, TipoMov, UUID } from '../types';
 import { API_URL } from '../constants';
 import { ModalComponent, PasswordEntryModal, GerenciarHistoricoModal } from './Shared';
+// NOVA IMPORTAÇÃO: Ícones para o Modal de aviso
+import { ExclamationTriangleFill, XCircle } from 'react-bootstrap-icons';
 
 export function ValorTotalEstoque({ allProdutos }: { allProdutos: Produto[] }) {
   const [valorTotal, setValorTotal] = useState<number | null>(null);
@@ -73,22 +75,37 @@ export function ValorTotalEstoque({ allProdutos }: { allProdutos: Produto[] }) {
   );
 }
 
+// COMPONENTE ATUALIZADO: Remoção do window.alert
 export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produto[]; categoriaSelecionada: string; }) {
   const [loading, setLoading] = useState(false);
+  
+  // Estado para controlar o modal de feedback
+  const [modalInfo, setModalInfo] = useState<{ show: boolean, title: string, message: string, type: 'info' | 'error' }>({ show: false, title: '', message: '', type: 'info' });
+
+  const closeModal = () => setModalInfo(prev => ({ ...prev, show: false }));
+
   const handleGenerate = () => {
     setLoading(true);
     try {
-      const { jsPDF } = window.jspdf;
+      const { jsPDF } = window.jspdf || { jsPDF: (window as any).jspdf.jsPDF };
       const doc = new jsPDF();
       const produtosParaRelatorio = categoriaSelecionada ? produtos.filter((p) => p.categoria === categoriaSelecionada) : produtos;
       const itemsToReorder = produtosParaRelatorio
         .filter((p) => p.estoqueMinimo !== undefined && p.quantidade < p.estoqueMinimo)
         .map((p) => ({ ...p, qtdRepor: p.estoqueMinimo! - p.quantidade }));
+        
       if (itemsToReorder.length === 0) {
-        alert(`Nenhum item precisa de reposição${categoriaSelecionada ? ` na categoria "${categoriaSelecionada}"` : ''}.`);
+        // Exibe o modal customizado ao invés do alert
+        setModalInfo({
+          show: true,
+          title: 'Aviso',
+          message: `Nenhum item precisa de reposição${categoriaSelecionada ? ` na categoria "${categoriaSelecionada}"` : ''}.`,
+          type: 'info'
+        });
         setLoading(false);
         return;
       }
+      
       const title = `Relatório de Reposição${categoriaSelecionada ? `: ${categoriaSelecionada}` : ''}`;
       doc.text(title, 14, 22);
       doc.setFontSize(10);
@@ -103,16 +120,42 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
       doc.save(`relatorio-reposicao-${categoriaSelecionada || 'geral'}-${Date.now()}.pdf`);
     } catch (error) {
       console.error('Erro ao gerar relatório:', error);
-      alert('Ocorreu um erro ao gerar o relatório. Tente novamente.');
+      // Exibe o modal de erro
+      setModalInfo({
+        show: true,
+        title: 'Erro',
+        message: 'Ocorreu um erro ao gerar o relatório. Tente novamente.',
+        type: 'error'
+      });
     } finally {
       setLoading(false);
     }
   };
+
   return (
-    <button className="btn btn-outline-secondary d-flex align-items-center gap-2" onClick={handleGenerate} disabled={loading}>
-      <i className="bi bi-file-earmark-arrow-down"></i>
-      Gerar Relatório
-    </button>
+    <>
+      <button className="btn btn-outline-secondary d-flex align-items-center gap-2" onClick={handleGenerate} disabled={loading}>
+        {loading ? <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> : <i className="bi bi-file-earmark-arrow-down"></i>}
+        Gerar Relatório
+      </button>
+
+      {/* Modal de Feedback */}
+      {modalInfo.show && (
+        <ModalComponent title={modalInfo.title} onClose={closeModal}>
+          <div className="p-3 text-center">
+            {modalInfo.type === 'error' ? (
+              <XCircle className="text-danger mb-3" size={40} />
+            ) : (
+              <ExclamationTriangleFill className="text-warning mb-3" size={40} />
+            )}
+            <p>{modalInfo.message}</p>
+            <div className="mt-4">
+              <button className="btn btn-secondary px-4" onClick={closeModal}>Entendi</button>
+            </div>
+          </div>
+        </ModalComponent>
+      )}
+    </>
   );
 }
 
@@ -127,7 +170,6 @@ export function ProdutoForm({ onCancel, onSave, produto, categorias, locais }: {
   const [fornecedor, setFornecedor] = useState(produto?.fornecedor ?? '');
   const [valorUnitario, setValorUnitario] = useState<number | undefined>(produto?.valorUnitario ?? undefined);
 
-  // --- LÓGICA DA ENGRENAGEM DE HISTÓRICO ---
   const [showManageModal, setShowManageModal] = useState(false);
   const [manageField, setManageField] = useState<'categorias' | 'locais' | null>(null);
   const [hiddenOptions, setHiddenOptions] = useState<Record<string, string[]>>(() => {
@@ -160,7 +202,6 @@ export function ProdutoForm({ onCancel, onSave, produto, categorias, locais }: {
       }));
     }
   };
-  // ----------------------------------------
 
   let valorTotalDisplay = '---';
   const quantidadeParaCalculo = produto ? produto.quantidade : quantidade;

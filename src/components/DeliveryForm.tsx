@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Form, Row, Col, Button, FloatingLabel, Modal } from 'react-bootstrap';
 import { CalendarEventFill, Save, XCircle, GearFill, Trash3Fill } from 'react-bootstrap-icons';
 import Select from 'react-select';
+// NOVA IMPORTAÇÃO: CreatableSelect para permitir que o usuário digite novos valores
+import CreatableSelect from 'react-select/creatable';
 import type { StylesConfig } from 'react-select';
 
 interface DeliveryFormProps {
@@ -13,7 +15,6 @@ interface DeliveryFormProps {
 }
 
 const customFormStyles = `
-  
   .modern-modal .modal-content {
     border-radius: 20px;
     border: none;
@@ -231,11 +232,16 @@ export function DeliveryForm({
     setShowManageModal(true);
   };
 
+  // Mapeando as opções para o formato esperado pelo react-select
+  const origensOptions = sugestoes.origens.map(o => ({ value: o, label: o }));
+  const destinosOptions = sugestoes.destinos.map(d => ({ value: d, label: d }));
+  const responsaveisOptions = sugestoes.responsaveis.map(r => ({ value: r, label: r }));
+  const telefonesOptions = sugestoes.telefones.map(t => ({ value: t, label: t }));
+
   return (
     <>
       <style>{customFormStyles}</style>
       
-      {/* Removido o h-100 fixo para evitar que os botões "sumam" em telas menores ou com zoom */}
       <Form onSubmit={handleSubmit} className="p-4 border rounded bg-white shadow-sm d-flex flex-column h-100">
         <h5 className="mb-4 border-bottom pb-2 text-primary d-flex align-items-center fw-bold">
           <CalendarEventFill className="me-2" />
@@ -285,42 +291,40 @@ export function DeliveryForm({
 
         <Row className="g-3 mb-3">
           <Col md={6}>
+            <Form.Label className="text-muted small fw-bold mb-1">Origem (Armazém)</Form.Label>
             <div className="d-flex align-items-center">
-              <FloatingLabel label="Origem (Armazém)" className="flex-grow-1">
-                <Form.Control
-                  value={formData.localArmazenagem}
-                  onChange={(e) => handleInputChange(e, 'localArmazenagem')}
-                  required
-                  list="origens-list"
-                  placeholder="Selecione..."
-                  autoComplete="off"
+              <div className="flex-grow-1">
+                <CreatableSelect
+                  isClearable
+                  options={origensOptions}
+                  value={formData.localArmazenagem ? { value: formData.localArmazenagem, label: formData.localArmazenagem } : null}
+                  onChange={(newValue) => handleInputChange({ target: { value: newValue?.value || '' } } as any, 'localArmazenagem')}
+                  placeholder="Selecione ou digite..."
+                  formatCreateLabel={(inputValue) => `Usar "${inputValue}"`}
+                  styles={customStyles}
                 />
-                <datalist id="origens-list">
-                  {sugestoes.origens.map((o, i) => <option key={i} value={o} />)}
-                </datalist>
-              </FloatingLabel>
-              <button type="button" className="btn-manage-discreet" onClick={() => openManage('origens')} title="Gerenciar histórico">
+              </div>
+              <button type="button" className="btn-manage-discreet ms-2" onClick={() => openManage('origens')} title="Gerenciar histórico">
                 <GearFill size={18} />
               </button>
             </div>
           </Col>
           
           <Col md={6}>
+            <Form.Label className="text-muted small fw-bold mb-1">Destino (Obra/Local)</Form.Label>
             <div className="d-flex align-items-center">
-              <FloatingLabel label="Destino (Obra/Local)" className="flex-grow-1">
-                <Form.Control
-                  value={formData.localObra}
-                  onChange={(e) => handleInputChange(e, 'localObra')}
-                  required
-                  list="destinos-list"
+              <div className="flex-grow-1">
+                <CreatableSelect
+                  isClearable
+                  options={destinosOptions}
+                  value={formData.localObra ? { value: formData.localObra, label: formData.localObra } : null}
+                  onChange={(newValue) => handleInputChange({ target: { value: newValue?.value || '' } } as any, 'localObra')}
                   placeholder="Ex: Bloco A"
-                  autoComplete="off"
+                  formatCreateLabel={(inputValue) => `Usar "${inputValue}"`}
+                  styles={customStyles}
                 />
-                <datalist id="destinos-list">
-                  {sugestoes.destinos.map((d, i) => <option key={i} value={d} />)}
-                </datalist>
-              </FloatingLabel>
-              <button type="button" className="btn-manage-discreet" onClick={() => openManage('destinos')} title="Gerenciar histórico">
+              </div>
+              <button type="button" className="btn-manage-discreet ms-2" onClick={() => openManage('destinos')} title="Gerenciar histórico">
                 <GearFill size={18} />
               </button>
             </div>
@@ -329,38 +333,36 @@ export function DeliveryForm({
 
         <Row className="g-3 mb-3">
           <Col md={6}>
+            <Form.Label className="text-muted small fw-bold mb-1">Responsável</Form.Label>
             <div className="d-flex align-items-center">
-              <FloatingLabel label="Responsável" className="flex-grow-1">
-                <Form.Control
-                  value={formData.responsavelNome}
-                  onChange={handleResponsavelChange}
-                  list="responsaveis-list"
-                  placeholder="Nome"
-                  autoComplete="off"
+              <div className="flex-grow-1">
+                <CreatableSelect
+                  isClearable
+                  options={responsaveisOptions}
+                  value={formData.responsavelNome ? { value: formData.responsavelNome, label: formData.responsavelNome } : null}
+                  onChange={(newValue) => handleResponsavelChange({ target: { value: newValue?.value || '' } } as any)}
+                  placeholder="Nome do responsável"
+                  formatCreateLabel={(inputValue) => `Usar "${inputValue}"`}
+                  styles={customStyles}
                 />
-                <datalist id="responsaveis-list">
-                  {sugestoes.responsaveis.map((r, i) => <option key={i} value={r} />)}
-                </datalist>
-              </FloatingLabel>
-              <button type="button" className="btn-manage-discreet" onClick={() => openManage('responsaveis')} title="Gerenciar histórico">
+              </div>
+              <button type="button" className="btn-manage-discreet ms-2" onClick={() => openManage('responsaveis')} title="Gerenciar histórico">
                 <GearFill size={18} />
               </button>
             </div>
           </Col>
+          
           <Col md={6}>
-            <FloatingLabel label="Telefone">
-              <Form.Control
-                value={formData.responsavelTelefone}
-                onChange={(e) => handleInputChange(e, 'responsavelTelefone')}
-                list="telefones-list"
-                placeholder="(27) ..."
-                autoComplete="off"
-                maxLength={15}
-              />
-              <datalist id="telefones-list">
-                {sugestoes.telefones.map((t, i) => <option key={i} value={t} />)}
-              </datalist>
-            </FloatingLabel>
+            <Form.Label className="text-muted small fw-bold mb-1">Telefone</Form.Label>
+            <CreatableSelect
+               isClearable
+               options={telefonesOptions}
+               value={formData.responsavelTelefone ? { value: formData.responsavelTelefone, label: formData.responsavelTelefone } : null}
+               onChange={(newValue) => handleInputChange({ target: { value: newValue?.value || '' } } as any, 'responsavelTelefone')}
+               placeholder="(27) ..."
+               formatCreateLabel={(inputValue) => `Usar "${inputValue}"`}
+               styles={customStyles}
+            />
           </Col>
         </Row>
 
