@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Form, Row, Col, Button, FloatingLabel, Modal } from 'react-bootstrap';
+import { Form, Row, Col, Button, Modal } from 'react-bootstrap';
 import { CalendarEventFill, Save, XCircle, GearFill, Trash3Fill } from 'react-bootstrap-icons';
 import Select from 'react-select';
 import CreatableSelect from 'react-select/creatable';
@@ -38,7 +38,6 @@ const customFormStyles = `
     color: #334155;
     font-size: 0.95rem;
   }
-  /* Garante que o container de botões não quebre o layout */
   .form-actions-container {
     margin-top: 2rem;
     padding-top: 1.5rem;
@@ -156,19 +155,11 @@ export function DeliveryForm({
       ...provided,
       backgroundColor: '#fff',
       borderColor: state.isFocused ? '#86b7fe' : '#dee2e6',
-      minHeight: '58px',
-      height: '58px',
+      minHeight: '38px',
       borderRadius: '0.375rem',
       boxShadow: state.isFocused ? '0 0 0 0.25rem rgba(13, 110, 253, 0.25)' : 'none',
       '&:hover': { borderColor: state.isFocused ? '#86b7fe' : '#dee2e6' },
     }),
-    valueContainer: (provided) => ({
-      ...provided,
-      height: '58px',
-      padding: '0 12px',
-      alignContent: 'center',
-    }),
-    input: (provided) => ({ ...provided, margin: '0', padding: '0' }),
     menu: (provided) => ({ ...provided, zIndex: 9999 }),
   };
 
@@ -231,7 +222,6 @@ export function DeliveryForm({
     setShowManageModal(true);
   };
 
-  // Mapeando as opções para o formato esperado pelo react-select
   const origensOptions = sugestoes.origens.map(o => ({ value: o, label: o }));
   const destinosOptions = sugestoes.destinos.map(d => ({ value: d, label: d }));
   const responsaveisOptions = sugestoes.responsaveis.map(r => ({ value: r, label: r }));
@@ -249,19 +239,24 @@ export function DeliveryForm({
 
         <Row className="g-3 mb-3">
           <Col md={6}>
-            <FloatingLabel label="Data">
-              <Form.Control type="date" value={data} onChange={(e) => setData(e.target.value)} required />
-            </FloatingLabel>
+            <div className="d-flex align-items-center mb-1" style={{ minHeight: '28px' }}>
+              <Form.Label className="text-muted small fw-bold mb-0">Data</Form.Label>
+            </div>
+            <Form.Control type="date" value={data} onChange={(e) => setData(e.target.value)} required />
           </Col>
           <Col md={6}>
-            <FloatingLabel label="Hora">
-              <Form.Control type="time" value={hora} onChange={(e) => setHora(e.target.value)} required />
-            </FloatingLabel>
+            <div className="d-flex align-items-center mb-1" style={{ minHeight: '28px' }}>
+              <Form.Label className="text-muted small fw-bold mb-0">Hora</Form.Label>
+            </div>
+            <Form.Control type="time" value={hora} onChange={(e) => setHora(e.target.value)} required />
           </Col>
         </Row>
 
         <Row className="g-3 mb-3">
           <Col md={8}>
+            <div className="d-flex align-items-center mb-1" style={{ minHeight: '28px' }}>
+              <Form.Label className="text-muted small fw-bold mb-0">Produto</Form.Label>
+            </div>
             <Select
               value={selectedOption}
               onChange={(opt) => {
@@ -275,84 +270,81 @@ export function DeliveryForm({
             />
           </Col>
           <Col md={4}>
-            <FloatingLabel label="Quantidade">
-              <Form.Control
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={formData.itemQuantidade}
-                onChange={(e) => setFormData({ ...formData, itemQuantidade: Number(e.target.value) })}
-                required
-              />
-            </FloatingLabel>
+            <div className="d-flex align-items-center mb-1" style={{ minHeight: '28px' }}>
+              <Form.Label className="text-muted small fw-bold mb-0">Quantidade</Form.Label>
+            </div>
+            <Form.Control
+              type="number"
+              min="0.01"
+              step="0.01"
+              value={formData.itemQuantidade}
+              onChange={(e) => setFormData({ ...formData, itemQuantidade: Number(e.target.value) })}
+              required
+            />
           </Col>
         </Row>
 
         <Row className="g-3 mb-3">
           <Col md={6}>
-            <Form.Label className="text-muted small fw-bold mb-1">Origem (Armazém)</Form.Label>
-            <div className="d-flex align-items-center">
-              <div className="flex-grow-1">
-                <CreatableSelect
-                  isClearable
-                  options={origensOptions}
-                  value={formData.localArmazenagem ? { value: formData.localArmazenagem, label: formData.localArmazenagem } : null}
-                  onChange={(newValue: any) => handleInputChange({ target: { value: newValue?.value || '' } } as any, 'localArmazenagem')}
-                  placeholder="Selecione ou digite..."
-                  formatCreateLabel={(inputValue) => `Usar "${inputValue}"`}
-                  styles={customStyles}
-                />
-              </div>
-              <button type="button" className="btn-manage-discreet ms-2" onClick={() => openManage('origens')} title="Gerenciar histórico">
-                <GearFill size={18} />
+            <div className="d-flex justify-content-between align-items-center mb-1" style={{ minHeight: '28px' }}>
+              <Form.Label className="text-muted small fw-bold mb-0">Origem (Armazém)</Form.Label>
+              <button type="button" className="btn-icon-subtle p-1" onClick={() => openManage('origens')} title="Gerenciar histórico">
+                <GearFill size={14} />
               </button>
             </div>
+            <CreatableSelect
+              isClearable
+              options={origensOptions}
+              value={formData.localArmazenagem ? { value: formData.localArmazenagem, label: formData.localArmazenagem } : null}
+              onChange={(newValue: any) => handleInputChange({ target: { value: newValue?.value || '' } } as any, 'localArmazenagem')}
+              placeholder="Selecione ou digite..."
+              formatCreateLabel={(inputValue) => `Usar "${inputValue}"`}
+              styles={customStyles}
+            />
           </Col>
           
           <Col md={6}>
-            <Form.Label className="text-muted small fw-bold mb-1">Destino (Obra/Local)</Form.Label>
-            <div className="d-flex align-items-center">
-              <div className="flex-grow-1">
-                <CreatableSelect
-                  isClearable
-                  options={destinosOptions}
-                  value={formData.localObra ? { value: formData.localObra, label: formData.localObra } : null}
-                  onChange={(newValue: any) => handleInputChange({ target: { value: newValue?.value || '' } } as any, 'localObra')}
-                  placeholder="Ex: Bloco A"
-                  formatCreateLabel={(inputValue) => `Usar "${inputValue}"`}
-                  styles={customStyles}
-                />
-              </div>
-              <button type="button" className="btn-manage-discreet ms-2" onClick={() => openManage('destinos')} title="Gerenciar histórico">
-                <GearFill size={18} />
+            <div className="d-flex justify-content-between align-items-center mb-1" style={{ minHeight: '28px' }}>
+              <Form.Label className="text-muted small fw-bold mb-0">Destino (Obra/Local)</Form.Label>
+              <button type="button" className="btn-icon-subtle p-1" onClick={() => openManage('destinos')} title="Gerenciar histórico">
+                <GearFill size={14} />
               </button>
             </div>
+            <CreatableSelect
+              isClearable
+              options={destinosOptions}
+              value={formData.localObra ? { value: formData.localObra, label: formData.localObra } : null}
+              onChange={(newValue: any) => handleInputChange({ target: { value: newValue?.value || '' } } as any, 'localObra')}
+              placeholder="Ex: Bloco A"
+              formatCreateLabel={(inputValue) => `Usar "${inputValue}"`}
+              styles={customStyles}
+            />
           </Col>
         </Row>
 
         <Row className="g-3 mb-3">
           <Col md={6}>
-            <Form.Label className="text-muted small fw-bold mb-1">Responsável</Form.Label>
-            <div className="d-flex align-items-center">
-              <div className="flex-grow-1">
-                <CreatableSelect
-                  isClearable
-                  options={responsaveisOptions}
-                  value={formData.responsavelNome ? { value: formData.responsavelNome, label: formData.responsavelNome } : null}
-                  onChange={(newValue: any) => handleResponsavelChange({ target: { value: newValue?.value || '' } } as any)}
-                  placeholder="Nome do responsável"
-                  formatCreateLabel={(inputValue) => `Usar "${inputValue}"`}
-                  styles={customStyles}
-                />
-              </div>
-              <button type="button" className="btn-manage-discreet ms-2" onClick={() => openManage('responsaveis')} title="Gerenciar histórico">
-                <GearFill size={18} />
+            <div className="d-flex justify-content-between align-items-center mb-1" style={{ minHeight: '28px' }}>
+              <Form.Label className="text-muted small fw-bold mb-0">Responsável</Form.Label>
+              <button type="button" className="btn-icon-subtle p-1" onClick={() => openManage('responsaveis')} title="Gerenciar histórico">
+                <GearFill size={14} />
               </button>
             </div>
+            <CreatableSelect
+              isClearable
+              options={responsaveisOptions}
+              value={formData.responsavelNome ? { value: formData.responsavelNome, label: formData.responsavelNome } : null}
+              onChange={(newValue: any) => handleResponsavelChange({ target: { value: newValue?.value || '' } } as any)}
+              placeholder="Nome do responsável"
+              formatCreateLabel={(inputValue) => `Usar "${inputValue}"`}
+              styles={customStyles}
+            />
           </Col>
           
           <Col md={6}>
-            <Form.Label className="text-muted small fw-bold mb-1">Telefone</Form.Label>
+            <div className="d-flex align-items-center mb-1" style={{ minHeight: '28px' }}>
+              <Form.Label className="text-muted small fw-bold mb-0">Telefone</Form.Label>
+            </div>
             <CreatableSelect
                isClearable
                options={telefonesOptions}
