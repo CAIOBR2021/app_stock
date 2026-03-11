@@ -26,6 +26,10 @@ export interface Movimentacao {
   quantidade: number;
   motivo?: string;
   criadoEm: string;
+  // Novos campos para rastreio de custos e obras
+  nomeObra?: string;
+  ordemCompra?: string;
+  custoUnitarioHistorico?: number;
 }
 
 export interface Entrega {

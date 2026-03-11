@@ -63,7 +63,8 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
     const itens = Object.entries(selecionados).map(([produtoId, dados]) => ({
       produtoId,
       quantidade: dados.quantidade,
-      valorUnitario: tipo === 'entrada' ? dados.valorUnitario : undefined
+      // Envia o valorUnitario sempre, seja para entrada ou para saída (histórico de custos)
+      valorUnitario: dados.valorUnitario
     }));
     
     onSubmit({ ordemCompra, nomeObra, tipo, itens });
@@ -150,7 +151,6 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
                               <span className="fw-medium">{p.nome}</span>
                               <div className="text-muted small">
                                 SKU: {p.sku} | Estoque: {p.quantidade} {p.unidade} 
-                                {/* Correção aplicada aqui: validando se p.valorUnitario é um número válido (não null) */}
                                 {tipo === 'saida' && typeof p.valorUnitario === 'number' && ` | Preço Médio: R$ ${p.valorUnitario.toFixed(2)}`}
                               </div>
                             </div>

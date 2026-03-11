@@ -197,8 +197,11 @@ export default function App() {
           produtoId: item.produtoId,
           tipo: dados.tipo,
           quantidade: item.quantidade,
-          motivo: motivoFinal
-        }, item.valorUnitario); 
+          motivo: motivoFinal,
+          nomeObra: dados.nomeObra || undefined,
+          ordemCompra: dados.ordemCompra || undefined,
+          custoUnitarioHistorico: item.valorUnitario
+        }, dados.tipo === 'entrada' ? item.valorUnitario : undefined); 
       }
       
       toast.success('Movimentações registradas e preços atualizados com sucesso!');
