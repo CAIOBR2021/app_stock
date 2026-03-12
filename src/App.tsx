@@ -564,112 +564,103 @@ const handleGenerateDeliveryReport = () => {
 
   if (selectedDeliveries.length === 0) {
     toast.error(
-      'Não existem itens pendentes selecionados. Itens já entregues não são incluídos.',
+      'Nao existem itens pendentes selecionados. Itens ja entregues nao sao incluidos.',
     );
     return;
   }
 
-  // ── Dados do cabeçalho ────────────────────────────────────────────────────
   const firstDelivery = selectedDeliveries[0];
   const reportDate = new Date(firstDelivery.dataHoraSolicitacao)
     .toLocaleDateString('pt-BR');
-  const responsavel = firstDelivery.responsavelNome || 'Não informado';
+  const responsavel = firstDelivery.responsavelNome || 'Nao informado';
   const telefone = firstDelivery.responsavelTelefone
     ? formatPhoneNumber(firstDelivery.responsavelTelefone)
-    : 'Não informado';
+    : 'Nao informado';
 
-  // ── Paleta ────────────────────────────────────────────────────────────────
-  const NAVY     = [27,  42,  74]  as [number, number, number]; // #1B2A4A
-  const SLATE    = [46,  66, 114]  as [number, number, number]; // #2E4272
-  const ACCENT   = [232, 160,  32] as [number, number, number]; // #E8A020
-  const LIGHT_BG = [244, 246, 250] as [number, number, number]; // #F4F6FA
-  const MID_GRAY = [107, 122, 153] as [number, number, number]; // #6B7A99
-  const DIVIDER  = [208, 216, 236] as [number, number, number]; // #D0D8EC
-  const CREAM    = [255, 249, 240] as [number, number, number]; // #FFF9F0
+  // Paleta minimalista
+  const DARK   = [30,  40,  60]  as [number, number, number];
+  const HEADER = [46,  66, 114]  as [number, number, number];
+  const GRAY   = [120, 130, 150] as [number, number, number];
+  const LIGHT  = [245, 246, 248] as [number, number, number];
+  const BORDER = [210, 215, 225] as [number, number, number];
+  const WHITE  = [255, 255, 255] as [number, number, number];
+  const CREAM  = [252, 251, 248] as [number, number, number];
 
   const { jsPDF } = (window as any).jspdf;
   const doc = new jsPDF('l', 'mm', 'a4');
 
   const pageW  = doc.internal.pageSize.getWidth();
   const pageH  = doc.internal.pageSize.getHeight();
-  const margin = 18;
-  const cw     = pageW - margin * 2; // largura útil
+  const margin = 20;
+  const cw     = pageW - margin * 2;
 
-  let y = 12; // cursor vertical
+  let y = 16;
 
-  // ── 1. TÍTULO (esquerda) + DATA (direita) ─────────────────────────────────
+  // 1. TITULO
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(...NAVY);
-  doc.text('Programação de Caminhões para Entrega de Materiais', margin, y + 6);
-
-  // Data alinhada à direita
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(...MID_GRAY);
-  doc.text('Data:', pageW - margin - 28, y + 6);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...NAVY);
-  doc.text(reportDate, pageW - margin, y + 6, { align: 'right' });
-
-  y += 11;
-
-  // ── 2. FAIXA RESPONSÁVEL ──────────────────────────────────────────────────
-  // linha cinza acima
-  doc.setDrawColor(...DIVIDER);
-  doc.setLineWidth(0.4);
-  doc.line(margin, y, margin + cw, y);
-
-  y += 6;
+  doc.setFontSize(17);
+  doc.setTextColor(...DARK);
+  doc.text('Programacao de Caminhoes para Entrega de Materiais', margin, y);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-  doc.setTextColor(...MID_GRAY);
-  doc.text('Responsável:', margin, y);
-  const respX = margin + doc.getTextWidth('Responsável: ');
+  doc.setTextColor(...GRAY);
+  doc.text('Data:', pageW - margin - 22, y);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...NAVY);
-  doc.text(responsavel, respX, y);
+  doc.setTextColor(...DARK);
+  doc.text(reportDate, pageW - margin, y, { align: 'right' });
 
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(...MID_GRAY);
-  doc.text('|', respX + doc.getTextWidth(responsavel + '  '), y);
-
-  const telLabelX = respX + doc.getTextWidth(responsavel + '   |   ');
-  doc.text('Telefone:', telLabelX, y);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...NAVY);
-  doc.text(telefone, telLabelX + doc.getTextWidth('Telefone: '), y);
-
-  y += 4;
-
-  // linha dourada abaixo
-  doc.setDrawColor(...ACCENT);
-  doc.setLineWidth(2);
+  y += 5;
+  doc.setDrawColor(...BORDER);
+  doc.setLineWidth(0.3);
   doc.line(margin, y, margin + cw, y);
-
   y += 7;
 
-  // ── 3. RÓTULO DA SEÇÃO ────────────────────────────────────────────────────
-  // pequeno retângulo dourado como marcador visual
-  doc.setFillColor(...ACCENT);
-  doc.rect(margin, y, 2.5, 4, 'F');
+  // 2. RESPONSAVEL
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(...GRAY);
+  doc.text('Responsavel:', margin, y);
 
+  let curX = margin + doc.getTextWidth('Responsavel: ');
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.5);
-  doc.setTextColor(...MID_GRAY);
-  doc.text('PROGRAMACAO DE ENTREGAS', margin + 5, y + 3);
+  doc.setTextColor(...DARK);
+  doc.text(responsavel, curX, y);
 
-  y += 3;
+  curX += doc.getTextWidth(responsavel + '  ');
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...BORDER);
+  doc.text('|', curX, y);
 
-  // ── 4. TABELA PRINCIPAL ───────────────────────────────────────────────────
+  curX += doc.getTextWidth('|  ');
+  doc.setTextColor(...GRAY);
+  doc.text('Telefone:', curX, y);
+
+  curX += doc.getTextWidth('Telefone: ');
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...DARK);
+  doc.text(telefone, curX, y);
+
+  y += 5;
+  doc.setDrawColor(...BORDER);
+  doc.setLineWidth(0.3);
+  doc.line(margin, y, margin + cw, y);
+  y += 10;
+
+  // 3. ROTULO DA SECAO
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(...GRAY);
+  doc.text('PROGRAMACAO DE ENTREGAS', margin, y);
+  y += 5;
+
+  // 4. TABELA
   const tableHead = [['No', 'OK', 'Hora', 'Local da Obra', 'Material', 'Qtd', 'Un', 'Armazem']];
   const tableBody = selectedDeliveries.map((d, i) => [
     String(i + 1).padStart(2, '0'),
     '',
     new Date(d.dataHoraSolicitacao).toLocaleTimeString('pt-BR', {
-      hour: '2-digit',
-      minute: '2-digit',
+      hour: '2-digit', minute: '2-digit',
     }),
     d.localObra,
     d.itemNome || '-',
@@ -678,7 +669,6 @@ const handleGenerateDeliveryReport = () => {
     d.localArmazenagem || '-',
   ]);
 
-  // proporções das colunas (somam 1.0)
   const colRatios = [0.05, 0.05, 0.08, 0.285, 0.285, 0.07, 0.08, 0.10];
   const colWidths = colRatios.map((r) => r * cw);
 
@@ -699,89 +689,73 @@ const handleGenerateDeliveryReport = () => {
       7: { cellWidth: colWidths[7], halign: 'center' },
     },
     headStyles: {
-      fillColor: SLATE,
-      textColor: [255, 255, 255],
+      fillColor: HEADER,
+      textColor: WHITE,
       fontStyle: 'bold',
       fontSize: 8,
-      cellPadding: { top: 5, bottom: 5, left: 3, right: 3 },
+      cellPadding: { top: 5, bottom: 5, left: 4, right: 4 },
       halign: 'center',
     },
     bodyStyles: {
       fontSize: 8.5,
-      textColor: NAVY,
-      cellPadding: { top: 5, bottom: 5, left: 3, right: 3 },
+      textColor: DARK,
+      cellPadding: { top: 6, bottom: 6, left: 4, right: 4 },
     },
-    alternateRowStyles: {
-      fillColor: LIGHT_BG,
-    },
+    alternateRowStyles: { fillColor: LIGHT },
     styles: {
-      lineColor: DIVIDER,
-      lineWidth: 0.3,
+      lineColor: BORDER,
+      lineWidth: 0.25,
       valign: 'middle',
     },
-    // Linha dourada abaixo da última linha + checkbox na col 1
     didDrawCell: (data: any) => {
-      // checkbox na coluna ✓
       if (data.section === 'body' && data.column.index === 1) {
         const size = 3.5;
         const cx = data.cell.x + (data.cell.width - size) / 2;
         const cy = data.cell.y + (data.cell.height - size) / 2;
-        doc.setDrawColor(150, 150, 150);
-        doc.setLineWidth(0.25);
+        doc.setDrawColor(...BORDER);
+        doc.setLineWidth(0.3);
         doc.rect(cx, cy, size, size);
-      }
-    },
-    didDrawPage: (data: any) => {
-      // linha dourada abaixo da tabela inteira
-      const tableBottom = (doc as any).lastAutoTable?.finalY ?? data.cursor?.y;
-      if (tableBottom) {
-        doc.setDrawColor(...ACCENT);
-        doc.setLineWidth(2);
-        doc.line(margin, tableBottom, margin + cw, tableBottom);
       }
     },
   });
 
   const tableEndY: number = (doc as any).lastAutoTable.finalY;
 
-  // ── 5. ASSINATURAS ────────────────────────────────────────────────────────
-  const sigY = tableEndY + 20; // espaço para assinar
+  // 5. ASSINATURAS
+  const sigY    = tableEndY + 22;
+  const lineLen = cw * 0.36;
+  const leftX   = margin;
+  const rightX  = margin + cw - lineLen;
 
-  // verifica se cabe na página
-  const sigBlock = sigY + 12;
-  if (sigBlock > pageH - 20) {
-    doc.addPage();
-  }
-
-  const lineLen  = cw * 0.38;
-  const leftX    = margin;
-  const rightX   = margin + cw - lineLen;
-
-  doc.setDrawColor(...MID_GRAY);
-  doc.setLineWidth(0.5);
+  doc.setDrawColor(...GRAY);
+  doc.setLineWidth(0.4);
   doc.line(leftX,  sigY, leftX  + lineLen, sigY);
   doc.line(rightX, sigY, rightX + lineLen, sigY);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
-  doc.setTextColor(...MID_GRAY);
+  doc.setTextColor(...GRAY);
   doc.text('Assinatura do Motorista',   leftX  + lineLen / 2, sigY + 5, { align: 'center' });
   doc.text('Assinatura do Solicitante', rightX + lineLen / 2, sigY + 5, { align: 'center' });
 
-  // ── 6. RODAPÉ ─────────────────────────────────────────────────────────────
-  const footerY = pageH - 10;
-  doc.setDrawColor(...DIVIDER);
-  doc.setLineWidth(0.4);
-  doc.line(margin, footerY - 4, margin + cw, footerY - 4);
+  // 6. RODAPE
+  doc.setDrawColor(...BORDER);
+  doc.setLineWidth(0.3);
+  doc.line(margin, pageH - 12, margin + cw, pageH - 12);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
-  doc.setTextColor(...MID_GRAY);
-  doc.text('Sistema de Gestão de Entregas', pageW / 2, footerY, { align: 'center' });
+  doc.setTextColor(...GRAY);
+  doc.text('Sistema de Gestao de Entregas', pageW / 2, pageH - 7, { align: 'center' });
 
-  // ── Salvar ────────────────────────────────────────────────────────────────
   doc.save(`Programacao-Diaria-${reportDate.replace(/\//g, '-')}.pdf`);
 };
+
+
+
+
+
+
 
   const handleReprogramDeliveries = async () => {
     if (selectedEntregaIds.length === 0) return;
