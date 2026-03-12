@@ -542,3 +542,20 @@ body {
   color: #334155;
   font-size: 0.9rem;
 }
+
+/* Adicione no seu arquivo CSS */
+.info-cabecalho {
+  display: flex;
+  gap: 20px;
+  background-color: #f1f5f9;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  border-left: 4px solid #3b82f6; /* Uma cor de destaque */
+}
+
+.info-cabecalho p {
+  margin: 0;
+  font-size: 14px;
+  color: #333;
+}
