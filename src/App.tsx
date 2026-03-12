@@ -547,6 +547,8 @@ export default function App() {
     }
   };
 
+// Substitua a função handleGenerateDeliveryReport no seu App.tsx por esta.
+
 const handleGenerateDeliveryReport = () => {
   if (selectedEntregaIds.length === 0) {
     toast.error('Selecione ao menos uma entrega para gerar o relatório.');
@@ -563,108 +565,105 @@ const handleGenerateDeliveryReport = () => {
     );
 
   if (selectedDeliveries.length === 0) {
-    toast.error(
-      'Nao existem itens pendentes selecionados. Itens ja entregues nao sao incluidos.',
-    );
+    toast.error('Nao existem itens pendentes selecionados.');
     return;
   }
 
-  const firstDelivery = selectedDeliveries[0];
-  const reportDate = new Date(firstDelivery.dataHoraSolicitacao)
-    .toLocaleDateString('pt-BR');
-  const responsavel = firstDelivery.responsavelNome || 'Nao informado';
-  const telefone = firstDelivery.responsavelTelefone
-    ? formatPhoneNumber(firstDelivery.responsavelTelefone)
-    : 'Nao informado';
+  const firstDelivery  = selectedDeliveries[0];
+  const reportDate     = new Date(firstDelivery.dataHoraSolicitacao).toLocaleDateString('pt-BR');
+  const responsavel    = firstDelivery.responsavelNome     || 'Nao informado';
+  const telefone       = firstDelivery.responsavelTelefone
+    ? formatPhoneNumber(firstDelivery.responsavelTelefone) : 'Nao informado';
 
-  // Paleta minimalista
-  const DARK   = [30,  40,  60]  as [number, number, number];
-  const HEADER = [46,  66, 114]  as [number, number, number];
-  const GRAY   = [120, 130, 150] as [number, number, number];
-  const LIGHT  = [245, 246, 248] as [number, number, number];
-  const BORDER = [210, 215, 225] as [number, number, number];
-  const WHITE  = [255, 255, 255] as [number, number, number];
-  const CREAM  = [252, 251, 248] as [number, number, number];
+  // Paleta: azul navy + acento índigo suave
+  const DARK    = [22,  34,  56]  as [number, number, number]; // #162238
+  const HEADER  = [40,  58, 100]  as [number, number, number]; // #283A64
+  const ACCENT  = [60,  90, 160]  as [number, number, number]; // #3A5AA0 (acento discreto)
+  const GRAY    = [110, 120, 140] as [number, number, number];
+  const LGRAY   = [180, 188, 205] as [number, number, number];
+  const LIGHT   = [246, 247, 250] as [number, number, number];
+  const BORDER  = [215, 220, 232] as [number, number, number];
+  const WHITE   = [255, 255, 255] as [number, number, number];
 
   const { jsPDF } = (window as any).jspdf;
-  const doc = new jsPDF('l', 'mm', 'a4');
+  const doc  = new jsPDF('l', 'mm', 'a4');
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const ML    = 20;   // margem esquerda
+  const MR    = 20;   // margem direita
+  const cw    = pageW - ML - MR;
 
-  const pageW  = doc.internal.pageSize.getWidth();
-  const pageH  = doc.internal.pageSize.getHeight();
-  const margin = 20;
-  const cw     = pageW - margin * 2;
+  // ── BARRA SUPERIOR AZUL ───────────────────────────────────────────────────
+  doc.setFillColor(...HEADER);
+  doc.rect(0, 0, pageW, 14, 'F');
 
-  let y = 16;
-
-  // 1. TITULO
+  // Título dentro da barra (branco)
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(17);
-  doc.setTextColor(...DARK);
-  doc.text('Programacao de Caminhoes para Entrega de Materiais', margin, y);
+  doc.setFontSize(13);
+  doc.setTextColor(...WHITE);
+  doc.text('Programacao de Caminhoes para Entrega de Materiais', ML, 9);
 
-  // Data: label + valor com espaço calculado corretamente
+  // Data dentro da barra (branco)
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(...GRAY);
-  const dateLabel = 'Data:  ';
-  const dateLabelW = doc.getTextWidth(dateLabel);
+  doc.setFontSize(8.5);
+  const dateLabelW = doc.getTextWidth('Data:  ');
+  doc.setTextColor(180, 195, 225);
+  doc.text('Data:', pageW - MR - dateLabelW - doc.getTextWidth(reportDate), 9);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...DARK);
-  const dateValueW = doc.getTextWidth(reportDate);
-  const dateStartX = pageW - margin - dateLabelW - dateValueW;
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(...GRAY);
-  doc.text(dateLabel, dateStartX, y);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...DARK);
-  doc.text(reportDate, dateStartX + dateLabelW, y);
+  doc.setTextColor(...WHITE);
+  doc.text(reportDate, pageW - MR, 9, { align: 'right' });
 
-  y += 5;
+  let y = 22;
+
+  // ── LINHA DE META-INFORMAÇÃO ──────────────────────────────────────────────
+  // Responsável
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(...GRAY);
+  doc.text('Responsavel:', ML, y);
+
+  let cx = ML + doc.getTextWidth('Responsavel:  ');
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...DARK);
+  doc.text(responsavel, cx, y);
+
+  cx += doc.getTextWidth(responsavel + '   ');
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...LGRAY);
+  doc.text('|', cx, y);
+
+  cx += doc.getTextWidth('|   ');
+  doc.setTextColor(...GRAY);
+  doc.text('Telefone:', cx, y);
+
+  cx += doc.getTextWidth('Telefone:  ');
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...DARK);
+  doc.text(telefone, cx, y);
+
+  y += 4;
+
+  // Linha separadora fina
   doc.setDrawColor(...BORDER);
-  doc.setLineWidth(0.3);
-  doc.line(margin, y, margin + cw, y);
-  y += 7;
+  doc.setLineWidth(0.25);
+  doc.line(ML, y, ML + cw, y);
 
-  // 2. RESPONSAVEL
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(...GRAY);
-  doc.text('Responsavel:', margin, y);
+  y += 8;
 
-  let curX = margin + doc.getTextWidth('Responsavel: ');
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...DARK);
-  doc.text(responsavel, curX, y);
+  // ── RÓTULO DA SEÇÃO ────────────────────────────────────────────────────────
+  // Ponto de acento colorido + texto
+  doc.setFillColor(...ACCENT);
+  doc.rect(ML, y - 3.5, 3, 4.5, 'F');
 
-  curX += doc.getTextWidth(responsavel + '  ');
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(...BORDER);
-  doc.text('|', curX, y);
-
-  curX += doc.getTextWidth('|  ');
-  doc.setTextColor(...GRAY);
-  doc.text('Telefone:', curX, y);
-
-  curX += doc.getTextWidth('Telefone: ');
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...DARK);
-  doc.text(telefone, curX, y);
-
-  y += 5;
-  doc.setDrawColor(...BORDER);
-  doc.setLineWidth(0.3);
-  doc.line(margin, y, margin + cw, y);
-  y += 10;
-
-  // 3. ROTULO DA SECAO
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7);
-  doc.setTextColor(...GRAY);
-  doc.text('PROGRAMACAO DE ENTREGAS', margin, y);
+  doc.setTextColor(...ACCENT);
+  doc.text('PROGRAMACAO DE ENTREGAS', ML + 5, y);
+
   y += 5;
 
-  // 4. TABELA
-  const tableHead = [['N°', 'OK', 'Hora', 'Local da Obra', 'Material', 'Qtd', 'Un', 'Armazem']];
+  // ── TABELA ────────────────────────────────────────────────────────────────
+  const tableHead = [['N.', 'Entregue', 'Hora', 'Local da Obra', 'Material', 'Qtd', 'Un', 'Armazem']];
   const tableBody = selectedDeliveries.map((d, i) => [
     String(i + 1).padStart(2, '0'),
     '',
@@ -678,18 +677,18 @@ const handleGenerateDeliveryReport = () => {
     d.localArmazenagem || '-',
   ]);
 
-  const colRatios = [0.05, 0.05, 0.08, 0.285, 0.285, 0.07, 0.08, 0.10];
+  const colRatios = [0.05, 0.08, 0.08, 0.265, 0.265, 0.07, 0.08, 0.10];
   const colWidths = colRatios.map((r) => r * cw);
 
   (doc as any).autoTable({
     head: tableHead,
     body: tableBody,
     startY: y,
-    margin: { left: margin, right: margin },
+    margin: { left: ML, right: MR },
     tableWidth: cw,
     columnStyles: {
       0: { cellWidth: colWidths[0], halign: 'center', fontStyle: 'bold' },
-      1: { cellWidth: colWidths[1], halign: 'center', fillColor: CREAM },
+      1: { cellWidth: colWidths[1], halign: 'center' },
       2: { cellWidth: colWidths[2], halign: 'center' },
       3: { cellWidth: colWidths[3], halign: 'left' },
       4: { cellWidth: colWidths[4], halign: 'left', fontStyle: 'bold' },
@@ -713,49 +712,58 @@ const handleGenerateDeliveryReport = () => {
     alternateRowStyles: { fillColor: LIGHT },
     styles: {
       lineColor: BORDER,
-      lineWidth: 0.25,
+      lineWidth: 0.2,
       valign: 'middle',
     },
     didDrawCell: (data: any) => {
       if (data.section === 'body' && data.column.index === 1) {
-        const size = 3.5;
-        const cx = data.cell.x + (data.cell.width - size) / 2;
-        const cy = data.cell.y + (data.cell.height - size) / 2;
-        doc.setDrawColor(...BORDER);
+        const sz = 3.8;
+        const bx = data.cell.x + (data.cell.width - sz) / 2;
+        const by = data.cell.y + (data.cell.height - sz) / 2;
+        doc.setDrawColor(...LGRAY);
         doc.setLineWidth(0.3);
-        doc.rect(cx, cy, size, size);
+        doc.rect(bx, by, sz, sz);
       }
     },
   });
 
   const tableEndY: number = (doc as any).lastAutoTable.finalY;
 
-  // 5. ASSINATURAS
-  const sigY    = tableEndY + 22;
-  const lineLen = cw * 0.36;
-  const leftX   = margin;
-  const rightX  = margin + cw - lineLen;
+  // ── BLOCO DE ASSINATURAS ──────────────────────────────────────────────────
+  // Posiciona próximo à tabela, não solto no meio da página
+  const sigY    = tableEndY + 16;
+  const lineLen = cw * 0.34;
+  const leftX   = ML;
+  const rightX  = ML + cw - lineLen;
 
-  doc.setDrawColor(...GRAY);
+  // Caixas de fundo suaves para as assinaturas
+  doc.setFillColor(...LIGHT);
+  doc.setDrawColor(...BORDER);
+  doc.setLineWidth(0.2);
+  doc.roundedRect(leftX,  sigY - 10, lineLen, 18, 2, 2, 'FD');
+  doc.roundedRect(rightX, sigY - 10, lineLen, 18, 2, 2, 'FD');
+
+  // Linha de assinatura dentro da caixa
+  doc.setDrawColor(...LGRAY);
   doc.setLineWidth(0.4);
-  doc.line(leftX,  sigY, leftX  + lineLen, sigY);
-  doc.line(rightX, sigY, rightX + lineLen, sigY);
+  doc.line(leftX  + 6, sigY + 1, leftX  + lineLen - 6, sigY + 1);
+  doc.line(rightX + 6, sigY + 1, rightX + lineLen - 6, sigY + 1);
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
+  doc.setFontSize(7.5);
   doc.setTextColor(...GRAY);
-  doc.text('Assinatura do Motorista',   leftX  + lineLen / 2, sigY + 5, { align: 'center' });
-  doc.text('Assinatura do Solicitante', rightX + lineLen / 2, sigY + 5, { align: 'center' });
+  doc.text('Assinatura do Motorista',   leftX  + lineLen / 2, sigY + 5.5, { align: 'center' });
+  doc.text('Assinatura do Solicitante', rightX + lineLen / 2, sigY + 5.5, { align: 'center' });
 
-  // 6. RODAPE
-  doc.setDrawColor(...BORDER);
-  doc.setLineWidth(0.3);
-  doc.line(margin, pageH - 12, margin + cw, pageH - 12);
+  // ── RODAPÉ ────────────────────────────────────────────────────────────────
+  // Barra fina de rodapé
+  doc.setFillColor(...HEADER);
+  doc.rect(0, pageH - 8, pageW, 8, 'F');
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
-  doc.setTextColor(...GRAY);
-  doc.text('Sistema de Gestao de Entregas', pageW / 2, pageH - 7, { align: 'center' });
+  doc.setTextColor(160, 175, 210);
+  doc.text('Sistema de Gestao de Entregas', pageW / 2, pageH - 3, { align: 'center' });
 
   doc.save(`Programacao-Diaria-${reportDate.replace(/\//g, '-')}.pdf`);
 };
