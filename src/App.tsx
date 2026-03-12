@@ -547,8 +547,6 @@ export default function App() {
     }
   };
 
-// Substitua a função handleGenerateDeliveryReport no seu App.tsx por esta.
-
 const handleGenerateDeliveryReport = () => {
   if (selectedEntregaIds.length === 0) {
     toast.error('Selecione ao menos uma entrega para gerar o relatório.');
@@ -729,44 +727,36 @@ const handleGenerateDeliveryReport = () => {
 
   const tableEndY: number = (doc as any).lastAutoTable.finalY;
 
-  // ── BLOCO DE ASSINATURAS ──────────────────────────────────────────────────
-  // Posiciona próximo à tabela, não solto no meio da página
-  const sigY    = tableEndY + 16;
-  const lineLen = cw * 0.34;
+  // ── ASSINATURAS ───────────────────────────────────────────────────────────
+  const sigY    = tableEndY + 22;
+  const lineLen = cw * 0.36;
   const leftX   = ML;
   const rightX  = ML + cw - lineLen;
 
-  // Caixas de fundo suaves para as assinaturas
-  doc.setFillColor(...LIGHT);
-  doc.setDrawColor(...BORDER);
-  doc.setLineWidth(0.2);
-  doc.roundedRect(leftX,  sigY - 10, lineLen, 18, 2, 2, 'FD');
-  doc.roundedRect(rightX, sigY - 10, lineLen, 18, 2, 2, 'FD');
-
-  // Linha de assinatura dentro da caixa
-  doc.setDrawColor(...LGRAY);
+  doc.setDrawColor(...GRAY);
   doc.setLineWidth(0.4);
-  doc.line(leftX  + 6, sigY + 1, leftX  + lineLen - 6, sigY + 1);
-  doc.line(rightX + 6, sigY + 1, rightX + lineLen - 6, sigY + 1);
+  doc.line(leftX,  sigY, leftX  + lineLen, sigY);
+  doc.line(rightX, sigY, rightX + lineLen, sigY);
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
+  doc.setFontSize(8);
   doc.setTextColor(...GRAY);
-  doc.text('Assinatura do Motorista',   leftX  + lineLen / 2, sigY + 5.5, { align: 'center' });
-  doc.text('Assinatura do Solicitante', rightX + lineLen / 2, sigY + 5.5, { align: 'center' });
+  doc.text('Assinatura do Motorista',   leftX  + lineLen / 2, sigY + 5, { align: 'center' });
+  doc.text('Assinatura do Solicitante', rightX + lineLen / 2, sigY + 5, { align: 'center' });
 
   // ── RODAPÉ ────────────────────────────────────────────────────────────────
-  // Barra fina de rodapé
-  doc.setFillColor(...HEADER);
-  doc.rect(0, pageH - 8, pageW, 8, 'F');
+  doc.setDrawColor(...BORDER);
+  doc.setLineWidth(0.3);
+  doc.line(ML, pageH - 12, ML + cw, pageH - 12);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
-  doc.setTextColor(160, 175, 210);
-  doc.text('Sistema de Gestao de Entregas', pageW / 2, pageH - 3, { align: 'center' });
+  doc.setTextColor(...GRAY);
+  doc.text('Sistema de Gestao de Entregas', pageW / 2, pageH - 7, { align: 'center' });
 
   doc.save(`Programacao-Diaria-${reportDate.replace(/\//g, '-')}.pdf`);
 };
+
 
   const handleReprogramDeliveries = async () => {
     if (selectedEntregaIds.length === 0) return;
