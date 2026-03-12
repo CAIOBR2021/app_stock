@@ -664,7 +664,7 @@ const handleGenerateDeliveryReport = () => {
   y += 5;
 
   // 4. TABELA
-  const tableHead = [['N°', 'Entregue', 'Hora', 'Local da Obra', 'Material', 'Qtd', 'Un', 'Armazem']];
+  const tableHead = [['N°', '✓', 'Hora', 'Local da Obra', 'Material', 'Qtd', 'Un', 'Armazem']];
   const tableBody = selectedDeliveries.map((d, i) => [
     String(i + 1).padStart(2, '0'),
     '',
