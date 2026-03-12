@@ -651,15 +651,19 @@ const handleGenerateDeliveryReport = () => {
   y += 7;
 
   // ── 3. RÓTULO DA SEÇÃO ────────────────────────────────────────────────────
+  // pequeno retângulo dourado como marcador visual
+  doc.setFillColor(...ACCENT);
+  doc.rect(margin, y, 2.5, 4, 'F');
+
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
   doc.setTextColor(...MID_GRAY);
-  doc.text('\u25B8  PROGRAMAÇÃO DE ENTREGAS', margin, y);
+  doc.text('PROGRAMACAO DE ENTREGAS', margin + 5, y + 3);
 
   y += 3;
 
   // ── 4. TABELA PRINCIPAL ───────────────────────────────────────────────────
-  const tableHead = [['Nº', '✓', 'Hora', 'Local da Obra', 'Material', 'Qtd', 'Un', 'Armazém']];
+  const tableHead = [['No', 'OK', 'Hora', 'Local da Obra', 'Material', 'Qtd', 'Un', 'Armazem']];
   const tableBody = selectedDeliveries.map((d, i) => [
     String(i + 1).padStart(2, '0'),
     '',
