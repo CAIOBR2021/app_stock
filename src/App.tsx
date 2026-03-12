@@ -675,7 +675,8 @@ const handleGenerateDeliveryReport = () => {
     d.localArmazenagem || '-',
   ]);
 
-  const colRatios = [0.05, 0.08, 0.08, 0.265, 0.265, 0.07, 0.08, 0.10];
+  const colRatios = [0.05, 0.07, 0.08, 0.285, 0.275, 0.065, 0.075, 0.10];
+  // soma exata: 0.05+0.07+0.08+0.285+0.275+0.065+0.075+0.10 = 1.00
   const colWidths = colRatios.map((r) => r * cw);
 
   (doc as any).autoTable({
@@ -731,7 +732,7 @@ const handleGenerateDeliveryReport = () => {
   const sigY    = tableEndY + 22;
   const lineLen = cw * 0.36;
   const leftX   = ML;
-  const rightX  = ML + cw - lineLen;
+  const rightX  = ML + cw - lineLen;  // ancora na margem direita exata
 
   doc.setDrawColor(...GRAY);
   doc.setLineWidth(0.4);
