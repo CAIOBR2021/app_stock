@@ -602,13 +602,22 @@ const handleGenerateDeliveryReport = () => {
   doc.setTextColor(...DARK);
   doc.text('Programacao de Caminhoes para Entrega de Materiais', margin, y);
 
+  // Data: label + valor com espaço calculado corretamente
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(...GRAY);
-  doc.text('Data:', pageW - margin - 22, y);
+  const dateLabel = 'Data:  ';
+  const dateLabelW = doc.getTextWidth(dateLabel);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...DARK);
-  doc.text(reportDate, pageW - margin, y, { align: 'right' });
+  const dateValueW = doc.getTextWidth(reportDate);
+  const dateStartX = pageW - margin - dateLabelW - dateValueW;
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...GRAY);
+  doc.text(dateLabel, dateStartX, y);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...DARK);
+  doc.text(reportDate, dateStartX + dateLabelW, y);
 
   y += 5;
   doc.setDrawColor(...BORDER);
@@ -655,7 +664,7 @@ const handleGenerateDeliveryReport = () => {
   y += 5;
 
   // 4. TABELA
-  const tableHead = [['No', 'OK', 'Hora', 'Local da Obra', 'Material', 'Qtd', 'Un', 'Armazem']];
+  const tableHead = [['N°', 'Entregue', 'Hora', 'Local da Obra', 'Material', 'Qtd', 'Un', 'Armazem']];
   const tableBody = selectedDeliveries.map((d, i) => [
     String(i + 1).padStart(2, '0'),
     '',
@@ -750,12 +759,6 @@ const handleGenerateDeliveryReport = () => {
 
   doc.save(`Programacao-Diaria-${reportDate.replace(/\//g, '-')}.pdf`);
 };
-
-
-
-
-
-
 
   const handleReprogramDeliveries = async () => {
     if (selectedEntregaIds.length === 0) return;
