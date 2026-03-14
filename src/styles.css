@@ -800,11 +800,17 @@ table.table tbody tr.row-danger:hover td { background: rgba(229,62,62,.07); }
 .pag-btns { display: flex; gap: 4px; }
 
 /* ── MODAL ───────────────────────────────────────────────── */
+/* ✅ depois — cobre o viewport inteiro */
 .modal {
   display: none;
+  position: fixed;   /* ← estava faltando */
+  inset: 0;          /* ← estava faltando (top/right/bottom/left: 0) */
   background-color: rgba(0,0,0,0.55);
   z-index: 9999;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
+
 .modal[style*="display: block"] { display: block !important; }
 
 .modal-content {
