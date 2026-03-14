@@ -19,7 +19,6 @@ import { DeliveryTable } from './components/DeliveryTable';
 import { EntradaSaidaForm } from './components/EntradaSaidaForm';
 import './styles.css';
 
-// Importações dos novos módulos
 import type { Produto, Movimentacao, Entrega } from './types';
 import { API_URL, ITEMS_PER_PAGE } from './constants';
 import { isDelivered, normalizeEntrega, formatPhoneNumber } from './utils';
@@ -31,6 +30,7 @@ import {
   BotaoNovoProduto,
   ProdutosTable,
 } from './components/Estoque';
+import { MetricCards } from './components/MetricCards';
 import { ConsultaMovimentacoes, MovsList } from './components/Movimentacoes';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -44,30 +44,22 @@ export default function App() {
   const [entregas, setEntregas] = useState<Entrega[]>([]);
   const [editingEntrega, setEditingEntrega] = useState<Entrega | null>(null);
 
-  const [entregaToDeleteId, setEntregaToDeleteId] = useState<string | null>(
-    null,
-  );
+  const [entregaToDeleteId, setEntregaToDeleteId] = useState<string | null>(null);
   const [showBulkConfirmModal, setShowBulkConfirmModal] = useState(false);
   const [bulkTargetStatus, setBulkTargetStatus] = useState('');
-
   const [showStockLimitModal, setShowStockLimitModal] = useState(false);
   const [pendingDeliveryData, setPendingDeliveryData] = useState<any>(null);
-
-  // Novo estado para controlar o modal de Alertas de Stock Baixo
   const [showLowStockModal, setShowLowStockModal] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [loadingAll, setLoadingAll] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [view, setView] = useState<
-    'estoque' | 'movimentacoes' | 'rotas' | 'entradas_saidas'
-  >('estoque');
+  const [view, setView] = useState<'estoque' | 'movimentacoes' | 'rotas' | 'entradas_saidas'>('estoque');
   const [showScroll, setShowScroll] = useState(false);
   const [q, setQ] = useState('');
   const [categoriaFilter, setCategoriaFilter] = useState('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null);
-
   const [mostrarAbaixoMin, setMostrarAbaixoMin] = useState(false);
   const [mostrarPrioritarios, setMostrarPrioritarios] = useState(false);
   const [page, setPage] = useState(1);
@@ -90,11 +82,8 @@ export default function App() {
     async function fetchInitialData() {
       try {
         setLoading(true);
-        const firstPageRes = await fetch(
-          `${API_URL}/produtos?_page=1&_limit=${ITEMS_PER_PAGE}`,
-        );
-        if (!firstPageRes.ok)
-          throw new Error('Falha ao buscar dados iniciais.');
+        const firstPageRes = await fetch(`${API_URL}/produtos?_page=1&_limit=${ITEMS_PER_PAGE}`);
+        if (!firstPageRes.ok) throw new Error('Falha ao buscar dados iniciais.');
         const firstPageData = await firstPageRes.json();
         setProdutos(firstPageData);
         setLoading(false);
@@ -105,8 +94,7 @@ export default function App() {
           fetch(`${API_URL}/entregas`),
         ]);
 
-        if (!allProdsRes.ok || !movsRes.ok || !entregasRes.ok)
-          throw new Error('Falha ao buscar dados completos.');
+        if (!allProdsRes.ok || !movsRes.ok || !entregasRes.ok) throw new Error('Falha ao buscar dados completos.');
 
         const allProdsData = await allProdsRes.json();
         const movsData = await movsRes.json();
@@ -133,9 +121,7 @@ export default function App() {
     return () => window.removeEventListener('scroll', checkScrollTop);
   }, []);
 
-  async function addProduto(
-    p: Omit<Produto, 'id' | 'criadoEm' | 'atualizadoEm' | 'sku'>,
-  ) {
+  async function addProduto(p: Omit<Produto, 'id' | 'criadoEm' | 'atualizadoEm' | 'sku'>) {
     try {
       const response = await fetch(`${API_URL}/produtos`, {
         method: 'POST',
@@ -145,15 +131,10 @@ export default function App() {
       if (!response.ok) throw new Error('Falha ao criar produto');
       const novoProduto = await response.json();
       setAllProdutos((prev) => [novoProduto, ...prev]);
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   }
 
-  async function updateProduto(
-    id: UUID,
-    patch: Partial<Omit<Produto, 'id' | 'sku' | 'criadoEm'>>,
-  ) {
+  async function updateProduto(id: UUID, patch: Partial<Omit<Produto, 'id' | 'sku' | 'criadoEm'>>) {
     try {
       const response = await fetch(`${API_URL}/produtos/${id}`, {
         method: 'PATCH',
@@ -162,12 +143,8 @@ export default function App() {
       });
       if (!response.ok) throw new Error('Falha ao atualizar produto');
       const produtoAtualizado = await response.json();
-      setAllProdutos((prev) =>
-        prev.map((x) => (x.id === id ? produtoAtualizado : x)),
-      );
-    } catch (err) {
-      console.error(err);
-    }
+      setAllProdutos((prev) => prev.map((x) => (x.id === id ? produtoAtualizado : x)));
+    } catch (err) { console.error(err); }
   }
 
   async function deleteProduto(id: UUID) {
@@ -175,40 +152,26 @@ export default function App() {
       await fetch(`${API_URL}/produtos/${id}`, { method: 'DELETE' });
       setAllProdutos((prev) => prev.filter((p) => p.id !== id));
       setMovs((prev) => prev.filter((m) => m.produtoId !== id));
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   }
 
   async function togglePrioritario(id: UUID, currentState: boolean) {
-    setAllProdutos((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, prioritario: !currentState } : p)),
-    );
+    setAllProdutos((prev) => prev.map((p) => (p.id === id ? { ...p, prioritario: !currentState } : p)));
     try {
       const response = await fetch(`${API_URL}/produtos/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prioritario: !currentState }),
       });
-      if (!response.ok)
-        throw new Error('Falha ao atualizar prioridade no servidor.');
+      if (!response.ok) throw new Error('Falha ao atualizar prioridade no servidor.');
     } catch (err) {
       console.error(err);
-      toast.error(
-        'Não foi possível salvar a alteração de prioridade. Verifique sua conexão.',
-      );
-      setAllProdutos((prev) =>
-        prev.map((p) =>
-          p.id === id ? { ...p, prioritario: currentState } : p,
-        ),
-      );
+      toast.error('Não foi possível salvar a alteração de prioridade. Verifique sua conexão.');
+      setAllProdutos((prev) => prev.map((p) => (p.id === id ? { ...p, prioritario: currentState } : p)));
     }
   }
 
-  async function addMov(
-    m: Omit<Movimentacao, 'id' | 'criadoEm'>,
-    custoEntrada?: number,
-  ) {
+  async function addMov(m: Omit<Movimentacao, 'id' | 'criadoEm'>, custoEntrada?: number) {
     try {
       const payload = { ...m, custoEntrada: custoEntrada };
       const response = await fetch(`${API_URL}/movimentacoes`, {
@@ -217,12 +180,9 @@ export default function App() {
         body: JSON.stringify(payload),
       });
       if (!response.ok) throw new Error('Falha ao criar movimentação');
-
       const { movimentacao, produto } = await response.json();
       setMovs((prev) => [movimentacao, ...prev]);
-      setAllProdutos((prev) =>
-        prev.map((p) => (p.id === produto.id ? produto : p)),
-      );
+      setAllProdutos((prev) => prev.map((p) => (p.id === produto.id ? produto : p)));
     } catch (err: any) {
       console.error(err);
       toast.error(err.message);
@@ -235,29 +195,16 @@ export default function App() {
       const motivoBase = [];
       if (dados.ordemCompra) motivoBase.push(`OC: ${dados.ordemCompra}`);
       if (dados.nomeObra) motivoBase.push(`Obra: ${dados.nomeObra}`);
-      const motivoFinal =
-        motivoBase.length > 0
-          ? motivoBase.join(' | ')
-          : `Movimentação em lote (${dados.tipo})`;
+      const motivoFinal = motivoBase.length > 0 ? motivoBase.join(' | ') : `Movimentação em lote (${dados.tipo})`;
 
       for (const item of dados.itens) {
         await addMov(
-          {
-            produtoId: item.produtoId,
-            tipo: dados.tipo,
-            quantidade: item.quantidade,
-            motivo: motivoFinal,
-            nomeObra: dados.nomeObra || undefined,
-            ordemCompra: dados.ordemCompra || undefined,
-            custoUnitarioHistorico: item.valorUnitario,
-          },
+          { produtoId: item.produtoId, tipo: dados.tipo, quantidade: item.quantidade, motivo: motivoFinal, nomeObra: dados.nomeObra || undefined, ordemCompra: dados.ordemCompra || undefined, custoUnitarioHistorico: item.valorUnitario },
           dados.tipo === 'entrada' ? item.valorUnitario : undefined,
         );
       }
 
-      toast.success(
-        'Movimentações registradas e preços atualizados com sucesso!',
-      );
+      toast.success('Movimentações registradas e preços atualizados com sucesso!');
       setView('estoque');
       scrollTop();
     } catch (err) {
@@ -267,10 +214,7 @@ export default function App() {
     }
   };
 
-  async function updateMov(
-    id: UUID,
-    patch: { quantidade: number; motivo?: string },
-  ) {
+  async function updateMov(id: UUID, patch: { quantidade: number; motivo?: string }) {
     try {
       const response = await fetch(`${API_URL}/movimentacoes/${id}`, {
         method: 'PATCH',
@@ -278,47 +222,26 @@ export default function App() {
         body: JSON.stringify(patch),
       });
       if (!response.ok) throw new Error('Falha ao atualizar movimentação');
-
-      const { movimentacaoAtualizada, produtoAtualizado } =
-        await response.json();
-      setMovs((prev) =>
-        prev.map((m) => (m.id === id ? movimentacaoAtualizada : m)),
-      );
-      setAllProdutos((prev) =>
-        prev.map((p) =>
-          p.id === produtoAtualizado.id ? produtoAtualizado : p,
-        ),
-      );
-
+      const { movimentacaoAtualizada, produtoAtualizado } = await response.json();
+      setMovs((prev) => prev.map((m) => (m.id === id ? movimentacaoAtualizada : m)));
+      setAllProdutos((prev) => prev.map((p) => (p.id === produtoAtualizado.id ? produtoAtualizado : p)));
       const entregasRes = await fetch(`${API_URL}/entregas`);
       const entregasData = await entregasRes.json();
       setEntregas(entregasData.map(normalizeEntrega));
-    } catch (err) {
-      console.error('Erro ao atualizar movimentação:', err);
-    }
+    } catch (err) { console.error('Erro ao atualizar movimentação:', err); }
   }
 
   async function deleteMov(id: UUID) {
     try {
-      const response = await fetch(`${API_URL}/movimentacoes/${id}`, {
-        method: 'DELETE',
-      });
+      const response = await fetch(`${API_URL}/movimentacoes/${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Falha ao excluir movimentação');
       const { produtoAtualizado } = await response.json();
-
       setMovs((prev) => prev.filter((m) => m.id !== id));
-      setAllProdutos((prev) =>
-        prev.map((p) =>
-          p.id === produtoAtualizado.id ? produtoAtualizado : p,
-        ),
-      );
-
+      setAllProdutos((prev) => prev.map((p) => (p.id === produtoAtualizado.id ? produtoAtualizado : p)));
       const entregasRes = await fetch(`${API_URL}/entregas`);
       const entregasData = await entregasRes.json();
       setEntregas(entregasData.map(normalizeEntrega));
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   }
 
   async function updateEntregaFull(id: string, data: any) {
@@ -333,33 +256,21 @@ export default function App() {
         const errData = await res.json();
         throw new Error(errData.error || 'Falha ao atualizar entrega');
       }
-
       const [entregasRes, prodsRes, movsRes] = await Promise.all([
         fetch(`${API_URL}/entregas`),
         fetch(`${API_URL}/produtos?_limit=10000`),
         fetch(`${API_URL}/movimentacoes`),
       ]);
-
-      if (!entregasRes.ok || !prodsRes.ok || !movsRes.ok) {
-        throw new Error('Erro ao sincronizar dados após edição.');
-      }
-
-      const entregasData = await entregasRes.json();
-      const prodsData = await prodsRes.json();
-      const movsData = await movsRes.json();
-
-      setEntregas(entregasData.map(normalizeEntrega));
-      setAllProdutos(prodsData);
-      setMovs(movsData);
-
+      if (!entregasRes.ok || !prodsRes.ok || !movsRes.ok) throw new Error('Erro ao sincronizar dados após edição.');
+      setEntregas((await entregasRes.json()).map(normalizeEntrega));
+      setAllProdutos(await prodsRes.json());
+      setMovs(await movsRes.json());
       setEditingEntrega(null);
       toast.success('Entrega atualizada e estoque sincronizado com sucesso!');
     } catch (err: any) {
       console.error(err);
       toast.error(err.message);
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }
 
   async function addEntrega(data: any) {
@@ -370,98 +281,55 @@ export default function App() {
         body: JSON.stringify(data),
       });
       if (!res.ok) throw new Error((await res.json()).error);
-
       const entregasRes = await fetch(`${API_URL}/entregas`);
       const entregasData = await entregasRes.json();
       setEntregas(entregasData.map(normalizeEntrega));
-
       const prodsRes = await fetch(`${API_URL}/produtos?_limit=10000`);
-      const prodsData = await prodsRes.json();
-      setAllProdutos(prodsData);
-
+      setAllProdutos(await prodsRes.json());
       const movsRes = await fetch(`${API_URL}/movimentacoes`);
-      const movsData = await movsRes.json();
-      setMovs(movsData);
-
+      setMovs(await movsRes.json());
       toast.success('Agendamento criado com sucesso!');
-    } catch (err: any) {
-      toast.error(err.message);
-    }
+    } catch (err: any) { toast.error(err.message); }
   }
 
   const processDeliverySave = (data: any) => {
-    if (editingEntrega) {
-      updateEntregaFull(editingEntrega.id, data);
-    } else {
-      addEntrega(data);
-    }
+    if (editingEntrega) updateEntregaFull(editingEntrega.id, data);
+    else addEntrega(data);
   };
 
   const handleSaveDelivery = (data: any) => {
     let produto = allProdutos.find((p) => p.id === data.produtoId);
-    if (!produto && data.itemNome) {
-      produto = allProdutos.find(
-        (p) => p.nome.toLowerCase() === data.itemNome.toLowerCase(),
-      );
-    }
-
+    if (!produto && data.itemNome) produto = allProdutos.find((p) => p.nome.toLowerCase() === data.itemNome.toLowerCase());
     if (produto) {
       let estoqueDisponivel = produto.quantidade;
-      if (
-        editingEntrega &&
-        (editingEntrega.produtoId === produto.id ||
-          editingEntrega.itemNome === produto.nome)
-      ) {
+      if (editingEntrega && (editingEntrega.produtoId === produto.id || editingEntrega.itemNome === produto.nome)) {
         estoqueDisponivel += Number(editingEntrega.itemQuantidade);
       }
-
-      const qtdSolicitada = Number(
-        String(data.itemQuantidade).replace(',', '.'),
-      );
-
-      if (qtdSolicitada > estoqueDisponivel) {
-        setPendingDeliveryData(data);
-        setShowStockLimitModal(true);
-        return;
-      }
+      const qtdSolicitada = Number(String(data.itemQuantidade).replace(',', '.'));
+      if (qtdSolicitada > estoqueDisponivel) { setPendingDeliveryData(data); setShowStockLimitModal(true); return; }
     }
     processDeliverySave(data);
   };
 
   const handleConfirmStockOverride = () => {
-    if (pendingDeliveryData) {
-      processDeliverySave(pendingDeliveryData);
-      setPendingDeliveryData(null);
-    }
+    if (pendingDeliveryData) { processDeliverySave(pendingDeliveryData); setPendingDeliveryData(null); }
     setShowStockLimitModal(false);
   };
 
   async function confirmDeleteEntrega(id: string) {
     try {
-      const res = await fetch(`${API_URL}/entregas/${id}`, {
-        method: 'DELETE',
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Erro ao excluir');
-      }
-
+      const res = await fetch(`${API_URL}/entregas/${id}`, { method: 'DELETE' });
+      if (!res.ok) { const data = await res.json(); throw new Error(data.error || 'Erro ao excluir'); }
       const entregasRes = await fetch(`${API_URL}/entregas`);
       const entregasData = await entregasRes.json();
       setEntregas(entregasData.map(normalizeEntrega));
-
       const prodsRes = await fetch(`${API_URL}/produtos?_limit=10000`);
       setAllProdutos(await prodsRes.json());
-
       const movsRes = await fetch(`${API_URL}/movimentacoes`);
       setMovs(await movsRes.json());
-
       setEntregaToDeleteId(null);
       toast.success('Entrega excluída com sucesso.');
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message);
-    }
+    } catch (err: any) { console.error(err); toast.error(err.message); }
   }
 
   async function updateEntregaStatus(id: string, status: string) {
@@ -471,14 +339,9 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       });
-      setEntregas((prev) =>
-        prev.map((e) => (e.id === id ? { ...e, status } : e)),
-      );
+      setEntregas((prev) => prev.map((e) => (e.id === id ? { ...e, status } : e)));
       toast.success(`Status atualizado para ${status}.`);
-    } catch (err) {
-      console.error(err);
-      toast.error('Erro ao atualizar status.');
-    }
+    } catch (err) { console.error(err); toast.error('Erro ao atualizar status.'); }
   }
 
   const handleBulkStatusChange = (newStatus: string) => {
@@ -499,295 +362,121 @@ export default function App() {
           }),
         ),
       );
-
       const entregasRes = await fetch(`${API_URL}/entregas`);
       const entregasData = await entregasRes.json();
       setEntregas(entregasData.map(normalizeEntrega));
-
       setSelectedEntregaIds([]);
       setShowBulkConfirmModal(false);
       toast.success(`Entregas marcadas como ${bulkTargetStatus}.`);
     } catch (err) {
       console.error(err);
       toast.error('Ocorreu um erro ao atualizar os status em massa.');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const handleSelectEntrega = (id: string) => {
-    setSelectedEntregaIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
-    );
+    setSelectedEntregaIds((prev) => prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]);
   };
 
   const filteredDeliveries = useMemo(() => {
     let data = entregas;
     if (rotaDateFilter) {
       data = data.filter((d) => {
-        const itemDate = new Date(d.dataHoraSolicitacao).toLocaleDateString(
-          'en-CA',
-        );
+        const itemDate = new Date(d.dataHoraSolicitacao).toLocaleDateString('en-CA');
         return itemDate === rotaDateFilter;
       });
     }
-    return data.sort(
-      (a, b) =>
-        new Date(a.dataHoraSolicitacao).getTime() -
-        new Date(b.dataHoraSolicitacao).getTime(),
-    );
+    return data.sort((a, b) => new Date(a.dataHoraSolicitacao).getTime() - new Date(b.dataHoraSolicitacao).getTime());
   }, [entregas, rotaDateFilter]);
 
   const handleSelectAllEntregas = (isChecked: boolean) => {
-    if (isChecked) {
-      const activeIds = filteredDeliveries.map((e) => e.id);
-      setSelectedEntregaIds(activeIds);
-    } else {
-      setSelectedEntregaIds([]);
-    }
+    if (isChecked) setSelectedEntregaIds(filteredDeliveries.map((e) => e.id));
+    else setSelectedEntregaIds([]);
   };
 
-const handleGenerateDeliveryReport = () => {
-  if (selectedEntregaIds.length === 0) {
-    toast.error('Selecione ao menos uma entrega para gerar o relatório.');
-    return;
-  }
-
-  const selectedDeliveries = entregas
-    .filter((d) => selectedEntregaIds.includes(d.id))
-    .filter((d) => !isDelivered(d.status))
-    .sort(
-      (a, b) =>
-        new Date(a.dataHoraSolicitacao).getTime() -
-        new Date(b.dataHoraSolicitacao).getTime(),
-    );
-
-  if (selectedDeliveries.length === 0) {
-    toast.error('Nao existem itens pendentes selecionados.');
-    return;
-  }
-
-  const firstDelivery  = selectedDeliveries[0];
-  const reportDate     = new Date(firstDelivery.dataHoraSolicitacao).toLocaleDateString('pt-BR');
-  const responsavel    = firstDelivery.responsavelNome     || 'Nao informado';
-  const telefone       = firstDelivery.responsavelTelefone
-    ? formatPhoneNumber(firstDelivery.responsavelTelefone) : 'Nao informado';
-
-  // Paleta: azul navy + acento índigo suave
-  const DARK    = [22,  34,  56]  as [number, number, number]; // #162238
-  const HEADER  = [40,  58, 100]  as [number, number, number]; // #283A64
-  const ACCENT  = [60,  90, 160]  as [number, number, number]; // #3A5AA0 (acento discreto)
-  const GRAY    = [110, 120, 140] as [number, number, number];
-  const LGRAY   = [180, 188, 205] as [number, number, number];
-  const LIGHT   = [246, 247, 250] as [number, number, number];
-  const BORDER  = [215, 220, 232] as [number, number, number];
-  const WHITE   = [255, 255, 255] as [number, number, number];
-
-  const { jsPDF } = (window as any).jspdf;
-  const doc  = new jsPDF('l', 'mm', 'a4');
-  const pageW = doc.internal.pageSize.getWidth();
-  const pageH = doc.internal.pageSize.getHeight();
-  const ML    = 20;   // margem esquerda
-  const MR    = 20;   // margem direita
-  const cw    = pageW - ML - MR;
-
-  // ── BARRA SUPERIOR AZUL ───────────────────────────────────────────────────
-  doc.setFillColor(...HEADER);
-  doc.rect(0, 0, pageW, 14, 'F');
-
-  // Título dentro da barra (branco)
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
-  doc.setTextColor(...WHITE);
-  doc.text('Programacao de Caminhoes para Entrega de Materiais', ML, 9);
-
-  // Data dentro da barra (branco)
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
-  const dateLabelW = doc.getTextWidth('Data:  ');
-  doc.setTextColor(180, 195, 225);
-  doc.text('Data:', pageW - MR - dateLabelW - doc.getTextWidth(reportDate), 9);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...WHITE);
-  doc.text(reportDate, pageW - MR, 9, { align: 'right' });
-
-  let y = 22;
-
-  // ── LINHA DE META-INFORMAÇÃO ──────────────────────────────────────────────
-  // Responsável
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
-  doc.setTextColor(...GRAY);
-  doc.text('Responsavel:', ML, y);
-
-  let cx = ML + doc.getTextWidth('Responsavel:  ');
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...DARK);
-  doc.text(responsavel, cx, y);
-
-  cx += doc.getTextWidth(responsavel + '   ');
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(...LGRAY);
-  doc.text('|', cx, y);
-
-  cx += doc.getTextWidth('|   ');
-  doc.setTextColor(...GRAY);
-  doc.text('Telefone:', cx, y);
-
-  cx += doc.getTextWidth('Telefone:  ');
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...DARK);
-  doc.text(telefone, cx, y);
-
-  y += 4;
-
-  // Linha separadora fina
-  doc.setDrawColor(...BORDER);
-  doc.setLineWidth(0.25);
-  doc.line(ML, y, ML + cw, y);
-
-  y += 8;
-
-  // ── RÓTULO DA SEÇÃO ────────────────────────────────────────────────────────
-  // Ponto de acento colorido + texto
-  doc.setFillColor(...ACCENT);
-  doc.rect(ML, y - 3.5, 3, 4.5, 'F');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
-  doc.setTextColor(...ACCENT);
-  doc.text('PROGRAMACAO DE ENTREGAS', ML + 5, y);
-
-  y += 5;
-
-  // ── TABELA ────────────────────────────────────────────────────────────────
-  const tableHead = [['N.', 'OK', 'Hora', 'Local da Obra', 'Material', 'Qtd', 'Un', 'Armazem']];
-  const tableBody = selectedDeliveries.map((d, i) => [
-    String(i + 1).padStart(2, '0'),
-    '',
-    new Date(d.dataHoraSolicitacao).toLocaleTimeString('pt-BR', {
-      hour: '2-digit', minute: '2-digit',
-    }),
-    d.localObra,
-    d.itemNome || '-',
-    String(d.itemQuantidade),
-    d.itemUnidadeMedida || '-',
-    d.localArmazenagem || '-',
-  ]);
-
-  const colRatios = [0.05, 0.07, 0.08, 0.285, 0.275, 0.065, 0.075, 0.10];
-  // soma exata: 0.05+0.07+0.08+0.285+0.275+0.065+0.075+0.10 = 1.00
-  const colWidths = colRatios.map((r) => r * cw);
-
-  (doc as any).autoTable({
-    head: tableHead,
-    body: tableBody,
-    startY: y,
-    margin: { left: ML, right: MR },
-    tableWidth: cw,
-    columnStyles: {
-      0: { cellWidth: colWidths[0], halign: 'center', fontStyle: 'bold' },
-      1: { cellWidth: colWidths[1], halign: 'center' },
-      2: { cellWidth: colWidths[2], halign: 'center' },
-      3: { cellWidth: colWidths[3], halign: 'left' },
-      4: { cellWidth: colWidths[4], halign: 'left', fontStyle: 'bold' },
-      5: { cellWidth: colWidths[5], halign: 'center' },
-      6: { cellWidth: colWidths[6], halign: 'center' },
-      7: { cellWidth: colWidths[7], halign: 'center' },
-    },
-    headStyles: {
-      fillColor: HEADER,
-      textColor: WHITE,
-      fontStyle: 'bold',
-      fontSize: 8,
-      cellPadding: { top: 5, bottom: 5, left: 4, right: 4 },
-      halign: 'center',
-    },
-    bodyStyles: {
-      fontSize: 8.5,
-      textColor: DARK,
-      cellPadding: { top: 6, bottom: 6, left: 4, right: 4 },
-    },
-    alternateRowStyles: { fillColor: LIGHT },
-    styles: {
-      lineColor: BORDER,
-      lineWidth: 0.2,
-      valign: 'middle',
-    },
-    didDrawCell: (data: any) => {
-      if (data.section === 'body' && data.column.index === 1) {
-        const sz = 3.8;
-        const bx = data.cell.x + (data.cell.width - sz) / 2;
-        const by = data.cell.y + (data.cell.height - sz) / 2;
-        doc.setDrawColor(...LGRAY);
-        doc.setLineWidth(0.3);
-        doc.rect(bx, by, sz, sz);
-      }
-    },
-  });
-
-  const tableEndY: number = (doc as any).lastAutoTable.finalY;
-
-  // ── ASSINATURAS ───────────────────────────────────────────────────────────
-  const sigY    = tableEndY + 22;
-  const lineLen = cw * 0.36;
-  const leftX   = ML;
-  const rightX  = ML + cw - lineLen;  // ancora na margem direita exata
-
-  doc.setDrawColor(...GRAY);
-  doc.setLineWidth(0.4);
-  doc.line(leftX,  sigY, leftX  + lineLen, sigY);
-  doc.line(rightX, sigY, rightX + lineLen, sigY);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(...GRAY);
-  doc.text('Assinatura do Motorista',   leftX  + lineLen / 2, sigY + 5, { align: 'center' });
-  doc.text('Assinatura do Solicitante', rightX + lineLen / 2, sigY + 5, { align: 'center' });
-
-  // ── RODAPÉ ────────────────────────────────────────────────────────────────
-  doc.setDrawColor(...BORDER);
-  doc.setLineWidth(0.3);
-  doc.line(ML, pageH - 12, ML + cw, pageH - 12);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7);
-  doc.setTextColor(...GRAY);
-  doc.text('Sistema de Gestao de Entregas', pageW / 2, pageH - 7, { align: 'center' });
-
-  doc.save(`Programacao-Diaria-${reportDate.replace(/\//g, '-')}.pdf`);
-};
-
+  const handleGenerateDeliveryReport = () => {
+    if (selectedEntregaIds.length === 0) { toast.error('Selecione ao menos uma entrega para gerar o relatório.'); return; }
+    const selectedDeliveries = entregas
+      .filter((d) => selectedEntregaIds.includes(d.id))
+      .filter((d) => !isDelivered(d.status))
+      .sort((a, b) => new Date(a.dataHoraSolicitacao).getTime() - new Date(b.dataHoraSolicitacao).getTime());
+    if (selectedDeliveries.length === 0) { toast.error('Nao existem itens pendentes selecionados.'); return; }
+    const firstDelivery = selectedDeliveries[0];
+    const reportDate = new Date(firstDelivery.dataHoraSolicitacao).toLocaleDateString('pt-BR');
+    const responsavel = firstDelivery.responsavelNome || 'Nao informado';
+    const telefone = firstDelivery.responsavelTelefone ? formatPhoneNumber(firstDelivery.responsavelTelefone) : 'Nao informado';
+    const DARK = [22, 34, 56] as [number, number, number];
+    const HEADER = [40, 58, 100] as [number, number, number];
+    const ACCENT = [60, 90, 160] as [number, number, number];
+    const GRAY = [110, 120, 140] as [number, number, number];
+    const LGRAY = [180, 188, 205] as [number, number, number];
+    const LIGHT = [246, 247, 250] as [number, number, number];
+    const BORDER = [215, 220, 232] as [number, number, number];
+    const WHITE = [255, 255, 255] as [number, number, number];
+    const { jsPDF } = (window as any).jspdf;
+    const doc = new jsPDF('l', 'mm', 'a4');
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const ML = 20; const MR = 20; const cw = pageW - ML - MR;
+    doc.setFillColor(...HEADER); doc.rect(0, 0, pageW, 14, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(...WHITE);
+    doc.text('Programacao de Caminhoes para Entrega de Materiais', ML, 9);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+    const dateLabelW = doc.getTextWidth('Data:  ');
+    doc.setTextColor(180, 195, 225); doc.text('Data:', pageW - MR - dateLabelW - doc.getTextWidth(reportDate), 9);
+    doc.setFont('helvetica', 'bold'); doc.setTextColor(...WHITE); doc.text(reportDate, pageW - MR, 9, { align: 'right' });
+    let y = 22;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...GRAY); doc.text('Responsavel:', ML, y);
+    let cx = ML + doc.getTextWidth('Responsavel:  ');
+    doc.setFont('helvetica', 'bold'); doc.setTextColor(...DARK); doc.text(responsavel, cx, y);
+    cx += doc.getTextWidth(responsavel + '   ');
+    doc.setFont('helvetica', 'normal'); doc.setTextColor(...LGRAY); doc.text('|', cx, y);
+    cx += doc.getTextWidth('|   ');
+    doc.setTextColor(...GRAY); doc.text('Telefone:', cx, y);
+    cx += doc.getTextWidth('Telefone:  ');
+    doc.setFont('helvetica', 'bold'); doc.setTextColor(...DARK); doc.text(telefone, cx, y);
+    y += 4;
+    doc.setDrawColor(...BORDER); doc.setLineWidth(0.25); doc.line(ML, y, ML + cw, y); y += 8;
+    doc.setFillColor(...ACCENT); doc.rect(ML, y - 3.5, 3, 4.5, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(...ACCENT);
+    doc.text('PROGRAMACAO DE ENTREGAS', ML + 5, y); y += 5;
+    const tableHead = [['N.', 'OK', 'Hora', 'Local da Obra', 'Material', 'Qtd', 'Un', 'Armazem']];
+    const tableBody = selectedDeliveries.map((d, i) => [String(i + 1).padStart(2, '0'), '', new Date(d.dataHoraSolicitacao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }), d.localObra, d.itemNome || '-', String(d.itemQuantidade), d.itemUnidadeMedida || '-', d.localArmazenagem || '-']);
+    const colRatios = [0.05, 0.07, 0.08, 0.285, 0.275, 0.065, 0.075, 0.10];
+    const colWidths = colRatios.map((r) => r * cw);
+    (doc as any).autoTable({ head: tableHead, body: tableBody, startY: y, margin: { left: ML, right: MR }, tableWidth: cw, columnStyles: { 0: { cellWidth: colWidths[0], halign: 'center', fontStyle: 'bold' }, 1: { cellWidth: colWidths[1], halign: 'center' }, 2: { cellWidth: colWidths[2], halign: 'center' }, 3: { cellWidth: colWidths[3], halign: 'left' }, 4: { cellWidth: colWidths[4], halign: 'left', fontStyle: 'bold' }, 5: { cellWidth: colWidths[5], halign: 'center' }, 6: { cellWidth: colWidths[6], halign: 'center' }, 7: { cellWidth: colWidths[7], halign: 'center' } }, headStyles: { fillColor: HEADER, textColor: WHITE, fontStyle: 'bold', fontSize: 8, cellPadding: { top: 5, bottom: 5, left: 4, right: 4 }, halign: 'center' }, bodyStyles: { fontSize: 8.5, textColor: DARK, cellPadding: { top: 6, bottom: 6, left: 4, right: 4 } }, alternateRowStyles: { fillColor: LIGHT }, styles: { lineColor: BORDER, lineWidth: 0.2, valign: 'middle' }, didDrawCell: (data: any) => { if (data.section === 'body' && data.column.index === 1) { const sz = 3.8; const bx = data.cell.x + (data.cell.width - sz) / 2; const by = data.cell.y + (data.cell.height - sz) / 2; doc.setDrawColor(...LGRAY); doc.setLineWidth(0.3); doc.rect(bx, by, sz, sz); } } });
+    const tableEndY: number = (doc as any).lastAutoTable.finalY;
+    const sigY = tableEndY + 22; const lineLen = cw * 0.36; const leftX = ML; const rightX = ML + cw - lineLen;
+    doc.setDrawColor(...GRAY); doc.setLineWidth(0.4);
+    doc.line(leftX, sigY, leftX + lineLen, sigY); doc.line(rightX, sigY, rightX + lineLen, sigY);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...GRAY);
+    doc.text('Assinatura do Motorista', leftX + lineLen / 2, sigY + 5, { align: 'center' });
+    doc.text('Assinatura do Solicitante', rightX + lineLen / 2, sigY + 5, { align: 'center' });
+    doc.setDrawColor(...BORDER); doc.setLineWidth(0.3); doc.line(ML, pageH - 12, ML + cw, pageH - 12);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(...GRAY);
+    doc.text('Sistema de Gestao de Entregas', pageW / 2, pageH - 7, { align: 'center' });
+    doc.save(`Programacao-Diaria-${reportDate.replace(/\//g, '-')}.pdf`);
+  };
 
   const handleReprogramDeliveries = async () => {
     if (selectedEntregaIds.length === 0) return;
-    if (!newDeliveryDate) {
-      toast.error('Escolha uma nova data.');
-      return;
-    }
-
+    if (!newDeliveryDate) { toast.error('Escolha uma nova data.'); return; }
     const validIdsToReprogram = selectedEntregaIds.filter((id) => {
       const delivery = entregas.find((e) => e.id === id);
       return delivery && !isDelivered(delivery.status);
     });
-
     if (validIdsToReprogram.length === 0) {
-      toast.error(
-        "Itens marcados como 'Entregue' não podem ser reprogramados. Por favor, selecione apenas itens pendentes ou altere o status antes.",
-      );
+      toast.error("Itens marcados como 'Entregue' não podem ser reprogramados. Por favor, selecione apenas itens pendentes ou altere o status antes.");
       setShowReprogramModal(false);
       return;
     }
-
     try {
       await Promise.all(
         validIdsToReprogram.map((id) => {
           const entrega = entregas.find((e) => e.id === id);
           if (!entrega) return Promise.resolve();
-          const timePart =
-            entrega.dataHoraSolicitacao.split('T')[1] || '08:00:00';
+          const timePart = entrega.dataHoraSolicitacao.split('T')[1] || '08:00:00';
           const newDateTime = `${newDeliveryDate}T${timePart}`;
-
           return fetch(`${API_URL}/entregas/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -795,14 +484,9 @@ const handleGenerateDeliveryReport = () => {
           });
         }),
       );
-
-      toast.success(
-        `${validIdsToReprogram.length} entrega(s) reprogramada(s) com sucesso!`,
-      );
-
+      toast.success(`${validIdsToReprogram.length} entrega(s) reprogramada(s) com sucesso!`);
       setShowReprogramModal(false);
       setNewDeliveryDate('');
-
       const entregasRes = await fetch(`${API_URL}/entregas`);
       const entregasData = await entregasRes.json();
       setEntregas(entregasData.map(normalizeEntrega));
@@ -812,71 +496,28 @@ const handleGenerateDeliveryReport = () => {
     }
   };
 
-  // Cálculo dos produtos abaixo do mínimo para o Alerta Visual
   const produtosAbaixoMinimo = useMemo(() => {
-    return allProdutos.filter(
-      (p) => p.estoqueMinimo != null && p.quantidade <= p.estoqueMinimo,
-    );
+    return allProdutos.filter((p) => p.estoqueMinimo != null && p.quantidade <= p.estoqueMinimo);
   }, [allProdutos]);
 
-  const categorias = useMemo(
-    () =>
-      Array.from(
-        new Set(allProdutos.map((p) => p.categoria || '').filter(Boolean)),
-      ),
-    [allProdutos],
-  );
-  const locaisArmazenamento = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          allProdutos.map((p) => p.localArmazenamento || '').filter(Boolean),
-        ),
-      ),
-    [allProdutos],
-  );
+  const categorias = useMemo(() => Array.from(new Set(allProdutos.map((p) => p.categoria || '').filter(Boolean))), [allProdutos]);
+  const locaisArmazenamento = useMemo(() => Array.from(new Set(allProdutos.map((p) => p.localArmazenamento || '').filter(Boolean))), [allProdutos]);
 
   const filteredProdutos = useMemo(() => {
     if (loadingAll) return produtos;
     let result = allProdutos.filter((p) => {
       const query = debouncedQ.trim().toLowerCase();
-      const matchesQuery =
-        query === '' ||
-        p.nome.toLowerCase().includes(query) ||
-        p.sku.toLowerCase().includes(query) ||
-        p.categoria?.toLowerCase().includes(query);
-      const matchesCategoria =
-        !categoriaFilter || p.categoria === categoriaFilter;
-      const matchesAbaixoMin =
-        !mostrarAbaixoMin ||
-        (p.estoqueMinimo != null && p.quantidade <= p.estoqueMinimo);
+      const matchesQuery = query === '' || p.nome.toLowerCase().includes(query) || p.sku.toLowerCase().includes(query) || p.categoria?.toLowerCase().includes(query);
+      const matchesCategoria = !categoriaFilter || p.categoria === categoriaFilter;
+      const matchesAbaixoMin = !mostrarAbaixoMin || (p.estoqueMinimo != null && p.quantidade <= p.estoqueMinimo);
       const matchesPrioritario = !mostrarPrioritarios || p.prioritario;
-      return (
-        matchesQuery &&
-        matchesCategoria &&
-        matchesAbaixoMin &&
-        matchesPrioritario
-      );
+      return matchesQuery && matchesCategoria && matchesAbaixoMin && matchesPrioritario;
     });
-
     if (sortOrder) {
-      result = [...result].sort((a, b) =>
-        sortOrder === 'asc'
-          ? a.nome.localeCompare(b.nome)
-          : b.nome.localeCompare(a.nome),
-      );
+      result = [...result].sort((a, b) => sortOrder === 'asc' ? a.nome.localeCompare(b.nome) : b.nome.localeCompare(a.nome));
     }
     return result;
-  }, [
-    debouncedQ,
-    categoriaFilter,
-    mostrarAbaixoMin,
-    mostrarPrioritarios,
-    allProdutos,
-    produtos,
-    loadingAll,
-    sortOrder,
-  ]);
+  }, [debouncedQ, categoriaFilter, mostrarAbaixoMin, mostrarPrioritarios, allProdutos, produtos, loadingAll, sortOrder]);
 
   const paginatedProdutos = useMemo(() => {
     const startIndex = (page - 1) * ITEMS_PER_PAGE;
@@ -884,22 +525,17 @@ const handleGenerateDeliveryReport = () => {
   }, [filteredProdutos, page]);
 
   const scrollTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
-
-  const handleToggleSort = () => {
-    setSortOrder((current) => {
-      if (current === null) return 'asc';
-      if (current === 'asc') return 'desc';
-      return null;
-    });
-  };
+  const handleToggleSort = () => setSortOrder((current) => {
+    if (current === null) return 'asc';
+    if (current === 'asc') return 'desc';
+    return null;
+  });
 
   if (error) {
     return (
       <div className="d-flex justify-content-center align-items-center min-vh-100 bg-light">
         <div className="alert alert-danger shadow-sm border-0 rounded-3 p-4">
-          <h4 className="alert-heading mb-3">
-            <i className="bi bi-exclamation-octagon me-2"></i>Erro de Conexão
-          </h4>
+          <h4 className="alert-heading mb-3"><i className="bi bi-exclamation-octagon me-2"></i>Erro de Conexão</h4>
           <p>{error}</p>
         </div>
       </div>
@@ -908,191 +544,131 @@ const handleGenerateDeliveryReport = () => {
 
   return (
     <div className="app-layout">
+      {/* ===== SIDEBAR ===== */}
       <aside className="sidebar">
         <div className="sidebar-logo-area">
           <img src={meuLogo} alt="Logo" className="sidebar-logo" />
         </div>
         <nav className="sidebar-nav">
-          <button
-            className={`nav-item-clean ${view === 'estoque' ? 'active' : ''}`}
-            onClick={() => {
-              setView('estoque');
-              scrollTop();
-            }}
-          >
+          <button className={`nav-item-clean ${view === 'estoque' ? 'active' : ''}`} onClick={() => { setView('estoque'); scrollTop(); }}>
             <BoxSeam /> Controle de Estoque
           </button>
-          <button
-            className={`nav-item-clean ${view === 'movimentacoes' ? 'active' : ''}`}
-            onClick={() => {
-              setView('movimentacoes');
-              scrollTop();
-            }}
-          >
+          <button className={`nav-item-clean ${view === 'movimentacoes' ? 'active' : ''}`} onClick={() => { setView('movimentacoes'); scrollTop(); }}>
             <ClipboardData /> Movimentações
           </button>
-          <button
-            className={`nav-item-clean ${view === 'rotas' ? 'active' : ''}`}
-            onClick={() => {
-              setView('rotas');
-              scrollTop();
-            }}
-          >
+          <button className={`nav-item-clean ${view === 'rotas' ? 'active' : ''}`} onClick={() => { setView('rotas'); scrollTop(); }}>
             <Truck /> Rotas & Entregas
           </button>
-          <button
-            className={`nav-item-clean ${view === 'entradas_saidas' ? 'active' : ''}`}
-            onClick={() => {
-              setView('entradas_saidas');
-              scrollTop();
-            }}
-          >
+          <button className={`nav-item-clean ${view === 'entradas_saidas' ? 'active' : ''}`} onClick={() => { setView('entradas_saidas'); scrollTop(); }}>
             <ArrowLeftRight /> Entrada / Saída
           </button>
         </nav>
       </aside>
 
+      {/* ===== MOBILE HEADER ===== */}
       <div className="mobile-header d-lg-none d-flex justify-content-between align-items-center px-3">
         <img src={meuLogo} alt="Logo" style={{ height: '32px' }} />
-        <div
-          className="position-relative cursor-pointer"
-          onClick={() => setShowLowStockModal(true)}
-          style={{ cursor: 'pointer' }}
-        >
+        <div className="position-relative cursor-pointer" onClick={() => setShowLowStockModal(true)} style={{ cursor: 'pointer' }}>
           <BellFill size={22} className="text-secondary" />
           {produtosAbaixoMinimo.length > 0 && (
-            <Badge
-              pill
-              bg="danger"
-              className="position-absolute top-0 start-100 translate-middle border border-light rounded-circle"
-            >
+            <Badge pill bg="danger" className="position-absolute top-0 start-100 translate-middle border border-light rounded-circle">
               {produtosAbaixoMinimo.length}
             </Badge>
           )}
         </div>
       </div>
 
+      {/* ===== MAIN CONTENT ===== */}
       <main className="main-content">
-        <header className="page-header d-none d-lg-flex justify-content-between align-items-center">
-          <h1 className="page-title m-0">
-            {view === 'estoque' && 'Visão Geral do Estoque'}
-            {view === 'movimentacoes' && 'Histórico de Movimentações'}
-            {view === 'rotas' && 'Cronograma de Entregas'}
-            {view === 'entradas_saidas' && 'Lançamento de Entradas e Saídas'}
-          </h1>
 
-          <div
-            className="position-relative bg-white p-2 rounded-circle shadow-sm border d-flex align-items-center justify-content-center"
-            onClick={() => setShowLowStockModal(true)}
-            style={{ cursor: 'pointer', width: '45px', height: '45px' }}
-            title="Alertas de Stock"
-          >
-            <BellFill
-              size={20}
-              className={
-                produtosAbaixoMinimo.length > 0
-                  ? 'text-danger'
-                  : 'text-secondary'
-              }
-            />
-            {produtosAbaixoMinimo.length > 0 && (
-              <Badge
-                pill
-                bg="danger"
-                className="position-absolute top-0 start-100 translate-middle border border-light rounded-circle"
-              >
-                {produtosAbaixoMinimo.length}
-              </Badge>
-            )}
+        {/* PAGE HEADER com data */}
+        <header className="page-header d-none d-lg-flex justify-content-between align-items-center">
+          <div>
+            <h1 className="page-title m-0">
+              {view === 'estoque' && 'Visão Geral do Estoque'}
+              {view === 'movimentacoes' && 'Histórico de Movimentações'}
+              {view === 'rotas' && 'Cronograma de Entregas'}
+              {view === 'entradas_saidas' && 'Lançamento de Entradas e Saídas'}
+            </h1>
+            <div className="page-date-subtitle">
+              {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            </div>
+          </div>
+
+          <div className="d-flex align-items-center gap-3">
+            <div
+              className="position-relative bg-white p-2 rounded-circle shadow-sm border d-flex align-items-center justify-content-center"
+              onClick={() => setShowLowStockModal(true)}
+              style={{ cursor: 'pointer', width: '45px', height: '45px' }}
+              title="Alertas de Stock"
+            >
+              <BellFill size={20} className={produtosAbaixoMinimo.length > 0 ? 'text-danger' : 'text-secondary'} />
+              {produtosAbaixoMinimo.length > 0 && (
+                <Badge pill bg="danger" className="position-absolute top-0 start-100 translate-middle border border-light rounded-circle">
+                  {produtosAbaixoMinimo.length}
+                </Badge>
+              )}
+            </div>
           </div>
         </header>
 
+        {/* ===== ESTOQUE ===== */}
         {view === 'estoque' && (
           <div className="animate-fade-in">
+
+            {/* METRIC CARDS */}
+            {!loadingAll && <MetricCards allProdutos={allProdutos} />}
+
             <div className="card-modern">
               <div className="row gy-3 align-items-end">
                 <div className="col-12 col-lg-5">
-                  <label className="form-label fw-bold text-muted small text-uppercase">
-                    Pesquisar Produto
-                  </label>
+                  <label className="form-label fw-bold text-muted small text-uppercase">Pesquisar Produto</label>
                   <div className="input-group">
-                    <span className="input-group-text bg-white border-end-0 text-muted">
-                      <i className="bi bi-search"></i>
-                    </span>
+                    <span className="input-group-text bg-white border-end-0 text-muted"><i className="bi bi-search"></i></span>
                     <input
                       className="form-control border-start-0 ps-0"
-                      placeholder={
-                        loadingAll
-                          ? 'Carregando...'
-                          : 'Buscar por nome, SKU ou categoria...'
-                      }
+                      placeholder={loadingAll ? 'Carregando...' : 'Nome, SKU ou categoria...'}
                       value={q}
                       onChange={(e) => setQ(e.target.value)}
                       disabled={loadingAll}
                     />
-                    {q && (
-                      <button
-                        className="btn btn-light border"
-                        onClick={() => setQ('')}
-                      >
-                        <i className="bi bi-x"></i>
-                      </button>
-                    )}
+                    {q && <button className="btn btn-light border" onClick={() => setQ('')}><i className="bi bi-x"></i></button>}
                   </div>
                 </div>
 
                 <div className="col-12 col-md-4 col-lg-3">
-                  <label className="form-label fw-bold text-muted small text-uppercase">
-                    Filtrar Categoria
-                  </label>
-                  <select
-                    className="form-select"
-                    value={categoriaFilter}
-                    onChange={(e) => setCategoriaFilter(e.target.value)}
-                  >
-                    <option value="">Todas</option>
-                    {categorias.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
+                  <label className="form-label fw-bold text-muted small text-uppercase">Categoria</label>
+                  <select className="form-select" value={categoriaFilter} onChange={(e) => setCategoriaFilter(e.target.value)}>
+                    <option value="">Todas as categorias</option>
+                    {categorias.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
 
-                <div className="col-12 col-md-8 col-lg-4">
-                  <div className="d-flex gap-3 align-items-center h-100 pb-2">
-                    <div className="form-check form-switch">
-                      <input
-                        className="form-check-input switch-gradient switch-gradient-primary"
-                        type="checkbox"
-                        id="abaixoMin"
-                        checked={mostrarAbaixoMin}
-                        onChange={(e) => setMostrarAbaixoMin(e.target.checked)}
-                      />
-                      <label
-                        className="form-check-label small fw-medium"
-                        htmlFor="abaixoMin"
-                      >
-                        Abaixo do mín.
-                      </label>
-                    </div>
-                    <div className="form-check form-switch">
-                      <input
-                        className="form-check-input switch-gradient switch-gradient-primary"
-                        type="checkbox"
-                        id="prioritarios"
-                        checked={mostrarPrioritarios}
-                        onChange={(e) =>
-                          setMostrarPrioritarios(e.target.checked)
-                        }
-                      />
-                      <label
-                        className="form-check-label small fw-medium"
-                        htmlFor="prioritarios"
-                      >
-                        Prioritários
-                      </label>
-                    </div>
+                <div className="col-12 col-md-4 col-lg-2">
+                  <label className="form-label fw-bold text-muted small text-uppercase">Localização</label>
+                  <select className="form-select" defaultValue="">
+                    <option value="">Todos os locais</option>
+                    {locaisArmazenamento.map((l) => <option key={l} value={l}>{l}</option>)}
+                  </select>
+                </div>
+
+                <div className="col-12 col-md-4 col-lg-2">
+                  <label className="form-label fw-bold text-muted small text-uppercase">Status</label>
+                  <div className="d-flex flex-column gap-1">
+                    <button
+                      className={`btn btn-sm rounded-pill fw-semibold text-start px-3 ${mostrarAbaixoMin ? 'btn-warning' : 'btn-outline-warning'}`}
+                      style={{ fontSize: '0.78rem' }}
+                      onClick={() => setMostrarAbaixoMin(!mostrarAbaixoMin)}
+                    >
+                      • Abaixo do mín.
+                    </button>
+                    <button
+                      className={`btn btn-sm rounded-pill fw-semibold text-start px-3 ${mostrarPrioritarios ? 'btn-secondary' : 'btn-outline-secondary'}`}
+                      style={{ fontSize: '0.78rem' }}
+                      onClick={() => setMostrarPrioritarios(!mostrarPrioritarios)}
+                    >
+                      • Prioritários
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1100,27 +676,27 @@ const handleGenerateDeliveryReport = () => {
               <hr className="my-4 text-muted opacity-25" />
 
               <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                <ValorTotalEstoque allProdutos={allProdutos} />
+                <div className="d-flex align-items-center gap-3">
+                  <ValorTotalEstoque allProdutos={allProdutos} />
+                  {!loadingAll && (
+                    <span className="text-muted small">
+                      Exibindo{' '}
+                      {Math.min((page - 1) * ITEMS_PER_PAGE + 1, filteredProdutos.length)}–{Math.min(page * ITEMS_PER_PAGE, filteredProdutos.length)}{' '}
+                      de{' '}
+                      <strong>{filteredProdutos.length}</strong> produtos
+                    </span>
+                  )}
+                </div>
                 <div className="d-flex gap-2">
-                  <Relatorios
-                    produtos={allProdutos}
-                    categoriaSelecionada={categoriaFilter}
-                  />
-                  <BotaoNovoProduto
-                    onCreate={addProduto}
-                    categorias={categorias}
-                    locais={locaisArmazenamento}
-                  />
+                  <Relatorios produtos={allProdutos} categoriaSelecionada={categoriaFilter} />
+                  <BotaoNovoProduto onCreate={addProduto} categorias={categorias} locais={locaisArmazenamento} />
                 </div>
               </div>
             </div>
 
             {loading ? (
               <div className="text-center p-5">
-                <div
-                  className="spinner-border text-primary"
-                  role="status"
-                ></div>
+                <div className="spinner-border text-primary" role="status"></div>
                 <p className="mt-2 text-muted">Carregando estoque...</p>
               </div>
             ) : (
@@ -1149,13 +725,9 @@ const handleGenerateDeliveryReport = () => {
             </div>
 
             <div className="mt-5">
-              <h6 className="text-uppercase text-muted fw-bold mb-3 small tracking-wider">
-                Últimas Movimentações
-              </h6>
+              <h6 className="text-uppercase text-muted fw-bold mb-3 small tracking-wider">Últimas Movimentações</h6>
               <div className="card-modern p-0 overflow-hidden">
-                <div className="p-3">
-                  <MovsList movs={movs.slice(0, 5)} produtos={allProdutos} />
-                </div>
+                <div className="p-3"><MovsList movs={movs.slice(0, 5)} produtos={allProdutos} /></div>
               </div>
             </div>
           </div>
@@ -1163,12 +735,7 @@ const handleGenerateDeliveryReport = () => {
 
         {view === 'movimentacoes' && (
           <div className="card-modern animate-fade-in">
-            <ConsultaMovimentacoes
-              movs={movs}
-              produtos={allProdutos}
-              onDelete={deleteMov}
-              onEdit={updateMov}
-            />
+            <ConsultaMovimentacoes movs={movs} produtos={allProdutos} onDelete={deleteMov} onEdit={updateMov} />
           </div>
         )}
 
@@ -1177,106 +744,41 @@ const handleGenerateDeliveryReport = () => {
             <div className="row g-4">
               <div className="col-lg-4">
                 <div className="card-modern h-180">
-                  <h5 className="mb-4 fw-bold text-primary">
-                    {editingEntrega ? 'Editar Agendamento' : 'Novo Agendamento'}
-                  </h5>
-                  <DeliveryForm
-                    onSave={handleSaveDelivery}
-                    produtosDisponiveis={allProdutos}
-                    deliveryToEdit={editingEntrega}
-                    onCancelEdit={() => setEditingEntrega(null)}
-                    historicoEntregas={entregas}
-                  />
+                  <h5 className="mb-4 fw-bold text-primary">{editingEntrega ? 'Editar Agendamento' : 'Novo Agendamento'}</h5>
+                  <DeliveryForm onSave={handleSaveDelivery} produtosDisponiveis={allProdutos} deliveryToEdit={editingEntrega} onCancelEdit={() => setEditingEntrega(null)} historicoEntregas={entregas} />
                 </div>
               </div>
-
               <div className="col-lg-8">
                 <div className="d-flex flex-column gap-3 mb-3">
                   <div className="d-flex justify-content-between align-items-center">
                     <div className="d-flex align-items-center gap-3">
-                      <div
-                        className="input-group"
-                        style={{ maxWidth: '220px' }}
-                      >
-                        <span className="input-group-text bg-white border-end-0 text-muted">
-                          <CalendarWeek />
-                        </span>
-                        <input
-                          type="date"
-                          className="form-control border-start-0 ps-0"
-                          value={rotaDateFilter}
-                          onChange={(e) => setRotaDateFilter(e.target.value)}
-                        />
-                        {rotaDateFilter && (
-                          <button
-                            className="btn btn-outline-secondary border-start-0"
-                            onClick={() => setRotaDateFilter('')}
-                            title="Limpar data"
-                          >
-                            <XCircle />
-                          </button>
-                        )}
+                      <div className="input-group" style={{ maxWidth: '220px' }}>
+                        <span className="input-group-text bg-white border-end-0 text-muted"><CalendarWeek /></span>
+                        <input type="date" className="form-control border-start-0 ps-0" value={rotaDateFilter} onChange={(e) => setRotaDateFilter(e.target.value)} />
+                        {rotaDateFilter && <button className="btn btn-outline-secondary border-start-0" onClick={() => setRotaDateFilter('')} title="Limpar data"><XCircle /></button>}
                       </div>
                     </div>
                   </div>
-
                   <div className="bg-white p-3 rounded-4 border d-flex flex-wrap gap-3 justify-content-between align-items-center shadow-sm">
                     <div className="d-flex align-items-center gap-2">
-                      <span className="badge bg-light text-dark border me-2">
-                        {selectedEntregaIds.length} selecionados
-                      </span>
-                      <Button
-                        variant="outline-success"
-                        size="sm"
-                        onClick={() => handleBulkStatusChange('Entregue')}
-                        disabled={selectedEntregaIds.length === 0}
-                      >
-                        <CheckCircleFill className="me-1" /> Entregue
-                      </Button>
-                      <Button
-                        variant="outline-warning"
-                        size="sm"
-                        className="text-dark"
-                        onClick={() => handleBulkStatusChange('Pendente')}
-                        disabled={selectedEntregaIds.length === 0}
-                      >
-                        <ArrowCounterclockwise className="me-1" /> Pendente
-                      </Button>
+                      <span className="badge bg-light text-dark border me-2">{selectedEntregaIds.length} selecionados</span>
+                      <Button variant="outline-success" size="sm" onClick={() => handleBulkStatusChange('Entregue')} disabled={selectedEntregaIds.length === 0}><CheckCircleFill className="me-1" /> Entregue</Button>
+                      <Button variant="outline-warning" size="sm" className="text-dark" onClick={() => handleBulkStatusChange('Pendente')} disabled={selectedEntregaIds.length === 0}><ArrowCounterclockwise className="me-1" /> Pendente</Button>
                     </div>
-
                     <div className="d-flex gap-2">
-                      <Button
-                        variant="outline-primary"
-                        size="sm"
-                        disabled={selectedEntregaIds.length === 0}
-                        onClick={() => setShowReprogramModal(true)}
-                      >
-                        <CalendarWeek className="me-2" /> Reprogramar
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        disabled={selectedEntregaIds.length === 0}
-                        onClick={handleGenerateDeliveryReport}
-                      >
-                        <ClipboardData className="me-2" /> PDF
-                      </Button>
+                      <Button variant="outline-primary" size="sm" disabled={selectedEntregaIds.length === 0} onClick={() => setShowReprogramModal(true)}><CalendarWeek className="me-2" /> Reprogramar</Button>
+                      <Button variant="secondary" size="sm" disabled={selectedEntregaIds.length === 0} onClick={handleGenerateDeliveryReport}><ClipboardData className="me-2" /> PDF</Button>
                     </div>
                   </div>
                 </div>
-
                 <div className="card-modern p-0 overflow-hidden">
                   <DeliveryTable
                     deliveries={filteredDeliveries}
                     onDelete={(id) => setEntregaToDeleteId(id)}
                     onEdit={(item: any) => {
                       const ent = normalizeEntrega(item);
-                      if (!isDelivered(ent.status)) {
-                        setEditingEntrega(ent);
-                        scrollTop();
-                      } else {
-                        toast.error('Itens entregues não podem ser editados.');
-                      }
+                      if (!isDelivered(ent.status)) { setEditingEntrega(ent); scrollTop(); }
+                      else { toast.error('Itens entregues não podem ser editados.'); }
                     }}
                     onStatusChange={updateEntregaStatus}
                     selectedIds={selectedEntregaIds}
@@ -1291,264 +793,94 @@ const handleGenerateDeliveryReport = () => {
 
         {view === 'entradas_saidas' && (
           <div className="animate-fade-in">
-            <EntradaSaidaForm
-              produtos={allProdutos}
-              onSubmit={handleEntradaSaidaSubmit}
-            />
+            <EntradaSaidaForm produtos={allProdutos} onSubmit={handleEntradaSaidaSubmit} />
           </div>
         )}
       </main>
 
+      {/* ===== BOTTOM NAV ===== */}
       <nav className="bottom-nav">
-        <button
-          className={`bottom-nav-item ${view === 'estoque' ? 'active' : ''}`}
-          onClick={() => {
-            setView('estoque');
-            scrollTop();
-          }}
-        >
-          <BoxSeam />
-          <span>Estoque</span>
-        </button>
-        <button
-          className={`bottom-nav-item ${view === 'movimentacoes' ? 'active' : ''}`}
-          onClick={() => {
-            setView('movimentacoes');
-            scrollTop();
-          }}
-        >
-          <ClipboardData />
-          <span>Movs</span>
-        </button>
-        <button
-          className={`bottom-nav-item ${view === 'entradas_saidas' ? 'active' : ''}`}
-          onClick={() => {
-            setView('entradas_saidas');
-            scrollTop();
-          }}
-        >
-          <ArrowLeftRight />
-          <span>Fluxo</span>
-        </button>
-        <button
-          className={`bottom-nav-item ${view === 'rotas' ? 'active' : ''}`}
-          onClick={() => {
-            setView('rotas');
-            scrollTop();
-          }}
-        >
-          <Truck />
-          <span>Rotas</span>
-        </button>
+        <button className={`bottom-nav-item ${view === 'estoque' ? 'active' : ''}`} onClick={() => { setView('estoque'); scrollTop(); }}><BoxSeam /><span>Estoque</span></button>
+        <button className={`bottom-nav-item ${view === 'movimentacoes' ? 'active' : ''}`} onClick={() => { setView('movimentacoes'); scrollTop(); }}><ClipboardData /><span>Movs</span></button>
+        <button className={`bottom-nav-item ${view === 'entradas_saidas' ? 'active' : ''}`} onClick={() => { setView('entradas_saidas'); scrollTop(); }}><ArrowLeftRight /><span>Fluxo</span></button>
+        <button className={`bottom-nav-item ${view === 'rotas' ? 'active' : ''}`} onClick={() => { setView('rotas'); scrollTop(); }}><Truck /><span>Rotas</span></button>
       </nav>
 
       {showScroll && (
-        <button
-          className="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center"
-          onClick={scrollTop}
-          style={{
-            position: 'fixed',
-            bottom: '90px',
-            right: '20px',
-            width: '45px',
-            height: '45px',
-            zIndex: 1000,
-          }}
-        >
+        <button className="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center" onClick={scrollTop} style={{ position: 'fixed', bottom: '90px', right: '20px', width: '45px', height: '45px', zIndex: 1000 }}>
           <i className="bi bi-arrow-up fs-4"></i>
         </button>
       )}
 
-      {/* MODAL DE ALERTAS DE STOCK */}
+      {/* ===== MODALS ===== */}
       {showLowStockModal && (
-        <ModalComponent
-          title="Alertas de Stock"
-          onClose={() => setShowLowStockModal(false)}
-        >
+        <ModalComponent title="Alertas de Stock" onClose={() => setShowLowStockModal(false)}>
           <div className="p-2">
-            <h6 className="text-muted mb-4">
-              Produtos abaixo da quantidade mínima (
-              {produtosAbaixoMinimo.length}):
-            </h6>
+            <h6 className="text-muted mb-4">Produtos abaixo da quantidade mínima ({produtosAbaixoMinimo.length}):</h6>
             {produtosAbaixoMinimo.length === 0 ? (
-              <div className="text-center my-5">
-                <CheckCircleFill size={40} className="text-success mb-3" />
-                <p className="text-muted fw-bold">Stock estabilizado!</p>
-                <p className="small text-muted">
-                  Não existem materiais em rutura no momento.
-                </p>
-              </div>
+              <div className="text-center my-5"><CheckCircleFill size={40} className="text-success mb-3" /><p className="text-muted fw-bold">Stock estabilizado!</p><p className="small text-muted">Não existem materiais em rutura no momento.</p></div>
             ) : (
-              <div
-                className="border rounded-3"
-                style={{
-                  maxHeight: '50vh',
-                  overflowY: 'auto',
-                  overflowX: 'hidden',
-                }}
-              >
+              <div className="border rounded-3" style={{ maxHeight: '50vh', overflowY: 'auto', overflowX: 'hidden' }}>
                 <ListGroup variant="flush">
                   {produtosAbaixoMinimo.map((p) => (
-                    <ListGroup.Item
-                      key={p.id}
-                      className="d-flex justify-content-between align-items-center py-3"
-                    >
-                      <div>
-                        <div className="fw-bold text-dark">{p.nome}</div>
-                        <div className="small text-muted">
-                          SKU: {p.sku} | Loc: {p.localArmazenamento || 'N/A'}
-                        </div>
-                      </div>
-                      <div className="text-end">
-                        <Badge bg="danger" className="mb-1 fs-6 px-2 py-1">
-                          {p.quantidade} {p.unidade}
-                        </Badge>
-                        <div className="small text-muted fw-medium">
-                          Mín: {p.estoqueMinimo}
-                        </div>
-                      </div>
+                    <ListGroup.Item key={p.id} className="d-flex justify-content-between align-items-center py-3">
+                      <div><div className="fw-bold text-dark">{p.nome}</div><div className="small text-muted">SKU: {p.sku} | Loc: {p.localArmazenamento || 'N/A'}</div></div>
+                      <div className="text-end"><Badge bg="danger" className="mb-1 fs-6 px-2 py-1">{p.quantidade} {p.unidade}</Badge><div className="small text-muted fw-medium">Mín: {p.estoqueMinimo}</div></div>
                     </ListGroup.Item>
                   ))}
                 </ListGroup>
               </div>
             )}
-            <div className="mt-4 text-end">
-              <Button
-                variant="secondary"
-                onClick={() => setShowLowStockModal(false)}
-              >
-                Fechar Notificações
-              </Button>
-            </div>
+            <div className="mt-4 text-end"><Button variant="secondary" onClick={() => setShowLowStockModal(false)}>Fechar Notificações</Button></div>
           </div>
         </ModalComponent>
       )}
 
-      {/* MODAL DE REPROGRAMAR ENTREGAS */}
       {showReprogramModal && (
-        <ModalComponent
-          title="Reprogramar Entregas"
-          onClose={() => setShowReprogramModal(false)}
-        >
+        <ModalComponent title="Reprogramar Entregas" onClose={() => setShowReprogramModal(false)}>
           <div className="p-2">
-            <p>
-              Reprogramar <strong>{selectedEntregaIds.length}</strong>{' '}
-              entrega(s).
-            </p>
+            <p>Reprogramar <strong>{selectedEntregaIds.length}</strong> entrega(s).</p>
             <Form.Group>
               <Form.Label>Nova Data</Form.Label>
-              <Form.Control
-                type="date"
-                value={newDeliveryDate}
-                onChange={(e) => setNewDeliveryDate(e.target.value)}
-                className="mb-3"
-              />
+              <Form.Control type="date" value={newDeliveryDate} onChange={(e) => setNewDeliveryDate(e.target.value)} className="mb-3" />
             </Form.Group>
-            <div className="text-end">
-              <Button
-                variant="secondary"
-                onClick={() => setShowReprogramModal(false)}
-                className="me-2"
-              >
-                Cancelar
-              </Button>
-              <Button variant="primary" onClick={handleReprogramDeliveries}>
-                Confirmar
-              </Button>
-            </div>
+            <div className="text-end"><Button variant="secondary" onClick={() => setShowReprogramModal(false)} className="me-2">Cancelar</Button><Button variant="primary" onClick={handleReprogramDeliveries}>Confirmar</Button></div>
           </div>
         </ModalComponent>
       )}
 
-      {/* MODAL DE MUDANÇA EM MASSA */}
       {showBulkConfirmModal && (
-        <ModalComponent
-          title="Confirmar Alteração"
-          onClose={() => setShowBulkConfirmModal(false)}
-        >
+        <ModalComponent title="Confirmar Alteração" onClose={() => setShowBulkConfirmModal(false)}>
           <div className="p-3 text-center">
             <ExclamationTriangleFill className="text-warning mb-3" size={40} />
-            <p>
-              Marcar <strong>{selectedEntregaIds.length}</strong> item(ns) como{' '}
-              <strong>"{bulkTargetStatus}"</strong>?
-            </p>
-            <div className="d-flex justify-content-center gap-2 mt-4">
-              <Button
-                variant="secondary"
-                onClick={() => setShowBulkConfirmModal(false)}
-              >
-                Cancelar
-              </Button>
-              <Button variant="primary" onClick={confirmBulkStatusChange}>
-                Confirmar
-              </Button>
-            </div>
+            <p>Marcar <strong>{selectedEntregaIds.length}</strong> item(ns) como <strong>"{bulkTargetStatus}"</strong>?</p>
+            <div className="d-flex justify-content-center gap-2 mt-4"><Button variant="secondary" onClick={() => setShowBulkConfirmModal(false)}>Cancelar</Button><Button variant="primary" onClick={confirmBulkStatusChange}>Confirmar</Button></div>
           </div>
         </ModalComponent>
       )}
 
-      {/* MODAL DE ESTOQUE INSUFICIENTE */}
       {showStockLimitModal && (
-        <ModalComponent
-          title="Estoque Insuficiente"
-          onClose={() => setShowStockLimitModal(false)}
-        >
+        <ModalComponent title="Estoque Insuficiente" onClose={() => setShowStockLimitModal(false)}>
           <div className="p-3 text-center">
             <ExclamationTriangleFill className="text-warning mb-3" size={40} />
             <p>A quantidade solicitada excede o disponível.</p>
             <p className="text-muted small">Deseja forçar o agendamento?</p>
-            <div className="d-flex justify-content-center gap-3 mt-4">
-              <Button
-                variant="secondary"
-                onClick={() => setShowStockLimitModal(false)}
-              >
-                Cancelar
-              </Button>
-              <Button variant="danger" onClick={handleConfirmStockOverride}>
-                Confirmar
-              </Button>
-            </div>
+            <div className="d-flex justify-content-center gap-3 mt-4"><Button variant="secondary" onClick={() => setShowStockLimitModal(false)}>Cancelar</Button><Button variant="danger" onClick={handleConfirmStockOverride}>Confirmar</Button></div>
           </div>
         </ModalComponent>
       )}
 
-      {/* MODAL DE CONFIRMAR EXCLUSÃO */}
       {entregaToDeleteId && (
-        <ModalComponent
-          title="Confirmar Exclusão"
-          onClose={() => setEntregaToDeleteId(null)}
-        >
+        <ModalComponent title="Confirmar Exclusão" onClose={() => setEntregaToDeleteId(null)}>
           <p>Deseja excluir esta entrega? O estoque será devolvido.</p>
           <div className="text-end mt-4">
-            <button
-              className="btn btn-secondary me-2"
-              onClick={() => setEntregaToDeleteId(null)}
-            >
-              Cancelar
-            </button>
-            <button
-              className="btn btn-danger"
-              onClick={() => confirmDeleteEntrega(entregaToDeleteId!)}
-            >
-              Excluir
-            </button>
+            <button className="btn btn-secondary me-2" onClick={() => setEntregaToDeleteId(null)}>Cancelar</button>
+            <button className="btn btn-danger" onClick={() => confirmDeleteEntrega(entregaToDeleteId!)}>Excluir</button>
           </div>
         </ModalComponent>
       )}
 
-      {/* CONTAINER DOS TOASTS (NOTIFICAÇÕES FLUTUANTES) */}
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="colored"
-      />
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="colored" />
     </div>
   );
 }
