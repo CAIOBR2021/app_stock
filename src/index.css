@@ -1,11 +1,11 @@
-/* index.css — resetado para não conflitar com o tema dark do styles.css */
+/* index.css — base reset alinhado ao design system claro */
 
 *, *::before, *::after {
   box-sizing: border-box;
 }
 
 html {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {

@@ -1,4 +1,10 @@
-/* Botão sem estilo, apenas para ícones clicáveis como a bandeira */
+/* ============================================================
+   custom.css — overrides & utilities alinhados ao design system
+   Construtora Dinâmica (âmbar · DM Sans · bordas 8 px)
+   ============================================================ */
+
+/* ── BTN-ICON ────────────────────────────────────────────── */
+/* Botão invisível para ícones clicáveis (flag de prioridade, etc.) */
 .btn-icon {
   background-color: transparent;
   border: none;
@@ -6,68 +12,78 @@
   margin: 0;
   line-height: 1;
   color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Estilos para os botões de ação (Editar/Excluir) */
+/* ── BTN-ACTION (tabela: movimentar / editar / excluir) ───── */
 .btn-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px; /* Largura fixa */
-  height: 32px; /* Altura fixa */
-  background-color: #fff;
-  border: 1px solid #dee2e6; /* Borda cinza claro */
-  color: #6c757d; /* Cor do ícone */
+  width: 30px;
+  height: 30px;
+  background-color: var(--surface);
+  border: 1.5px solid var(--border);
+  color: var(--text-3);
   margin: 0 2px;
-  font-size: 1rem;
+  font-size: 0.875rem;
   line-height: 1;
-  border-radius: 0.375rem; /* Bordas arredondadas */
-  transition: all 0.2s ease-in-out;
+  border-radius: 7px;              /* alinhado ao --radius do design */
+  transition: all var(--transition);
   cursor: pointer;
 }
 
-/* Efeito ao passar o mouse para o botão padrão (Movimentar) */
+/* Hover padrão */
 .btn-action:hover:not(:disabled) {
-  background-color: #e9ecef; /* Fundo levemente acinzentado */
-  color: #212529;
-  border-color: #adb5bd;
+  background-color: var(--surface-3);
+  color: var(--text-1);
+  border-color: #C4C9D8;
 }
 
-/* Estilo específico para o botão de Editar no hover */
+/* Hover — Editar (âmbar, coerente com a marca) */
 .btn-action-edit:hover:not(:disabled) {
-  background-color: #cfe2ff; /* Fundo azul claro */
-  color: #0a58ca; /* Ícone azul escuro */
-  border-color: #9ec5fe;
+  background-color: var(--primary-light);
+  color: var(--primary-dark);
+  border-color: #FAD898;
 }
 
-/* Estilo específico para o botão de Excluir no hover */
-.btn-action-delete:hover:not(:disabled) {
-  background-color: #f8d7da; /* Fundo vermelho claro */
-  color: #842029; /* Ícone vermelho escuro */
-  border-color: #f5c2c7;
+/* Hover — Excluir (vermelho semântico) */
+.btn-action-delete:hover:not(:disabled),
+.btn-action.del:hover:not(:disabled) {
+  background-color: var(--danger-light);
+  color: var(--danger);
+  border-color: #FFC5C5;
 }
 
-/* Estilo para botões desabilitados */
+/* Desabilitado */
 .btn-action:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
-  background-color: #e9ecef;
+  background-color: var(--surface-2);
+  border-color: var(--border);
 }
 
-/* Estilo padronizado do botão de engrenagem transparente (Referência: DeliveryForm) */
+/* ── BTN-MANAGE-DISCREET (engrenagem de histórico) ────────── */
 .btn-manage-discreet {
   background: transparent;
   border: none;
-  color: #94a3b8;
-  padding: 0 12px;
+  color: var(--text-3);
+  padding: 0 10px;
+  height: 38px;               /* mesma altura dos inputs */
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
-  border-radius: 8px;
-  height: auto; /* Ajuste adaptável para diferentes tamanhos de input */
+  border-radius: 7px;
+  transition: all var(--transition);
+  cursor: pointer;
+  font-size: 16px;
+  flex-shrink: 0;
 }
+
 .btn-manage-discreet:hover {
-  color: #0d6efd;
-  background-color: #f1f5f9;
+  color: var(--primary-dark);
+  background-color: var(--primary-light);
 }
