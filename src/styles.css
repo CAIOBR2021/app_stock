@@ -1100,10 +1100,6 @@ table.table tbody tr.row-danger:hover td {
   margin: 0;
 }
 
-.ds-modal-body {
-  padding: 20px 24px;
-}
-
 .ds-modal-footer {
   padding: 16px 24px;
   border-top: 1px solid var(--border);
