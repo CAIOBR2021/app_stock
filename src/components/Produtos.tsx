@@ -365,7 +365,14 @@ export function ProdutoCard({ produto, onMovimentar, onEditar, onExcluir, onTogg
           {produto.valorUnitario != null && produto.valorUnitario > 0 && <span title="Valor registrado"><IconTag /></span>}
         </div>
         <h6 className="card-title card-title-clamp mb-2 fw-bold">{produto.nome}</h6>
-        {produto.categoria && <div className="mb-2"><span className="category-badge">{produto.categoria}</span></div>}
+
+        {/* title expõe o nome completo ao passar o mouse */}
+        {produto.categoria && (
+          <div className="mb-2">
+            <span className="category-badge" title={produto.categoria}>{produto.categoria}</span>
+          </div>
+        )}
+
         <div className="card-info-grid my-2">
           <div><strong>Estoque</strong><span>{produto.quantidade} {produto.unidade}</span></div>
           <div><strong>Local</strong><span>{produto.localArmazenamento || '—'}</span></div>

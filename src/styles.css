@@ -791,6 +791,12 @@ table.table tbody tr.row-danger:hover td {
   padding: 3px 8px;
   font-size: 11.5px;
   font-weight: 500;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 /* Status badges */

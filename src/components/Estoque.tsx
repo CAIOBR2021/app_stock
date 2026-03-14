@@ -522,7 +522,8 @@ export function ProdutoCard({
 
         {produto.categoria && (
           <div className="mb-2">
-            <span className="category-badge">{produto.categoria}</span>
+            {/* title expõe o nome completo ao passar o mouse */}
+            <span className="category-badge" title={produto.categoria}>{produto.categoria}</span>
           </div>
         )}
 
@@ -714,10 +715,10 @@ export function ProdutosTable({
                       )}
                     </td>
 
-                    {/* Categoria */}
+                    {/* Categoria — title expõe o nome completo ao passar o mouse */}
                     <td>
                       {p.categoria
-                        ? <span className="category-badge">{p.categoria}</span>
+                        ? <span className="category-badge" title={p.categoria}>{p.categoria}</span>
                         : <span style={{ color: 'var(--text-3)' }}>—</span>}
                     </td>
 
