@@ -1245,3 +1245,355 @@ hr {
 
 /* ── SHADOW TWEAKS ───────────────────────────────────────────────── */
 .shadow-lg { box-shadow: var(--shadow-popup) !important; }
+
+/* ════════════════════════════════════════════════════════════════════
+   BOOTSTRAP NUCLEAR OVERRIDES
+   Garante que o Bootstrap não quebre o tema dark em nenhum elemento
+════════════════════════════════════════════════════════════════════ */
+
+/* Body e HTML — fundo global */
+html, body, #root {
+  background-color: var(--c-navy) !important;
+  color: var(--c-text) !important;
+}
+
+/* Main content background */
+.main-content {
+  background-color: var(--c-navy) !important;
+  color: var(--c-text) !important;
+}
+
+/* Page header area */
+.page-header {
+  background: transparent !important;
+}
+
+/* Todos os cards Bootstrap */
+.card {
+  background: var(--g-card) !important;
+  border-color: var(--c-border) !important;
+  color: var(--c-text) !important;
+}
+
+.card-body {
+  background: transparent !important;
+  color: var(--c-text) !important;
+}
+
+.card-header, .card-footer {
+  background: var(--surface-1) !important;
+  border-color: var(--c-border) !important;
+  color: var(--c-text) !important;
+}
+
+/* Bootstrap bg utilities */
+.bg-white  { background-color: var(--surface-2) !important; }
+.bg-light  { background-color: var(--surface-3) !important; }
+.bg-dark   { background-color: var(--surface-1) !important; }
+
+/* Tabela Bootstrap */
+.table {
+  --bs-table-bg: transparent !important;
+  --bs-table-striped-bg: var(--surface-hover) !important;
+  --bs-table-hover-bg: var(--surface-hover) !important;
+  --bs-table-border-color: var(--c-border) !important;
+  --bs-table-color: var(--c-text-2) !important;
+  color: var(--c-text-2) !important;
+  border-color: var(--c-border) !important;
+}
+
+.table > :not(caption) > * > * {
+  background-color: transparent !important;
+  color: var(--c-text-2) !important;
+  border-bottom-color: var(--c-border) !important;
+}
+
+.table-light {
+  --bs-table-bg: var(--surface-1) !important;
+  --bs-table-color: var(--c-text-3) !important;
+  background-color: var(--surface-1) !important;
+}
+
+.table-light th,
+.table-light > * > tr > th {
+  background-color: var(--surface-1) !important;
+  color: var(--c-text-3) !important;
+}
+
+.table-warning {
+  --bs-table-bg: rgba(245,158,11,0.06) !important;
+  background-color: rgba(245,158,11,0.06) !important;
+}
+
+.table-warning > td,
+.table-warning td {
+  color: var(--c-text) !important;
+  background-color: rgba(245,158,11,0.06) !important;
+  border-left: 2px solid var(--c-amber) !important;
+}
+
+/* Table responsive wrapper */
+.table-responsive {
+  background: var(--g-card) !important;
+  border-radius: var(--r-lg) !important;
+  border: 1px solid var(--c-border) !important;
+}
+
+/* Bootstrap form controls */
+.form-control,
+.form-select,
+input[type="text"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+textarea,
+select {
+  background-color: var(--surface-2) !important;
+  border-color: var(--c-border-2) !important;
+  color: var(--c-text) !important;
+}
+
+.form-control:focus,
+.form-select:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  background-color: var(--surface-3) !important;
+  border-color: var(--c-amber) !important;
+  color: var(--c-text) !important;
+  box-shadow: 0 0 0 3px var(--c-amber-dim) !important;
+}
+
+/* Input group text */
+.input-group-text {
+  background-color: var(--surface-3) !important;
+  border-color: var(--c-border-2) !important;
+  color: var(--c-text-2) !important;
+}
+
+/* Checkbox / Switch */
+.form-check-input {
+  background-color: var(--surface-3) !important;
+  border-color: var(--c-border-2) !important;
+}
+
+.form-check-input:checked {
+  background-color: var(--c-amber) !important;
+  border-color: var(--c-amber) !important;
+}
+
+/* List group */
+.list-group {
+  background: transparent !important;
+}
+
+.list-group-item {
+  background-color: transparent !important;
+  border-color: var(--c-border) !important;
+  color: var(--c-text-2) !important;
+}
+
+.list-group-item:hover {
+  background-color: var(--surface-hover) !important;
+  color: var(--c-text) !important;
+}
+
+/* Modal */
+.modal-backdrop {
+  background-color: #000 !important;
+}
+
+.modal-content {
+  background-color: var(--surface-2) !important;
+  border-color: var(--c-border-2) !important;
+  color: var(--c-text) !important;
+}
+
+.modal-header {
+  background-color: var(--surface-1) !important;
+  border-bottom-color: var(--c-border) !important;
+}
+
+.modal-body {
+  background-color: var(--surface-2) !important;
+  color: var(--c-text) !important;
+}
+
+.modal-footer {
+  background-color: var(--surface-1) !important;
+  border-top-color: var(--c-border) !important;
+}
+
+/* Dropdown */
+.dropdown-menu {
+  background-color: var(--surface-2) !important;
+  border-color: var(--c-border-2) !important;
+  color: var(--c-text) !important;
+}
+
+.dropdown-item {
+  color: var(--c-text-2) !important;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background-color: var(--surface-hover) !important;
+  color: var(--c-text) !important;
+}
+
+.dropdown-divider {
+  border-top-color: var(--c-border) !important;
+}
+
+/* Alert */
+.alert {
+  color: var(--c-text) !important;
+}
+
+.alert-info {
+  background-color: rgba(6,182,212,0.1) !important;
+  border-color: rgba(6,182,212,0.2) !important;
+  color: var(--c-text) !important;
+}
+
+.alert-danger {
+  background-color: var(--c-red-dim) !important;
+  border-color: rgba(239,68,68,0.25) !important;
+  color: #fca5a5 !important;
+}
+
+.alert-warning {
+  background-color: var(--c-amber-dim) !important;
+  border-color: rgba(245,158,11,0.25) !important;
+  color: var(--c-amber-light) !important;
+}
+
+.alert-success {
+  background-color: var(--c-green-dim) !important;
+  border-color: rgba(16,185,129,0.25) !important;
+  color: #6ee7b7 !important;
+}
+
+/* Bootstrap text colors */
+.text-dark    { color: var(--c-text) !important; }
+.text-muted   { color: var(--c-text-3) !important; }
+.text-secondary { color: var(--c-text-3) !important; }
+.text-primary { color: var(--c-amber) !important; }
+.text-success { color: var(--c-green) !important; }
+.text-danger  { color: var(--c-red) !important; }
+.text-warning { color: var(--c-amber-light) !important; }
+.text-info    { color: var(--c-cyan) !important; }
+
+/* Borders */
+.border        { border-color: var(--c-border) !important; }
+.border-bottom { border-bottom-color: var(--c-border) !important; }
+.border-top    { border-top-color: var(--c-border) !important; }
+.border-end    { border-right-color: var(--c-border) !important; }
+.border-start  { border-left-color: var(--c-border) !important; }
+
+/* Breadcrumb, hr */
+hr { border-color: var(--c-border) !important; opacity: 1 !important; }
+
+/* Pagination */
+.pagination .page-link {
+  background-color: var(--surface-2) !important;
+  border-color: var(--c-border) !important;
+  color: var(--c-text-2) !important;
+}
+
+.pagination .page-item.active .page-link {
+  background: var(--g-amber) !important;
+  border-color: transparent !important;
+  color: #1a1000 !important;
+}
+
+.pagination .page-item.disabled .page-link {
+  background-color: var(--surface-1) !important;
+  color: var(--c-text-3) !important;
+  opacity: 0.5;
+}
+
+/* Scrollbar fix no Firefox */
+* {
+  scrollbar-color: var(--c-navy-5) var(--surface-1);
+  scrollbar-width: thin;
+}
+
+/* React-Select portal fix */
+.css-menu-portal,
+[id^="react-select"][class*="menu"] {
+  background: var(--surface-2) !important;
+  border: 1px solid var(--c-border-2) !important;
+  color: var(--c-text) !important;
+}
+
+/* Sombra das cards de produto */
+.shadow-sm {
+  box-shadow: 0 2px 12px rgba(0,0,0,0.4) !important;
+}
+
+/* Rounded class fixes */
+.rounded, .rounded-2 { border-radius: var(--r-md) !important; }
+.rounded-3 { border-radius: var(--r-lg) !important; }
+.rounded-4 { border-radius: var(--r-xl) !important; }
+
+/* Badge bg-light override */
+.badge.bg-light.text-dark {
+  background: var(--surface-3) !important;
+  color: var(--c-text-2) !important;
+  border: 1px solid var(--c-border-2) !important;
+}
+
+/* Span badge inside table */
+.badge.border {
+  border-color: var(--c-border-2) !important;
+}
+
+/* Specific: "X selecionados" badge */
+.badge.bg-light.text-dark.border {
+  background: var(--surface-3) !important;
+  color: var(--c-text-2) !important;
+  border-color: var(--c-border-2) !important;
+}
+
+/* Action bar background */
+.bg-white.p-3.rounded-4.border {
+  background: var(--surface-2) !important;
+  border-color: var(--c-border) !important;
+}
+
+/* Filter area card */
+.card-modern .row {
+  background: transparent;
+}
+
+/* Datalist options styling workaround */
+datalist {
+  background: var(--surface-2);
+  color: var(--c-text);
+}
+
+/* Overflow fix for table container */
+.p-0.overflow-hidden {
+  background: var(--g-card) !important;
+}
+
+/* "Últimas Movimentações" section header */
+.tracking-wider {
+  letter-spacing: 0.1em;
+}
+
+/* Fix spinner color */
+.spinner-border {
+  color: var(--c-amber) !important;
+}
+
+/* Fix link colors inside tables */
+.btn-link {
+  color: var(--c-text-3) !important;
+}
+.btn-link.text-danger { color: #f87171 !important; }
+.btn-link.text-primary { color: var(--c-cyan) !important; }
