@@ -1,6 +1,5 @@
-<svg width="680" height="420" viewBox="0 0 680 420" xmlns="http://www.w3.org/2000/svg">
+<svg width="680" height="166" viewBox="0 0 680 166" xmlns="http://www.w3.org/2000/svg">
 
-  <!-- ══ VERSÃO PRINCIPAL — fundo escuro ══ -->
   <rect x="0" y="0" width="680" height="166" fill="#1A1A2E"/>
 
   <g transform="translate(48, 20)">
@@ -12,6 +11,7 @@
     <path d="M48 27 Q58 27 58 37 Q58 47 48 47" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
   </g>
 
-  <text x="148" y="62" font-family="system-ui, -apple-system, sans-serif" font-size="34" font-weight="700" fill="#ffffff" letter-spacing="-1">Portal de</text>
-  <text x="148" y="100" font-family="system-ui, -apple-system, sans-serif" font-size="34" font-weight="700" fill="#F5A623" letter-spacing="-1">Suprimentos</text>
+  <text x="148" y="75" font-family="system-ui, -apple-system, sans-serif" font-size="34" font-weight="700" fill="#ffffff" letter-spacing="-1">Portal de</text>
+  <text x="148" y="118" font-family="system-ui, -apple-system, sans-serif" font-size="34" font-weight="700" fill="#F5A623" letter-spacing="-1">Suprimentos</text>
+
 </svg>
