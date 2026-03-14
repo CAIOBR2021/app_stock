@@ -377,42 +377,40 @@ export function ProdutoForm({
             <textarea className="form-control" placeholder="Detalhes do produto (opcional)" value={descricao} onChange={e => setDescricao(e.target.value)} style={{ height: '72px', resize: 'none' }} />
           </div>
 
-          {/* Categoria com engrenagem */}
+          {/* ── Categoria — label + engrenagem acima, input abaixo (padrão DeliveryForm) ── */}
           <div className="col-12 col-md-6">
-            <label className="form-label">Categoria</label>
-            <div className="d-flex align-items-center gap-1">
-              <div className="flex-grow-1">
-                <input className="form-control" placeholder="Ex: Ferragens" value={categoria} onChange={e => setCategoria(e.target.value)} list="cats" autoComplete="off" />
-                <datalist id="cats">{visibleCategorias.map(c => <option key={c} value={c} />)}</datalist>
-              </div>
+            <div className="d-flex justify-content-between align-items-center mb-1">
+              <label className="form-label mb-0">Categoria</label>
               <button
                 type="button"
                 className="btn-manage-discreet"
+                style={{ height: '24px', padding: '0 6px' }}
                 onClick={() => { setManageField('categorias'); setShowManageModal(true); }}
                 title="Gerenciar Categorias"
               >
                 <IconGear />
               </button>
             </div>
+            <input className="form-control" placeholder="Ex: Ferragens" value={categoria} onChange={e => setCategoria(e.target.value)} list="cats" autoComplete="off" />
+            <datalist id="cats">{visibleCategorias.map(c => <option key={c} value={c} />)}</datalist>
           </div>
 
-          {/* Local com engrenagem */}
+          {/* ── Local de Armazenamento — label + engrenagem acima, input abaixo (padrão DeliveryForm) ── */}
           <div className="col-12 col-md-6">
-            <label className="form-label">Local de Armazenamento</label>
-            <div className="d-flex align-items-center gap-1">
-              <div className="flex-grow-1">
-                <input className="form-control" placeholder="Ex: Pátio 04" value={localArmazenamento} onChange={e => setLocalArmazenamento(e.target.value)} list="locais" autoComplete="off" />
-                <datalist id="locais">{visibleLocais.map(l => <option key={l} value={l} />)}</datalist>
-              </div>
+            <div className="d-flex justify-content-between align-items-center mb-1">
+              <label className="form-label mb-0">Local de Armazenamento</label>
               <button
                 type="button"
                 className="btn-manage-discreet"
+                style={{ height: '24px', padding: '0 6px' }}
                 onClick={() => { setManageField('locais'); setShowManageModal(true); }}
                 title="Gerenciar Locais"
               >
                 <IconGear />
               </button>
             </div>
+            <input className="form-control" placeholder="Ex: Pátio 04" value={localArmazenamento} onChange={e => setLocalArmazenamento(e.target.value)} list="locais" autoComplete="off" />
+            <datalist id="locais">{visibleLocais.map(l => <option key={l} value={l} />)}</datalist>
           </div>
 
           <div className="col-12 col-sm-4">
@@ -522,7 +520,6 @@ export function ProdutoCard({
 
         {produto.categoria && (
           <div className="mb-2">
-            {/* title expõe o nome completo ao passar o mouse */}
             <span className="category-badge" title={produto.categoria}>{produto.categoria}</span>
           </div>
         )}
@@ -690,7 +687,6 @@ export function ProdutosTable({
                 const belowMin = p.estoqueMinimo != null && p.quantidade <= p.estoqueMinimo;
                 return (
                   <tr key={p.id} className={belowMin ? 'row-warning' : ''}>
-                    {/* Flag prioridade */}
                     <td style={{ textAlign: 'center' }}>
                       <button
                         className="btn-icon"
@@ -700,11 +696,7 @@ export function ProdutosTable({
                         <IconFlag filled active={!!p.prioritario} />
                       </button>
                     </td>
-
-                    {/* SKU */}
                     <td><span className="sku">{p.sku}</span></td>
-
-                    {/* Nome + indicadores */}
                     <td>
                       <span className="product-name">{p.nome}</span>
                       {belowMin && (
@@ -714,15 +706,11 @@ export function ProdutosTable({
                         <span className="ms-2" title="Valor registrado"><IconTag /></span>
                       )}
                     </td>
-
-                    {/* Categoria — title expõe o nome completo ao passar o mouse */}
                     <td>
                       {p.categoria
                         ? <span className="category-badge" title={p.categoria}>{p.categoria}</span>
                         : <span style={{ color: 'var(--text-3)' }}>—</span>}
                     </td>
-
-                    {/* Quantidade */}
                     <td>
                       <div className="d-flex align-items-center gap-1">
                         <span
@@ -737,43 +725,14 @@ export function ProdutosTable({
                         <small style={{ color: 'var(--text-3)' }}>{p.unidade}</small>
                       </div>
                     </td>
-
-                    {/* Estoque mínimo */}
                     <td style={{ color: 'var(--text-2)' }}>{p.estoqueMinimo ?? '—'}</td>
-
-                    {/* Barra nível */}
                     <td><StockLevelBar produto={p} /></td>
-
-                    {/* Local */}
                     <td style={{ color: 'var(--text-2)', fontSize: '13px' }}>{p.localArmazenamento ?? '—'}</td>
-
-                    {/* Ações */}
                     <td>
                       <div className="action-group d-flex justify-content-end gap-1">
-                        <button
-                          type="button"
-                          className="act-btn"
-                          onClick={() => setMovProdId(p.id)}
-                          title="Movimentar"
-                        >
-                          <IconMove />
-                        </button>
-                        <button
-                          type="button"
-                          className="act-btn"
-                          onClick={() => setEditingId(p.id)}
-                          title="Editar"
-                        >
-                          <IconEdit />
-                        </button>
-                        <button
-                          type="button"
-                          className="act-btn del"
-                          onClick={() => setDeleteId(p.id)}
-                          title="Excluir"
-                        >
-                          <IconTrash />
-                        </button>
+                        <button type="button" className="act-btn" onClick={() => setMovProdId(p.id)} title="Movimentar"><IconMove /></button>
+                        <button type="button" className="act-btn" onClick={() => setEditingId(p.id)} title="Editar"><IconEdit /></button>
+                        <button type="button" className="act-btn del" onClick={() => setDeleteId(p.id)} title="Excluir"><IconTrash /></button>
                       </div>
                     </td>
                   </tr>
@@ -783,9 +742,7 @@ export function ProdutosTable({
               {produtos.length === 0 && (
                 <tr>
                   <td colSpan={9} style={{ textAlign: 'center', padding: '48px 16px', color: 'var(--text-3)' }}>
-                    <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-2)', marginBottom: 4 }}>
-                      Nenhum produto encontrado
-                    </div>
+                    <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-2)', marginBottom: 4 }}>Nenhum produto encontrado</div>
                     <div style={{ fontSize: '13px' }}>Tente ajustar seus filtros ou busca.</div>
                   </td>
                 </tr>
@@ -811,9 +768,7 @@ export function ProdutosTable({
           ))}
           {produtos.length === 0 && (
             <div className="col-12 text-center py-5" style={{ color: 'var(--text-3)' }}>
-              <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-2)', marginBottom: 4 }}>
-                Nenhum produto encontrado
-              </div>
+              <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-2)', marginBottom: 4 }}>Nenhum produto encontrado</div>
               <div style={{ fontSize: '13px' }}>Tente ajustar seus filtros ou busca.</div>
             </div>
           )}
