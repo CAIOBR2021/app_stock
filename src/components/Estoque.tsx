@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import type { Produto, Movimentacao, TipoMov, UUID } from '../types';
 import { API_URL } from '../constants';
 import { ModalComponent, PasswordEntryModal, GerenciarHistoricoModal } from './Shared';
+// NOVA IMPORTAÇÃO: Ícones para o Modal de aviso
 import { ExclamationTriangleFill, XCircle } from 'react-bootstrap-icons';
-import { StockLevelBar } from './MetricCards';
 
 export function ValorTotalEstoque({ allProdutos }: { allProdutos: Produto[] }) {
   const [valorTotal, setValorTotal] = useState<number | null>(null);
@@ -75,8 +75,11 @@ export function ValorTotalEstoque({ allProdutos }: { allProdutos: Produto[] }) {
   );
 }
 
+// COMPONENTE ATUALIZADO: Remoção do window.alert
 export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produto[]; categoriaSelecionada: string; }) {
   const [loading, setLoading] = useState(false);
+  
+  // Estado para controlar o modal de feedback
   const [modalInfo, setModalInfo] = useState<{ show: boolean, title: string, message: string, type: 'info' | 'error' }>({ show: false, title: '', message: '', type: 'info' });
 
   const closeModal = () => setModalInfo(prev => ({ ...prev, show: false }));
@@ -90,13 +93,19 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
       const itemsToReorder = produtosParaRelatorio
         .filter((p) => p.estoqueMinimo !== undefined && p.quantidade < p.estoqueMinimo)
         .map((p) => ({ ...p, qtdRepor: p.estoqueMinimo! - p.quantidade }));
-
+        
       if (itemsToReorder.length === 0) {
-        setModalInfo({ show: true, title: 'Aviso', message: `Nenhum item precisa de reposição${categoriaSelecionada ? ` na categoria "${categoriaSelecionada}"` : ''}.`, type: 'info' });
+        // Exibe o modal customizado ao invés do alert
+        setModalInfo({
+          show: true,
+          title: 'Aviso',
+          message: `Nenhum item precisa de reposição${categoriaSelecionada ? ` na categoria "${categoriaSelecionada}"` : ''}.`,
+          type: 'info'
+        });
         setLoading(false);
         return;
       }
-
+      
       const title = `Relatório de Reposição${categoriaSelecionada ? `: ${categoriaSelecionada}` : ''}`;
       doc.text(title, 14, 22);
       doc.setFontSize(10);
@@ -111,7 +120,13 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
       doc.save(`relatorio-reposicao-${categoriaSelecionada || 'geral'}-${Date.now()}.pdf`);
     } catch (error) {
       console.error('Erro ao gerar relatório:', error);
-      setModalInfo({ show: true, title: 'Erro', message: 'Ocorreu um erro ao gerar o relatório. Tente novamente.', type: 'error' });
+      // Exibe o modal de erro
+      setModalInfo({
+        show: true,
+        title: 'Erro',
+        message: 'Ocorreu um erro ao gerar o relatório. Tente novamente.',
+        type: 'error'
+      });
     } finally {
       setLoading(false);
     }
@@ -123,6 +138,8 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
         {loading ? <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> : <i className="bi bi-file-earmark-arrow-down"></i>}
         Gerar Relatório
       </button>
+
+      {/* Modal de Feedback */}
       {modalInfo.show && (
         <ModalComponent title={modalInfo.title} onClose={closeModal}>
           <div className="p-3 text-center">
@@ -230,7 +247,7 @@ export function ProdutoForm({ onCancel, onSave, produto, categorias, locais }: {
             <label className="form-label">Descrição</label>
             <textarea className="form-control" placeholder="Detalhes do produto (opcional)" value={descricao} onChange={(e) => setDescricao(e.target.value)} />
           </div>
-
+          
           <div className="col-12 col-md-6">
             <label className="form-label">Categoria</label>
             <div className="d-flex align-items-center">
@@ -243,7 +260,7 @@ export function ProdutoForm({ onCancel, onSave, produto, categorias, locais }: {
               </button>
             </div>
           </div>
-
+          
           <div className="col-12 col-md-6">
             <label className="form-label">Local de Armazenamento</label>
             <div className="d-flex align-items-center">
@@ -256,7 +273,7 @@ export function ProdutoForm({ onCancel, onSave, produto, categorias, locais }: {
               </button>
             </div>
           </div>
-
+          
           <div className="col-12 col-sm-4">
             <label className="form-label">Unidade de Medida</label>
             <input className="form-control" placeholder="un, kg, m, L" value={unidade} onChange={(e) => setUnidade(e.target.value)} required />
@@ -325,18 +342,11 @@ export function ProdutoCard({ produto, onMovimentar, onEditar, onExcluir, onTogg
           {produto.valorUnitario != null && produto.valorUnitario > 0 && <i className="bi bi-tag-fill text-success" title="Valor unitário registrado"></i>}
         </div>
         <h6 className="card-title card-title-clamp mb-2 fw-bold">{produto.nome}</h6>
-        {produto.categoria && (
-          <div className="mb-2">
-            <span className="category-badge">{produto.categoria}</span>
-          </div>
-        )}
         <div className="card-info-grid my-2">
           <div><strong>Estoque</strong><span>{produto.quantidade} {produto.unidade}</span></div>
           <div><strong>Local</strong><span>{produto.localArmazenamento || '-'}</span></div>
+          <div><strong>Categoria</strong><span>{produto.categoria || '-'}</span></div>
           <div><strong>SKU</strong><span className="sku">{produto.sku}</span></div>
-        </div>
-        <div className="mb-2">
-          <StockLevelBar produto={produto} />
         </div>
         <div className="mt-auto dropdown">
           <button className="btn btn-sm btn-secondary dropdown-toggle w-100" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i className="bi bi-gear-fill me-1"></i> Ações</button>
@@ -421,30 +431,24 @@ export function ProdutosTable({ produtos, onEdit, onDelete, onAddMov, onTogglePr
 
   return (
     <>
-      {/* ===== DESKTOP TABLE ===== */}
       <div className="d-none d-lg-block products-table">
         <div className="table-responsive">
           <table className="table table-hover align-middle mb-0">
             <thead>
               <tr>
                 <th style={{ width: '4%' }}></th>
-                <th style={{ width: '11%' }}>SKU</th>
-                <th
-                  style={{ width: '26%', cursor: 'pointer', userSelect: 'none' }}
-                  onClick={onToggleSort}
-                  title="Clique para ordenar por nome"
-                >
+                <th style={{ width: '12%' }}>SKU</th>
+                <th style={{ width: '36%', cursor: 'pointer', userSelect: 'none' }} onClick={onToggleSort} title="Clique para ordenar por nome">
                   Nome
                   {sortOrder === 'asc' && <i className="bi bi-sort-alpha-down ms-2"></i>}
                   {sortOrder === 'desc' && <i className="bi bi-sort-alpha-down-alt ms-2"></i>}
                   {!sortOrder && <i className="bi bi-filter ms-2 text-muted" style={{fontSize: '0.8em', opacity: 0.5}}></i>}
                 </th>
-                <th style={{ width: '11%' }}>Categoria</th>
-                <th style={{ width: '9%' }}>Qtd.</th>
+                <th style={{ width: '12%' }}>Categoria</th>
+                <th style={{ width: '8%' }}>Qtd.</th>
                 <th style={{ width: '8%' }}>Est. Mín.</th>
-                <th style={{ width: '10%' }}>Nível</th>
-                <th style={{ width: '10%' }}>Local</th>
-                <th style={{ width: '11%' }} className="text-end">Ações</th>
+                <th style={{ width: '12%' }}>Local</th>
+                <th style={{ width: '12%' }} className="text-end">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -458,39 +462,12 @@ export function ProdutosTable({ produtos, onEdit, onDelete, onAddMov, onTogglePr
                   <td><span className="sku">{p.sku}</span></td>
                   <td>
                     <span className="product-name">{p.nome}</span>
-                    {p.estoqueMinimo != null && p.quantidade <= p.estoqueMinimo && (
-                      <i className="bi bi-exclamation-triangle-fill text-warning ms-2" title="Estoque abaixo do mínimo!"></i>
-                    )}
-                    {p.valorUnitario != null && p.valorUnitario > 0 && (
-                      <i className="bi bi-tag-fill text-success ms-2" title="Valor unitário registrado"></i>
-                    )}
+                    {p.estoqueMinimo != null && p.quantidade <= p.estoqueMinimo && <i className="bi bi-exclamation-triangle-fill text-warning ms-2" title="Estoque abaixo do mínimo!"></i>}
+                    {p.valorUnitario != null && p.valorUnitario > 0 && <i className="bi bi-tag-fill text-success ms-2" title="Valor unitário registrado"></i>}
                   </td>
-                  <td>
-                    {p.categoria
-                      ? <span className="category-badge">{p.categoria}</span>
-                      : <span className="text-muted">-</span>
-                    }
-                  </td>
-                  <td>
-                    <span className="d-flex align-items-center gap-1">
-                      <span
-                        className="stock-dot"
-                        style={{
-                          background: p.quantidade === 0
-                            ? '#ef4444'
-                            : (p.estoqueMinimo != null && p.quantidade <= p.estoqueMinimo)
-                              ? '#f59e0b'
-                              : '#22c55e'
-                        }}
-                      ></span>
-                      <strong>{p.quantidade}</strong>
-                      <small className="text-muted">{p.unidade}</small>
-                    </span>
-                  </td>
+                  <td>{p.categoria ?? '-'}</td>
+                  <td>{p.quantidade} <small className="text-muted">{p.unidade}</small></td>
                   <td>{p.estoqueMinimo ?? '-'}</td>
-                  <td>
-                    <StockLevelBar produto={p} />
-                  </td>
                   <td>{p.localArmazenamento ?? '-'}</td>
                   <td className="text-end">
                     <div className="btn-group btn-group-sm action-buttons-group" role="group">
@@ -502,14 +479,12 @@ export function ProdutosTable({ produtos, onEdit, onDelete, onAddMov, onTogglePr
                 </tr>
               ))}
               {produtos.length === 0 && (
-                <tr><td colSpan={9} className="text-center py-5"><h5>Nenhum produto encontrado</h5><p className="text-muted">Tente ajustar seus filtros ou busca.</p></td></tr>
+                <tr><td colSpan={8} className="text-center py-5"><h5>Nenhum produto encontrado</h5><p className="text-muted">Tente ajustar seus filtros ou busca.</p></td></tr>
               )}
             </tbody>
           </table>
         </div>
       </div>
-
-      {/* ===== MOBILE CARDS ===== */}
       <div className="d-lg-none">
         <div className="row g-3">
           {produtos.map((p) => (
@@ -522,8 +497,6 @@ export function ProdutosTable({ produtos, onEdit, onDelete, onAddMov, onTogglePr
           )}
         </div>
       </div>
-
-      {/* ===== MODALS ===== */}
       {produtoParaEditar && (
         <ModalComponent title={`Editar: ${produtoParaEditar.nome}`} onClose={() => setEditingId(null)}>
           <ProdutoForm produto={produtoParaEditar} onCancel={() => setEditingId(null)} onSave={(vals) => { onEdit(editingId!, vals); setEditingId(null); }} categorias={categorias} locais={locais} />
