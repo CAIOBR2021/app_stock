@@ -41,11 +41,8 @@ export function ModalComponent({
 }) {
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    // Lock body scroll
-    document.body.style.overflow = 'hidden';
     window.addEventListener('keydown', handleEsc);
     return () => {
-      document.body.style.overflow = '';
       window.removeEventListener('keydown', handleEsc);
     };
   }, [onClose]);
