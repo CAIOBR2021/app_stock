@@ -1,0 +1,22 @@
+/* index.css — resetado para não conflitar com o tema dark do styles.css */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  display: flex;
+  place-items: start;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
