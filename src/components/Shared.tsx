@@ -42,23 +42,39 @@ export function ModalComponent({
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', handleEsc);
-    return () => {
-      window.removeEventListener('keydown', handleEsc);
-    };
+    return () => { window.removeEventListener('keydown', handleEsc); };
   }, [onClose]);
 
   return (
-    <div className="ds-modal-overlay" onClick={onClose}>
-      <div className="ds-modal" onClick={e => e.stopPropagation()}>
-        <div className="ds-modal-header">
-          <h5 className="ds-modal-title">{title}</h5>
-          <button className="ds-modal-close" onClick={onClose} aria-label="Fechar">
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)',
+        zIndex: 9999, display: 'flex', alignItems: 'flex-start',
+        justifyContent: 'center', padding: '16px', overflowY: 'auto',
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: '#fff', borderRadius: '14px',
+          boxShadow: '0 12px 32px rgba(0,0,0,.12)',
+          width: '100%', maxWidth: '520px', maxHeight: '90vh',
+          display: 'flex', flexDirection: 'column',
+          margin: 'auto', position: 'relative',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid #E2E5EC', flexShrink: 0 }}>
+          <h5 style={{ fontSize: '16px', fontWeight: 700, color: '#0F1117', margin: 0 }}>{title}</h5>
+          <button onClick={onClose} style={{ width: '28px', height: '28px', border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
         </div>
-        <div className="ds-modal-body">{children}</div>
+        <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
+          {children}
+        </div>
       </div>
     </div>
   );
