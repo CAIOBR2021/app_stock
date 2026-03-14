@@ -1056,7 +1056,7 @@ table.table tbody tr.row-danger:hover td {
   background: rgba(0, 0, 0, .55);
   z-index: 9999;
   display: flex;
-  align-items: center;
+  align-items: flex-start;        /* ← era center */
   justify-content: center;
   padding: 16px;
   overflow-y: auto;
@@ -1069,13 +1069,12 @@ table.table tbody tr.row-danger:hover td {
   width: 100%;
   max-width: 520px;
   max-height: 90vh;
-  /* limita a altura à viewport */
   display: flex;
   flex-direction: column;
-  /* header fixo, body rola, footer fixo */
   font-family: 'DM Sans', sans-serif;
   position: relative;
   animation: fadeUp .2s ease both;
+  margin: auto;                   /* ← adicione esta linha */
 }
 
 .ds-modal-body {
