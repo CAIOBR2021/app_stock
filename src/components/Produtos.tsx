@@ -272,32 +272,40 @@ export function ProdutoForm({ onCancel, onSave, produto, categorias, locais }: {
             <textarea className="form-control" value={descricao} onChange={e => setDescricao(e.target.value)} style={{ height: '72px', resize: 'none' }} />
           </div>
 
-          {/* Categoria + engrenagem */}
+          {/* ── Categoria — label + engrenagem acima, input abaixo (padrão DeliveryForm) ── */}
           <div className="col-12 col-md-6">
-            <label className="form-label">Categoria</label>
-            <div className="d-flex align-items-center gap-1">
-              <div className="flex-grow-1">
-                <input className="form-control" value={categoria} onChange={e => setCategoria(e.target.value)} list="cats" autoComplete="off" placeholder="Ex: Ferramentas" />
-                <datalist id="cats">{visibleCategorias.map(c => <option key={c} value={c} />)}</datalist>
-              </div>
-              <button type="button" className="btn-manage-discreet" onClick={() => { setManageField('categorias'); setShowManageModal(true); }} title="Gerenciar Categorias">
+            <div className="d-flex justify-content-between align-items-center mb-1">
+              <label className="form-label mb-0">Categoria</label>
+              <button
+                type="button"
+                className="btn-manage-discreet"
+                style={{ height: '24px', padding: '0 6px' }}
+                onClick={() => { setManageField('categorias'); setShowManageModal(true); }}
+                title="Gerenciar Categorias"
+              >
                 <IconGear />
               </button>
             </div>
+            <input className="form-control" value={categoria} onChange={e => setCategoria(e.target.value)} list="cats" autoComplete="off" placeholder="Ex: Ferramentas" />
+            <datalist id="cats">{visibleCategorias.map(c => <option key={c} value={c} />)}</datalist>
           </div>
 
-          {/* Local + engrenagem */}
+          {/* ── Local de Armazenamento — label + engrenagem acima, input abaixo (padrão DeliveryForm) ── */}
           <div className="col-12 col-md-6">
-            <label className="form-label">Local de Armazenamento</label>
-            <div className="d-flex align-items-center gap-1">
-              <div className="flex-grow-1">
-                <input className="form-control" value={localArmazenamento} onChange={e => setLocalArmazenamento(e.target.value)} list="locais" autoComplete="off" placeholder="Ex: Prateleira A" />
-                <datalist id="locais">{visibleLocais.map(l => <option key={l} value={l} />)}</datalist>
-              </div>
-              <button type="button" className="btn-manage-discreet" onClick={() => { setManageField('locais'); setShowManageModal(true); }} title="Gerenciar Locais">
+            <div className="d-flex justify-content-between align-items-center mb-1">
+              <label className="form-label mb-0">Local de Armazenamento</label>
+              <button
+                type="button"
+                className="btn-manage-discreet"
+                style={{ height: '24px', padding: '0 6px' }}
+                onClick={() => { setManageField('locais'); setShowManageModal(true); }}
+                title="Gerenciar Locais"
+              >
                 <IconGear />
               </button>
             </div>
+            <input className="form-control" value={localArmazenamento} onChange={e => setLocalArmazenamento(e.target.value)} list="locais" autoComplete="off" placeholder="Ex: Prateleira A" />
+            <datalist id="locais">{visibleLocais.map(l => <option key={l} value={l} />)}</datalist>
           </div>
 
           <div className="col-12 col-sm-4">
@@ -366,7 +374,6 @@ export function ProdutoCard({ produto, onMovimentar, onEditar, onExcluir, onTogg
         </div>
         <h6 className="card-title card-title-clamp mb-2 fw-bold">{produto.nome}</h6>
 
-        {/* title expõe o nome completo ao passar o mouse */}
         {produto.categoria && (
           <div className="mb-2">
             <span className="category-badge" title={produto.categoria}>{produto.categoria}</span>

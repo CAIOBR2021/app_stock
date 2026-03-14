@@ -163,7 +163,6 @@ export function MovsList({ movs, produtos }: { movs: Movimentacao[]; produtos: P
           }}
         >
           <div>
-            {/* Tipo badge */}
             <span
               className="badge me-2"
               style={{ ...tipoBadgeStyle(m.tipo), fontFamily: 'DM Mono, monospace', fontSize: '10px', letterSpacing: '.5px' }}
@@ -212,7 +211,7 @@ export function MovimentacaoEditForm({
   }, [hiddenMotivos]);
 
   const visibleMotivos = motivosDisponiveis.filter(m => !hiddenMotivos.includes(m));
-  const handleRemoveMotivo   = (item: string) => setHiddenMotivos(prev => [...prev, item]);
+  const handleRemoveMotivo    = (item: string) => setHiddenMotivos(prev => [...prev, item]);
   const handleClearAllMotivos = () => setHiddenMotivos(prev => [...prev, ...visibleMotivos]);
 
   function handleSubmit(e: React.FormEvent) {
@@ -239,29 +238,31 @@ export function MovimentacaoEditForm({
             <input type="number" className="form-control" value={quantidade} onChange={e => setQuantidade(Number(e.target.value))} min="1" required />
           </div>
 
-          {/* Motivo com engrenagem */}
+          {/* ── Motivo — label + engrenagem acima, input abaixo (padrão DeliveryForm) ── */}
           <div className="col-md-6">
-            <label className="form-label">Motivo (opcional)</label>
-            <div className="d-flex align-items-center gap-1">
-              <div className="flex-grow-1">
-                <input
-                  type="text" className="form-control"
-                  value={motivo} onChange={e => setMotivo(e.target.value)}
-                  list="edit-motivos-list" autoComplete="off"
-                />
-                <datalist id="edit-motivos-list">
-                  {visibleMotivos.map((m, i) => <option key={i} value={m} />)}
-                </datalist>
-              </div>
+            <div className="d-flex justify-content-between align-items-center mb-1">
+              <label className="form-label mb-0">Motivo (opcional)</label>
               <button
                 type="button"
                 className="btn-manage-discreet"
+                style={{ height: '24px', padding: '0 6px' }}
                 onClick={() => setShowManageModal(true)}
                 title="Gerenciar Motivos"
               >
                 <IconGear />
               </button>
             </div>
+            <input
+              type="text"
+              className="form-control"
+              value={motivo}
+              onChange={e => setMotivo(e.target.value)}
+              list="edit-motivos-list"
+              autoComplete="off"
+            />
+            <datalist id="edit-motivos-list">
+              {visibleMotivos.map((m, i) => <option key={i} value={m} />)}
+            </datalist>
           </div>
         </div>
 
