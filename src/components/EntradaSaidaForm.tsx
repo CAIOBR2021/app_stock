@@ -64,15 +64,20 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
   const [tipo,        setTipo]        = useState<'entrada' | 'saida' | 'ajuste'>('entrada');
   const [selecionados, setSelecionados] = useState<Record<string, { quantidade: number; valorUnitario: number }>>({});
   const [busca, setBusca] = useState('');
+  const [categoriaFiltro, setCategoriaFiltro] = useState('');
+
+  const categorias = useMemo(() => {
+    return Array.from(new Set(produtos.map(p => p.categoria || '').filter(Boolean))).sort();
+  }, [produtos]);
 
   const produtosDisponiveis = useMemo(() => {
     return produtos.filter(p => {
-      const atendeBusca   = p.nome.toLowerCase().includes(busca.toLowerCase()) || p.sku.toLowerCase().includes(busca.toLowerCase());
-      // Para saída: só mostra produtos com estoque. Para entrada e ajuste: mostra todos.
-      const atendeEstoque = tipo !== 'saida' || p.quantidade > 0;
-      return atendeBusca && atendeEstoque;
+      const atendeBusca     = p.nome.toLowerCase().includes(busca.toLowerCase()) || p.sku.toLowerCase().includes(busca.toLowerCase());
+      const atendeEstoque   = tipo !== 'saida' || p.quantidade > 0;
+      const atendeCategoria = !categoriaFiltro || p.categoria === categoriaFiltro;
+      return atendeBusca && atendeEstoque && atendeCategoria;
     });
-  }, [produtos, tipo, busca]);
+  }, [produtos, tipo, busca, categoriaFiltro]);
 
   const handleToggleProduto = (p: Produto) => {
     setSelecionados(prev => {
@@ -211,15 +216,31 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
         {/* ── Busca de produtos ── */}
         <div className="mb-3">
           <label className="form-label">Selecionar Produtos</label>
-          <div className="input-wrap mb-3">
-            <IconSearch />
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Buscar produto por nome ou SKU..."
-              value={busca}
-              onChange={e => setBusca(e.target.value)}
-            />
+          <div className="row g-2 mb-3">
+            <div className="col-12 col-sm-7">
+              <div className="input-wrap">
+                <IconSearch />
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Buscar por nome ou SKU..."
+                  value={busca}
+                  onChange={e => setBusca(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="col-12 col-sm-5">
+              <select
+                className="form-select"
+                value={categoriaFiltro}
+                onChange={e => setCategoriaFiltro(e.target.value)}
+              >
+                <option value="">Todas as categorias</option>
+                {categorias.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Lista de produtos */}
