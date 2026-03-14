@@ -147,3 +147,41 @@
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(245, 166, 35, .5) !important;
 }
+
+/* ── FORÇA COR AMARELA EM TODOS OS BTN-PRIMARY ─────────── */
+.btn-primary,
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active,
+.btn-primary.active,
+.btn-primary:disabled,
+button.btn-primary,
+a.btn-primary {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: #fff !important;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-dark) !important;
+  border-color: var(--primary-dark) !important;
+}
+
+.btn-primary:focus,
+.btn-primary:active {
+  background-color: var(--primary-dark) !important;
+  border-color: var(--primary-dark) !important;
+  box-shadow: 0 0 0 3px rgba(245, 166, 35, .35) !important;
+}
+
+/* Paginação ativa */
+.page-item.active .page-link {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: #fff !important;
+}
+
+/* Checkbox accent */
+input[type="checkbox"] {
+  accent-color: var(--primary) !important;
+}
