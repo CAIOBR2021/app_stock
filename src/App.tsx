@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import meuLogo from './assets/logo.png';
+import meuLogo from './assets/logo.svg';
 import { DeliveryForm } from './components/DeliveryForm';
 import { DeliveryTable } from './components/DeliveryTable';
 import { EntradaSaidaForm } from './components/EntradaSaidaForm';
