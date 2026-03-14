@@ -41,26 +41,27 @@ export function ModalComponent({
 }) {
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    // Lock body scroll
+    document.body.style.overflow = 'hidden';
     window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleEsc);
+    };
   }, [onClose]);
 
   return (
-    <div
-      className="modal"
-      style={{ display: 'block', backgroundColor: 'rgba(0,0,0,.6)', zIndex: 9999 }}
-      onClick={onClose}
-    >
-      <div className="modal-dialog modal-dialog-centered" onClick={e => e.stopPropagation()}>
-        <div className="modal-content" style={{ borderRadius: 'var(--radius-lg)', border: 'none', boxShadow: 'var(--shadow-lg)' }}>
-          <div className="modal-header" style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)' }}>
-            <h5 className="modal-title" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-1)', letterSpacing: '-.3px', margin: 0 }}>
-              {title}
-            </h5>
-            <button type="button" className="btn-close" onClick={onClose} />
-          </div>
-          <div className="modal-body" style={{ padding: '20px 24px' }}>{children}</div>
+    <div className="ds-modal-overlay" onClick={onClose}>
+      <div className="ds-modal" onClick={e => e.stopPropagation()}>
+        <div className="ds-modal-header">
+          <h5 className="ds-modal-title">{title}</h5>
+          <button className="ds-modal-close" onClick={onClose} aria-label="Fechar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
         </div>
+        <div className="ds-modal-body">{children}</div>
       </div>
     </div>
   );
@@ -109,12 +110,7 @@ export function GerenciarHistoricoModal({
         )}
       </div>
 
-      <div
-        style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border)',
-        }}
-      >
+      <div className="ds-modal-footer" style={{ marginTop: '20px' }}>
         <button
           type="button"
           style={{ background: 'none', border: 'none', color: 'var(--danger)', fontWeight: 700, fontSize: '13.5px', cursor: 'pointer', padding: 0, opacity: items.length === 0 ? .4 : 1 }}

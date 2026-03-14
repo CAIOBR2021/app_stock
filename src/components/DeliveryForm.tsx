@@ -383,25 +383,20 @@ export function DeliveryForm({
 
       {/* ── MANAGE HISTORY MODAL ── */}
       {showManageModal && (
-        <div
-          className="modal"
-          style={{ display: 'block', backgroundColor: 'rgba(0,0,0,.55)', zIndex: 9999 }}
-          onClick={() => setShowManageModal(false)}
-        >
-          <div
-            className="modal-dialog modal-dialog-centered"
-            style={{ maxWidth: '480px' }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="modal-content">
+        <div className="ds-modal-overlay" onClick={() => setShowManageModal(false)}>
+          <div className="ds-modal" style={{ maxWidth: '480px' }} onClick={e => e.stopPropagation()}>
               {/* Header */}
-              <div className="modal-header">
-                <h5 className="modal-title">Gerenciar Histórico</h5>
-                <button type="button" className="btn-close" onClick={() => setShowManageModal(false)} />
+              <div className="ds-modal-header">
+                <h5 className="ds-modal-title">Gerenciar Histórico</h5>
+                <button className="ds-modal-close" onClick={() => setShowManageModal(false)} aria-label="Fechar">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
               </div>
 
               {/* Body */}
-              <div className="modal-body">
+              <div className="ds-modal-body">
                 <p style={{ fontSize: '13px', color: 'var(--text-3)', marginBottom: '16px' }}>
                   Remova itens que não deseja mais como sugestão neste campo.
                 </p>
@@ -430,7 +425,7 @@ export function DeliveryForm({
               </div>
 
               {/* Footer */}
-              <div className="modal-footer" style={{ justifyContent: 'space-between' }}>
+              <div className="ds-modal-footer">
                 <button
                   type="button"
                   style={{ background: 'none', border: 'none', color: 'var(--danger)', fontWeight: 700, fontSize: '13.5px', cursor: 'pointer', padding: 0 }}
@@ -450,7 +445,6 @@ export function DeliveryForm({
               </div>
             </div>
           </div>
-        </div>
       )}
     </>
   );
