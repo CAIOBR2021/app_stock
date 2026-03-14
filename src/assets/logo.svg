@@ -1,8 +1,8 @@
 <svg width="680" height="420" viewBox="0 0 680 420" xmlns="http://www.w3.org/2000/svg">
- 
+
   <!-- ══ VERSÃO PRINCIPAL — fundo escuro ══ -->
   <rect x="0" y="0" width="680" height="166" fill="#1A1A2E"/>
- 
+
   <g transform="translate(48, 20)">
     <polygon points="40,0 80,20 80,60 40,80 0,60 0,20" fill="#F5A623"/>
     <polygon points="40,9 71,25 71,55 40,71 9,55 9,25" fill="none" stroke="#ffffff" stroke-width="1.5" opacity="0.35"/>
@@ -11,6 +11,7 @@
     <rect x="24" y="37" width="20" height="6" rx="3" fill="#ffffff"/>
     <path d="M48 27 Q58 27 58 37 Q58 47 48 47" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
   </g>
- 
+
   <text x="148" y="62" font-family="system-ui, -apple-system, sans-serif" font-size="34" font-weight="700" fill="#ffffff" letter-spacing="-1">Portal de</text>
   <text x="148" y="100" font-family="system-ui, -apple-system, sans-serif" font-size="34" font-weight="700" fill="#F5A623" letter-spacing="-1">Suprimentos</text>
+</svg>
