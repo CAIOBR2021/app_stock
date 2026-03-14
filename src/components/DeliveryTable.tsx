@@ -1,6 +1,31 @@
-import type { Entrega } from '../App';
-import { Form } from 'react-bootstrap';
-import { Trash, PencilSquare, Clock } from 'react-bootstrap-icons';
+import type { Entrega } from '../types';
+
+// ── SVG ICONS ─────────────────────────────────────────────────────────────────
+
+const IconEdit = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+  </svg>
+);
+
+const IconTrash = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15">
+    <polyline points="3 6 5 6 21 6"/>
+    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+    <path d="M10 11v6"/><path d="M14 11v6"/>
+    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+  </svg>
+);
+
+const IconClock = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="11" height="11" style={{ marginBottom: '1px' }}>
+    <circle cx="12" cy="12" r="10"/>
+    <polyline points="12 6 12 12 16 14"/>
+  </svg>
+);
+
+// ── TYPES ─────────────────────────────────────────────────────────────────────
 
 interface DeliveryTableProps {
   deliveries: Entrega[];
@@ -12,6 +37,8 @@ interface DeliveryTableProps {
   onSelectAll: (isChecked: boolean) => void;
 }
 
+// ── COMPONENT ─────────────────────────────────────────────────────────────────
+
 export function DeliveryTable({
   deliveries,
   onDelete,
@@ -19,153 +46,154 @@ export function DeliveryTable({
   onStatusChange,
   selectedIds,
   onSelectItem,
-  onSelectAll
+  onSelectAll,
 }: DeliveryTableProps) {
 
-  // Função auxiliar para verificar status
-  const isDelivered = (status: string | undefined) => {
-    return status?.trim().toLowerCase() === 'entregue';
-  };
+  const isDelivered = (status: string | undefined) =>
+    status?.trim().toLowerCase() === 'entregue';
 
-  // LÓGICA ATUALIZADA: Permite selecionar todos, inclusive os entregues
-  const isAllSelected = deliveries.length > 0 && 
-                        deliveries.every(d => selectedIds.includes(d.id));
+  const isAllSelected =
+    deliveries.length > 0 && deliveries.every(d => selectedIds.includes(d.id));
 
   return (
-    <div className="table-responsive shadow-sm rounded bg-white">
-      <style>
-        {`
-          @media print {
-            .print-hidden { display: none !important; }
-          }
-          /* Efeito hover suave no badge */
-          .status-badge {
-            transition: opacity 0.2s, transform 0.1s;
-          }
-          .status-badge:hover {
-            opacity: 0.85;
-            transform: scale(1.02);
-          }
-          .status-badge:active {
-            transform: scale(0.98);
-          }
-        `}
-      </style>
-
-      <table className="table table-hover table-sm align-middle mb-0">
-        <thead className="table-light">
+    <div style={{ overflowX: 'auto' }}>
+      <table className="table" style={{ marginBottom: 0 }}>
+        <thead>
           <tr>
-            <th style={{ width: '40px' }} className="text-center py-2">
-              <Form.Check 
+            {/* Checkbox selecionar todos */}
+            <th style={{ width: '40px', textAlign: 'center', padding: '12px 16px' }}>
+              <input
                 type="checkbox"
                 checked={isAllSelected}
-                onChange={(e) => onSelectAll(e.target.checked)}
+                onChange={e => onSelectAll(e.target.checked)}
                 disabled={deliveries.length === 0}
+                style={{ accentColor: 'var(--primary)', width: '15px', height: '15px', cursor: 'pointer' }}
               />
             </th>
-            <th className="py-2 text-secondary text-uppercase small fw-bold">Data</th>
-            <th className="py-2 text-secondary text-uppercase small fw-bold">Hora</th>
-            <th className="py-2 text-secondary text-uppercase small fw-bold">Local / Obra</th>
-            <th className="py-2 text-secondary text-uppercase small fw-bold">Produto</th>
-            <th className="py-2 text-secondary text-uppercase small fw-bold text-center">Qtd.</th>
-            <th className="py-2 text-secondary text-uppercase small fw-bold text-center">Status</th>
-            <th className="py-2 text-secondary text-uppercase small fw-bold text-end">Ações</th>
+            <th>Data</th>
+            <th>Hora</th>
+            <th>Local / Obra</th>
+            <th>Produto</th>
+            <th style={{ textAlign: 'center' }}>Qtd.</th>
+            <th style={{ textAlign: 'center', width: '130px' }}>Status</th>
+            <th style={{ textAlign: 'right' }}>Ações</th>
           </tr>
         </thead>
+
         <tbody>
           {deliveries.length === 0 ? (
             <tr>
-              <td colSpan={8} className="text-center py-4 text-muted">
+              <td colSpan={8} style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--text-3)', fontSize: '13.5px' }}>
                 Nenhuma entrega encontrada para os filtros atuais.
               </td>
             </tr>
           ) : (
-            deliveries.map((delivery) => {
+            deliveries.map(delivery => {
               const delivered = isDelivered(delivery.status);
-              
-              // Estilo visual: Itens entregues ficam com fundo cinza claro, mas totalmente visíveis
-              const rowClass = delivered 
-                ? 'bg-light text-secondary d-print-none print-hidden' 
-                : '';
 
               return (
-                <tr key={delivery.id} className={rowClass}>
-                  <td className="text-center">
-                    <Form.Check 
+                <tr
+                  key={delivery.id}
+                  style={{ background: delivered ? 'var(--surface-2)' : 'transparent', opacity: delivered ? .75 : 1 }}
+                >
+                  {/* Checkbox */}
+                  <td style={{ textAlign: 'center' }}>
+                    <input
                       type="checkbox"
                       checked={selectedIds.includes(delivery.id)}
                       onChange={() => onSelectItem(delivery.id)}
-                      // Checkbox SEMPRE habilitado para permitir ações em massa (Entregue <-> Pendente)
-                      disabled={false} 
+                      style={{ accentColor: 'var(--primary)', width: '15px', height: '15px', cursor: 'pointer' }}
                     />
                   </td>
-                  
-                  <td className="fw-medium">
+
+                  {/* Data */}
+                  <td style={{ fontWeight: 500, fontSize: '13px', whiteSpace: 'nowrap' }}>
                     {new Date(delivery.dataHoraSolicitacao).toLocaleDateString('pt-BR')}
                   </td>
-                  <td>
+
+                  {/* Hora */}
+                  <td style={{ fontSize: '13px', color: 'var(--text-2)', whiteSpace: 'nowrap' }}>
                     {new Date(delivery.dataHoraSolicitacao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                   </td>
 
+                  {/* Local */}
                   <td>
-                    <div className="fw-medium">{delivery.localObra}</div>
-                    <small className="text-muted" style={{ fontSize: '0.85em' }}>
-                        {delivery.localArmazenagem || delivery.localArmazenamento || '-'}
-                    </small>
+                    <div style={{ fontWeight: 500, fontSize: '13.5px' }}>{delivery.localObra}</div>
+                    <div style={{ fontSize: '11.5px', color: 'var(--text-3)', marginTop: '1px' }}>
+                      {delivery.localArmazenagem || (delivery as any).localArmazenamento || '—'}
+                    </div>
                   </td>
 
+                  {/* Produto */}
                   <td>
-                    <span>{delivery.itemNome || 'Produto não encontrado'}</span>
-                    {delivery.sku && <div className="text-muted small" style={{ fontSize: '0.75em' }}>{delivery.sku}</div>}
+                    <div style={{ fontSize: '13.5px' }}>{delivery.itemNome || 'Produto não encontrado'}</div>
+                    {delivery.sku && (
+                      <div className="sku" style={{ fontSize: '11px', marginTop: '1px' }}>{delivery.sku}</div>
+                    )}
                   </td>
 
-                  <td className="text-center">
-                    <span className={`badge ${delivered ? 'bg-secondary' : 'bg-light text-dark border'}`}>
+                  {/* Quantidade */}
+                  <td style={{ textAlign: 'center' }}>
+                    <span
+                      className="badge"
+                      style={{
+                        background: delivered ? 'var(--surface-3)' : 'var(--surface-2)',
+                        color: delivered ? 'var(--text-3)' : 'var(--text-1)',
+                        border: '1px solid var(--border)',
+                        fontFamily: 'DM Mono, monospace',
+                        fontSize: '11.5px',
+                      }}
+                    >
                       {delivery.itemQuantidade} {delivery.itemUnidadeMedida}
                     </span>
                   </td>
 
-                  <td className="text-center" style={{ width: '130px' }}>
-                    <span 
-                        className={`badge status-badge ${delivered ? 'bg-success' : 'bg-warning text-dark'}`}
-                        style={{ 
-                            cursor: 'pointer', 
-                            userSelect: 'none',
-                            fontSize: '0.75em',
-                            padding: '0.35em 0.6em',
-                            fontWeight: 600
-                        }}
-                        onClick={() => onStatusChange(delivery.id, delivered ? 'Pendente' : 'Entregue')}
-                        title={delivered ? "Clique para marcar como Pendente" : "Clique para marcar como Entregue"}
+                  {/* Status — clicável */}
+                  <td style={{ textAlign: 'center' }}>
+                    <span
+                      className="status-badge"
+                      onClick={() => onStatusChange(delivery.id, delivered ? 'Pendente' : 'Entregue')}
+                      title={delivered ? 'Clique para marcar como Pendente' : 'Clique para marcar como Entregue'}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '4px 10px',
+                        borderRadius: '999px',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        letterSpacing: '.3px',
+                        cursor: 'pointer',
+                        userSelect: 'none',
+                        background: delivered ? 'var(--success-light)' : 'var(--warning-light)',
+                        color:      delivered ? 'var(--success)'       : 'var(--primary-dark)',
+                        border: `1px solid ${delivered ? '#A3E6B5' : '#FAD898'}`,
+                      }}
                     >
-                        <Clock className="me-1" style={{ fontSize: '0.9em', marginBottom: '1px' }} />
-                        {delivered ? 'ENTREGUE' : 'PENDENTE'}
+                      <IconClock />
+                      {delivered ? 'ENTREGUE' : 'PENDENTE'}
                     </span>
                   </td>
 
-                  <td className="text-end">
-                    <div className="d-flex justify-content-end gap-1">
-                        <button 
-                            className="btn btn-sm btn-link text-decoration-none p-0" 
-                            onClick={() => !delivered && onEdit(delivery)}
-                            disabled={delivered}
-                            style={{ 
-                              opacity: delivered ? 0.3 : 1, 
-                              pointerEvents: delivered ? 'none' : 'auto',
-                              cursor: delivered ? 'default' : 'pointer'
-                            }}
-                            title="Editar"
-                        >
-                            <PencilSquare size={16} />
-                        </button>
-                        
-                        <button 
-                            className="btn btn-sm btn-link text-danger text-decoration-none p-0" 
-                            onClick={() => onDelete(delivery.id)}
-                            title="Excluir"
-                        >
-                            <Trash size={16} />
-                        </button>
+                  {/* Ações */}
+                  <td>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '4px' }}>
+                      <button
+                        className="act-btn"
+                        onClick={() => !delivered && onEdit(delivery)}
+                        disabled={delivered}
+                        title="Editar"
+                        style={{ opacity: delivered ? .3 : 1 }}
+                      >
+                        <IconEdit />
+                      </button>
+                      <button
+                        className="act-btn del"
+                        onClick={() => onDelete(delivery.id)}
+                        title="Excluir"
+                      >
+                        <IconTrash />
+                      </button>
                     </div>
                   </td>
                 </tr>
