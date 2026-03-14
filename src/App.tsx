@@ -842,9 +842,8 @@ export default function App() {
       {/* Scroll to top */}
       {showScroll && (
         <button
-          className="btn btn-primary d-flex align-items-center justify-content-center"
+          className="btn-scroll-top"
           onClick={scrollTop}
-          style={{ position: 'fixed', bottom: '90px', right: '20px', width: '45px', height: '45px', borderRadius: '50%', zIndex: 1000, boxShadow: 'var(--shadow-md)', padding: 0 }}
         >
           <IconArrowUp />
         </button>

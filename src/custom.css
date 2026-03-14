@@ -115,3 +115,35 @@
   flex: 1 !important;
   min-height: 0 !important;
 }
+
+/* ── SIDEBAR NAV ─────────────────────────────────────────── */
+.sidebar-nav {
+  padding: 16px 12px;
+  flex: 1;
+}
+
+/* ── SCROLL TO TOP ───────────────────────────────────────── */
+.btn-scroll-top {
+  position: fixed;
+  bottom: 90px;
+  right: 20px;
+  width: 45px;
+  height: 45px;
+  border-radius: 10px !important;
+  background: var(--primary) !important;
+  border: none !important;
+  color: #fff !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(245, 166, 35, .4) !important;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.btn-scroll-top:hover {
+  background: var(--primary-dark) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(245, 166, 35, .5) !important;
+}
