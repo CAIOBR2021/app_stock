@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 
 // ── SVG ICONS ─────────────────────────────────────────────────────────────────
 
@@ -45,7 +46,7 @@ export function ModalComponent({
     return () => { window.removeEventListener('keydown', handleEsc); };
   }, [onClose]);
 
-  return (
+  return ReactDOM.createPortal(
     <div
       onClick={onClose}
       style={{
@@ -76,7 +77,8 @@ export function ModalComponent({
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
