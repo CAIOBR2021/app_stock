@@ -15,6 +15,17 @@ const IconArrowOut = () => (
   </svg>
 );
 
+const IconAdjust = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+    <line x1="4" y1="6" x2="20" y2="6"/>
+    <line x1="4" y1="12" x2="20" y2="12"/>
+    <line x1="4" y1="18" x2="20" y2="18"/>
+    <circle cx="8" cy="6" r="2" fill="currentColor" stroke="none"/>
+    <circle cx="16" cy="12" r="2" fill="currentColor" stroke="none"/>
+    <circle cx="10" cy="18" r="2" fill="currentColor" stroke="none"/>
+  </svg>
+);
+
 const IconCheck = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18">
     <polyline points="20 6 9 17 4 12"/>
@@ -40,7 +51,7 @@ interface EntradaSaidaFormProps {
   onSubmit: (dados: {
     ordemCompra: string;
     nomeObra: string;
-    tipo: 'entrada' | 'saida';
+    tipo: 'entrada' | 'saida' | 'ajuste';
     itens: ProdutoSelecionado[];
   }) => void;
 }
@@ -50,14 +61,15 @@ interface EntradaSaidaFormProps {
 export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) {
   const [ordemCompra, setOrdemCompra] = useState('');
   const [nomeObra,    setNomeObra]    = useState('');
-  const [tipo,        setTipo]        = useState<'entrada' | 'saida'>('entrada');
+  const [tipo,        setTipo]        = useState<'entrada' | 'saida' | 'ajuste'>('entrada');
   const [selecionados, setSelecionados] = useState<Record<string, { quantidade: number; valorUnitario: number }>>({});
   const [busca, setBusca] = useState('');
 
   const produtosDisponiveis = useMemo(() => {
     return produtos.filter(p => {
       const atendeBusca   = p.nome.toLowerCase().includes(busca.toLowerCase()) || p.sku.toLowerCase().includes(busca.toLowerCase());
-      const atendeEstoque = tipo === 'entrada' || p.quantidade > 0;
+      // Para saída: só mostra produtos com estoque. Para entrada e ajuste: mostra todos.
+      const atendeEstoque = tipo !== 'saida' || p.quantidade > 0;
       return atendeBusca && atendeEstoque;
     });
   }, [produtos, tipo, busca]);
@@ -66,13 +78,13 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
     setSelecionados(prev => {
       const novo = { ...prev };
       if (novo[p.id]) { delete novo[p.id]; }
-      else { novo[p.id] = { quantidade: 1, valorUnitario: p.valorUnitario || 0 }; }
+      else { novo[p.id] = { quantidade: tipo === 'ajuste' ? p.quantidade : 1, valorUnitario: p.valorUnitario || 0 }; }
       return novo;
     });
   };
 
   const handleChangeQuantidade = (id: string, qtd: number) => {
-    if (qtd <= 0) return;
+    if (qtd < 0) return;
     setSelecionados(prev => ({ ...prev, [id]: { ...prev[id], quantidade: qtd } }));
   };
 
@@ -96,7 +108,8 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
 
   const totalSelecionados = Object.keys(selecionados).length;
 
-  // Estilos do botão de tipo ativo/inativo
+  // ── Button styles ──────────────────────────────────────────────────────────
+
   const btnEntrada: React.CSSProperties = tipo === 'entrada'
     ? { background: 'var(--success)', borderColor: 'var(--success)', color: '#fff', boxShadow: '0 4px 12px rgba(47,158,68,.3)' }
     : { background: 'var(--surface)', borderColor: 'var(--success)', color: 'var(--success)' };
@@ -104,6 +117,14 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
   const btnSaida: React.CSSProperties = tipo === 'saida'
     ? { background: 'var(--danger)', borderColor: 'var(--danger)', color: '#fff', boxShadow: '0 4px 12px rgba(229,62,62,.3)' }
     : { background: 'var(--surface)', borderColor: 'var(--danger)', color: 'var(--danger)' };
+
+  const btnAjuste: React.CSSProperties = tipo === 'ajuste'
+    ? { background: '#1971C2', borderColor: '#1971C2', color: '#fff', boxShadow: '0 4px 12px rgba(25,113,194,.3)' }
+    : { background: 'var(--surface)', borderColor: '#1971C2', color: '#1971C2' };
+
+  // Label helpers
+  const tipoLabel = tipo === 'entrada' ? 'Entrada' : tipo === 'saida' ? 'Saída' : 'Ajuste';
+  const quantidadeLabel = tipo === 'ajuste' ? 'Nova Qtd.' : 'Qtd.';
 
   return (
     <div className="card-modern">
@@ -153,7 +174,38 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
             >
               <IconArrowOut /> SAÍDA
             </button>
+            <button
+              type="button"
+              className="btn d-flex align-items-center justify-content-center gap-2 flex-grow-1"
+              style={{ ...btnAjuste, height: '44px', fontSize: '13.5px', fontWeight: 700, borderRadius: '8px', border: '1.5px solid', transition: 'all 150ms' }}
+              onClick={() => { setTipo('ajuste'); setSelecionados({}); }}
+            >
+              <IconAdjust /> AJUSTE
+            </button>
           </div>
+
+          {/* Info banner for ajuste */}
+          {tipo === 'ajuste' && (
+            <div style={{
+              marginTop: '12px',
+              padding: '10px 14px',
+              background: '#EBF4FF',
+              border: '1px solid #BFD7FF',
+              borderRadius: '8px',
+              fontSize: '12.5px',
+              color: '#1971C2',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15" style={{ flexShrink: 0 }}>
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              O ajuste define a <strong style={{ marginLeft: 3, marginRight: 3 }}>nova quantidade absoluta</strong> do estoque, substituindo o valor atual.
+            </div>
+          )}
         </div>
 
         {/* ── Busca de produtos ── */}
@@ -190,7 +242,11 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
                       justifyContent: 'space-between',
                       padding: '12px 16px',
                       borderBottom: idx < produtosDisponiveis.length - 1 ? '1px solid var(--border)' : 'none',
-                      background: isSelected ? 'rgba(245,166,35,.04)' : 'transparent',
+                      background: isSelected
+                        ? tipo === 'ajuste'
+                          ? 'rgba(25,113,194,.04)'
+                          : 'rgba(245,166,35,.04)'
+                        : 'transparent',
                       transition: 'background var(--transition)',
                       flexWrap: 'wrap',
                       gap: '10px',
@@ -206,14 +262,14 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
                         id={`check-${p.id}`}
                         checked={isSelected}
                         onChange={() => handleToggleProduto(p)}
-                        style={{ marginTop: '3px', accentColor: 'var(--primary)', width: '15px', height: '15px', flexShrink: 0 }}
+                        style={{ marginTop: '3px', accentColor: tipo === 'ajuste' ? '#1971C2' : 'var(--primary)', width: '15px', height: '15px', flexShrink: 0 }}
                       />
                       <div>
                         <div style={{ fontSize: '13.5px', fontWeight: 500, color: 'var(--text-1)' }}>{p.nome}</div>
                         <div style={{ fontSize: '11.5px', color: 'var(--text-3)', marginTop: '2px' }}>
                           <span className="sku">{p.sku}</span>
                           {' · '}
-                          Estoque: <strong style={{ color: 'var(--text-2)' }}>{p.quantidade} {p.unidade}</strong>
+                          Estoque atual: <strong style={{ color: 'var(--text-2)' }}>{p.quantidade} {p.unidade}</strong>
                           {tipo === 'saida' && typeof p.valorUnitario === 'number' && (
                             <> · Preço Médio: <strong style={{ color: 'var(--text-2)' }}>R$ {p.valorUnitario.toFixed(2)}</strong></>
                           )}
@@ -250,29 +306,69 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
                           </div>
                         )}
 
-                        {/* Quantidade */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 0, width: '130px' }}>
+                        {/* Quantidade / Nova quantidade */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 0, width: '160px' }}>
+                          {/* Label prefix for ajuste */}
+                          {tipo === 'ajuste' && (
+                            <span style={{
+                              background: '#EBF4FF', border: '1.5px solid #BFD7FF',
+                              borderRight: 'none', borderRadius: '8px 0 0 8px',
+                              padding: '0 8px', height: '34px', display: 'flex', alignItems: 'center',
+                              fontSize: '11px', color: '#1971C2', fontWeight: 700, whiteSpace: 'nowrap',
+                            }}>
+                              {quantidadeLabel}
+                            </span>
+                          )}
                           <input
-                            type="number" min="1"
+                            type="number"
+                            min={tipo === 'saida' ? 1 : 0}
                             max={tipo === 'saida' ? p.quantidade : undefined}
                             value={selecionado.quantidade}
                             onChange={e => handleChangeQuantidade(p.id, Number(e.target.value))}
                             style={{
-                              height: '34px', border: '1.5px solid var(--border)', borderRight: 'none',
-                              borderRadius: '8px 0 0 8px', padding: '0 8px', fontSize: '13px',
+                              height: '34px',
+                              border: '1.5px solid var(--border)',
+                              borderRight: 'none',
+                              borderLeft: tipo === 'ajuste' ? 'none' : '1.5px solid var(--border)',
+                              borderRadius: tipo === 'ajuste' ? '0' : '8px 0 0 8px',
+                              padding: '0 8px', fontSize: '13px',
                               color: 'var(--text-1)', background: '#fff', outline: 'none',
                               fontFamily: 'DM Mono, monospace', width: '100%',
+                              borderColor: tipo === 'ajuste' ? '#BFD7FF' : 'var(--border)',
                             }}
                           />
                           <span style={{
-                            background: 'var(--surface-2)', border: '1.5px solid var(--border)',
+                            background: tipo === 'ajuste' ? '#EBF4FF' : 'var(--surface-2)',
+                            border: `1.5px solid ${tipo === 'ajuste' ? '#BFD7FF' : 'var(--border)'}`,
                             borderLeft: 'none', borderRadius: '0 8px 8px 0',
                             padding: '0 10px', height: '34px', display: 'flex', alignItems: 'center',
-                            fontSize: '11.5px', color: 'var(--text-3)', fontWeight: 600, whiteSpace: 'nowrap',
+                            fontSize: '11.5px',
+                            color: tipo === 'ajuste' ? '#1971C2' : 'var(--text-3)',
+                            fontWeight: 600, whiteSpace: 'nowrap',
                           }}>
                             {p.unidade}
                           </span>
                         </div>
+
+                        {/* Delta indicator for ajuste */}
+                        {tipo === 'ajuste' && (
+                          <div style={{
+                            fontSize: '11.5px',
+                            fontWeight: 700,
+                            fontFamily: 'DM Mono, monospace',
+                            color: selecionado.quantidade > p.quantidade
+                              ? 'var(--success)'
+                              : selecionado.quantidade < p.quantidade
+                                ? 'var(--danger)'
+                                : 'var(--text-3)',
+                            minWidth: '52px',
+                            textAlign: 'right',
+                          }}>
+                            {selecionado.quantidade > p.quantidade && `+${selecionado.quantidade - p.quantidade}`}
+                            {selecionado.quantidade < p.quantidade && `${selecionado.quantidade - p.quantidade}`}
+                            {selecionado.quantidade === p.quantidade && '±0'}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -287,17 +383,22 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
           <button
             type="submit"
             disabled={totalSelecionados === 0}
-            className="btn btn-primary d-flex align-items-center gap-2"
+            className="btn d-flex align-items-center gap-2"
             style={{
               height: '44px',
               padding: '0 32px',
               fontSize: '14px',
               fontWeight: 700,
               borderRadius: '999px',
+              background: tipo === 'ajuste' ? '#1971C2' : tipo === 'saida' ? 'var(--danger)' : 'var(--success)',
+              borderColor: tipo === 'ajuste' ? '#1971C2' : tipo === 'saida' ? 'var(--danger)' : 'var(--success)',
+              color: '#fff',
+              opacity: totalSelecionados === 0 ? 0.5 : 1,
+              cursor: totalSelecionados === 0 ? 'not-allowed' : 'pointer',
             }}
           >
             <IconCheck />
-            Confirmar {tipo === 'entrada' ? 'Entrada' : 'Saída'}
+            Confirmar {tipoLabel}
             {totalSelecionados > 0 && (
               <span style={{
                 background: 'rgba(255,255,255,.25)',
