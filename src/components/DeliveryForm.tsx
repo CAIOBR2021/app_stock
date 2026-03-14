@@ -1,9 +1,57 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Form, Row, Col, Button, Modal } from 'react-bootstrap';
-import { CalendarEventFill, Save, XCircle, Gear, Trash3Fill } from 'react-bootstrap-icons';
 import Select from 'react-select';
 import CreatableSelect from 'react-select/creatable';
 import type { StylesConfig } from 'react-select';
+
+// ── SVG ICONS ─────────────────────────────────────────────────────────────────
+
+const IconCalendar = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+    <line x1="16" y1="2" x2="16" y2="6"/>
+    <line x1="8"  y1="2" x2="8"  y2="6"/>
+    <line x1="3"  y1="10" x2="21" y2="10"/>
+  </svg>
+);
+
+const IconSave = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15">
+    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+    <polyline points="17 21 17 13 7 13 7 21"/>
+    <polyline points="7 3 7 8 15 8"/>
+  </svg>
+);
+
+const IconX = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15">
+    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+);
+
+const IconGear = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+  </svg>
+);
+
+const IconTrash = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+    <polyline points="3 6 5 6 21 6"/>
+    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+    <path d="M10 11v6"/><path d="M14 11v6"/>
+    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+  </svg>
+);
+
+const IconEmptyHistory = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="40" height="40" style={{ opacity: .3 }}>
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+  </svg>
+);
+
+// ── TYPES ─────────────────────────────────────────────────────────────────────
 
 interface DeliveryFormProps {
   onSave: (data: any) => void;
@@ -13,37 +61,37 @@ interface DeliveryFormProps {
   historicoEntregas?: any[];
 }
 
-const customFormStyles = `
-  .modern-modal .modal-content {
-    border-radius: 20px;
-    border: none;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-  }
-  .history-item-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-    background: #f8fafc;
-    border: 1px solid #edf2f7;
-    border-radius: 12px;
-    margin-bottom: 8px;
-    transition: background 0.2s;
-  }
-  .history-item-row:hover {
-    background: #f1f5f9;
-  }
-  .history-item-text {
-    font-weight: 500;
-    color: #334155;
-    font-size: 0.95rem;
-  }
-  .form-actions-container {
-    margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid #f1f5f9;
-  }
-`;
+// ── REACT-SELECT STYLES (aligned to design system) ────────────────────────────
+
+const selectStyles: StylesConfig = {
+  control: (base, state) => ({
+    ...base,
+    backgroundColor: state.isDisabled ? 'var(--surface-2)' : '#fff',
+    borderColor: state.isFocused ? 'var(--primary)' : 'var(--border)',
+    borderWidth: '1.5px',
+    minHeight: '38px',
+    borderRadius: '8px',
+    boxShadow: state.isFocused ? '0 0 0 3px rgba(245,166,35,.12)' : 'none',
+    fontFamily: 'DM Sans, sans-serif',
+    fontSize: '13.5px',
+    '&:hover': { borderColor: state.isFocused ? 'var(--primary)' : 'var(--border)' },
+  }),
+  placeholder: base => ({ ...base, color: 'var(--text-3)', fontSize: '13.5px' }),
+  singleValue: base => ({ ...base, color: 'var(--text-1)', fontSize: '13.5px' }),
+  option: (base, state) => ({
+    ...base,
+    backgroundColor: state.isSelected ? 'var(--primary)' : state.isFocused ? 'var(--primary-light)' : '#fff',
+    color: state.isSelected ? '#fff' : 'var(--text-1)',
+    fontSize: '13.5px',
+    fontFamily: 'DM Sans, sans-serif',
+    cursor: 'pointer',
+  }),
+  menu:       base => ({ ...base, zIndex: 9999, borderRadius: '8px', border: '1px solid var(--border)', boxShadow: '0 4px 12px rgba(0,0,0,.08)' }),
+  menuPortal: base => ({ ...base, zIndex: 9999 }),
+  indicatorSeparator: () => ({ display: 'none' }),
+};
+
+// ── COMPONENT ─────────────────────────────────────────────────────────────────
 
 export function DeliveryForm({
   onSave,
@@ -52,31 +100,24 @@ export function DeliveryForm({
   deliveryToEdit,
   historicoEntregas = [],
 }: DeliveryFormProps) {
-  const today = new Date();
-  const todayStr =
-    today.getFullYear() +
-    '-' +
-    String(today.getMonth() + 1).padStart(2, '0') +
-    '-' +
-    String(today.getDate()).padStart(2, '0');
+  // Today string
+  const todayStr = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  })();
 
   const [formData, setFormData] = useState({
-    localArmazenagem: '',
-    localObra: '',
-    produtoId: '',
-    itemNome: '',
-    itemQuantidade: 1,
-    responsavelNome: '',
-    responsavelTelefone: '',
+    localArmazenagem: '', localObra: '', produtoId: '',
+    itemNome: '', itemQuantidade: 1, responsavelNome: '', responsavelTelefone: '',
   });
-
-  const [data, setData] = useState(todayStr);
-  const [hora, setHora] = useState('08:00');
+  const [data,           setData]           = useState(todayStr);
+  const [hora,           setHora]           = useState('08:00');
   const [selectedOption, setSelectedOption] = useState<any>(null);
 
+  // Manage history modal state
   const [showManageModal, setShowManageModal] = useState(false);
-  const [manageField, setManageField] = useState<'origens' | 'destinos' | 'responsaveis' | null>(null);
-  const [hiddenOptions, setHiddenOptions] = useState<Record<string, string[]>>(() => {
+  const [manageField, setManageField]         = useState<'origens' | 'destinos' | 'responsaveis' | null>(null);
+  const [hiddenOptions, setHiddenOptions]     = useState<Record<string, string[]>>(() => {
     const saved = localStorage.getItem('deliveryHiddenOptions');
     return saved ? JSON.parse(saved) : { origens: [], destinos: [], responsaveis: [] };
   });
@@ -85,115 +126,82 @@ export function DeliveryForm({
     localStorage.setItem('deliveryHiddenOptions', JSON.stringify(hiddenOptions));
   }, [hiddenOptions]);
 
-  const handleRemoveOption = (field: 'origens' | 'destinos' | 'responsaveis', value: string) => {
-    setHiddenOptions((prev) => ({
-      ...prev,
-      [field]: [...(prev[field] || []), value],
-    }));
-  };
-
-  const handleClearAllOptions = (field: 'origens' | 'destinos' | 'responsaveis') => {
-    if (window.confirm('Deseja limpar todo o histórico visível deste campo?')) {
-      const currentVisible = sugestoes[field];
-      setHiddenOptions((prev) => ({
-        ...prev,
-        [field]: [...(prev[field] || []), ...currentVisible],
-      }));
-    }
-  };
-
+  // Phone formatter
   const formatPhone = (value: string) => {
     if (!value) return '';
-    let v = value.replace(/\D/g, '');
-    v = v.substring(0, 11);
+    let v = value.replace(/\D/g, '').substring(0, 11);
     v = v.replace(/^(\d{2})(\d)/g, '($1) $2');
     v = v.replace(/(\d)(\d{4})$/, '$1-$2');
     return v;
   };
 
+  // Build suggestion lists from history
   const sugestoes = useMemo(() => {
-    const origens = new Set<string>(['Almoxarifado Central', 'Pátio 04', 'Galpão Externo']);
-    const destinos = new Set<string>();
+    const origens     = new Set<string>(['Almoxarifado Central', 'Pátio 04', 'Galpão Externo']);
+    const destinos    = new Set<string>();
     const responsaveis = new Set<string>();
-    const telefones = new Set<string>();
-    const mapaTelefonePorNome: Record<string, string> = {};
+    const telefones   = new Set<string>();
+    const mapaTel: Record<string, string> = {};
 
-    historicoEntregas?.forEach((entrega) => {
-      if (entrega.localArmazenagem) origens.add(entrega.localArmazenagem);
-      if (entrega.localObra) destinos.add(entrega.localObra);
-      if (entrega.responsavelNome) {
-        responsaveis.add(entrega.responsavelNome);
-        if (entrega.responsavelTelefone) {
-          const telFormatado = formatPhone(entrega.responsavelTelefone);
-          mapaTelefonePorNome[entrega.responsavelNome.toLowerCase()] = telFormatado;
-          telefones.add(telFormatado);
+    historicoEntregas.forEach(e => {
+      if (e.localArmazenagem) origens.add(e.localArmazenagem);
+      if (e.localObra)        destinos.add(e.localObra);
+      if (e.responsavelNome) {
+        responsaveis.add(e.responsavelNome);
+        if (e.responsavelTelefone) {
+          const tel = formatPhone(e.responsavelTelefone);
+          mapaTel[e.responsavelNome.toLowerCase()] = tel;
+          telefones.add(tel);
         }
       }
     });
 
     return {
-      origens: Array.from(origens).filter(o => !hiddenOptions.origens?.includes(o)),
-      destinos: Array.from(destinos).filter(d => !hiddenOptions.destinos?.includes(d)),
+      origens:     Array.from(origens).filter(o => !hiddenOptions.origens?.includes(o)),
+      destinos:    Array.from(destinos).filter(d => !hiddenOptions.destinos?.includes(d)),
       responsaveis: Array.from(responsaveis).filter(r => !hiddenOptions.responsaveis?.includes(r)),
-      telefones: Array.from(telefones),
-      mapaTelefonePorNome,
+      telefones:   Array.from(telefones),
+      mapaTelefonePorNome: mapaTel,
     };
   }, [historicoEntregas, hiddenOptions]);
 
-  const options = useMemo(() => {
-    return produtosDisponiveis.map((p) => ({
+  // Product options for react-select
+  const options = useMemo(() =>
+    produtosDisponiveis.map(p => ({
       value: p.id,
       label: `${p.nome} (Saldo: ${p.quantidade} ${p.unidade} | SKU: ${p.sku})`,
       nomeProduto: p.nome,
       unidade: p.unidade,
       quantidade: p.quantidade,
-    }));
-  }, [produtosDisponiveis]);
+    })), [produtosDisponiveis]);
 
-  const customStyles: StylesConfig = {
-    control: (provided, state) => ({
-      ...provided,
-      backgroundColor: '#fff',
-      borderColor: state.isFocused ? '#86b7fe' : '#dee2e6',
-      minHeight: '38px',
-      borderRadius: '0.375rem',
-      boxShadow: state.isFocused ? '0 0 0 0.25rem rgba(13, 110, 253, 0.25)' : 'none',
-      '&:hover': { borderColor: state.isFocused ? '#86b7fe' : '#dee2e6' },
-    }),
-    menu: (provided) => ({ ...provided, zIndex: 9999 }),
-    menuPortal: (base) => ({ ...base, zIndex: 9999 })
-  };
-
+  // Populate form when editing
   useEffect(() => {
     if (deliveryToEdit) {
-      const dataObj = new Date(deliveryToEdit.dataHoraSolicitacao);
-      setData(`${dataObj.getFullYear()}-${String(dataObj.getMonth() + 1).padStart(2, '0')}-${String(dataObj.getDate()).padStart(2, '0')}`);
-      setHora(`${String(dataObj.getHours()).padStart(2, '0')}:${String(dataObj.getMinutes()).padStart(2, '0')}`);
+      const d = new Date(deliveryToEdit.dataHoraSolicitacao);
+      setData(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
+      setHora(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`);
       setFormData({
         localArmazenagem: deliveryToEdit.localArmazenagem || '',
-        localObra: deliveryToEdit.localObra || '',
-        produtoId: deliveryToEdit.produtoId,
-        itemNome: deliveryToEdit.itemNome || '',
-        itemQuantidade: deliveryToEdit.itemQuantidade,
-        responsavelNome: deliveryToEdit.responsavelNome || '',
+        localObra:        deliveryToEdit.localObra || '',
+        produtoId:        deliveryToEdit.produtoId,
+        itemNome:         deliveryToEdit.itemNome || '',
+        itemQuantidade:   deliveryToEdit.itemQuantidade,
+        responsavelNome:  deliveryToEdit.responsavelNome || '',
         responsavelTelefone: formatPhone(deliveryToEdit.responsavelTelefone || ''),
       });
-      const foundOption = options.find((opt) => opt.value === deliveryToEdit.produtoId);
-      setSelectedOption(foundOption || null);
+      setSelectedOption(options.find(o => o.value === deliveryToEdit.produtoId) || null);
     }
   }, [deliveryToEdit, options]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.produtoId || !selectedOption) {
-      alert('Por favor, selecione um produto da lista.');
-      return;
-    }
+    if (!selectedOption) { alert('Por favor, selecione um produto da lista.'); return; }
     const dataLocal = new Date(`${data}T${hora}:00`);
     onSave({
       ...formData,
       produtoId: selectedOption.value,
-      itemNome: selectedOption.nomeProduto,
+      itemNome:  selectedOption.nomeProduto,
       dataHoraSolicitacao: dataLocal.toISOString(),
     });
     if (!deliveryToEdit) {
@@ -202,240 +210,248 @@ export function DeliveryForm({
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<any>, field: string) => {
-    let valor = e.target.value;
-    if (field === 'responsavelTelefone') valor = formatPhone(valor);
-    setFormData({ ...formData, [field]: valor });
+  const handleResponsavelChange = (newValue: any) => {
+    const nome = newValue?.value || '';
+    const tel  = nome ? (sugestoes.mapaTelefonePorNome[nome.toLowerCase()] || formData.responsavelTelefone) : '';
+    setFormData(prev => ({ ...prev, responsavelNome: nome, responsavelTelefone: tel }));
   };
 
-  const handleResponsavelChange = (e: any) => {
-    const nomeDigitado = e.target.value || '';
-    
-    if (nomeDigitado.trim() === '') {
-      setFormData({
-        ...formData,
-        responsavelNome: '',
-        responsavelTelefone: '',
-      });
-      return;
-    }
-
-    const telefoneEncontrado = sugestoes.mapaTelefonePorNome[nomeDigitado.toLowerCase()];
-    setFormData({
-      ...formData,
-      responsavelNome: nomeDigitado,
-      responsavelTelefone: telefoneEncontrado || formData.responsavelTelefone,
-    });
-  };
-
-  const openManage = (field: 'origens' | 'destinos' | 'responsaveis') => {
-    setManageField(field);
-    setShowManageModal(true);
-  };
-
-  const origensOptions = sugestoes.origens.map(o => ({ value: o, label: o }));
-  const destinosOptions = sugestoes.destinos.map(d => ({ value: d, label: d }));
+  // Creatable select option arrays
+  const origensOptions     = sugestoes.origens.map(o => ({ value: o, label: o }));
+  const destinosOptions    = sugestoes.destinos.map(d => ({ value: d, label: d }));
   const responsaveisOptions = sugestoes.responsaveis.map(r => ({ value: r, label: r }));
-  const telefonesOptions = sugestoes.telefones.map(t => ({ value: t, label: t }));
+  const telefonesOptions   = sugestoes.telefones.map(t => ({ value: t, label: t }));
+
+  // History management helpers
+  const handleRemoveOption = (field: 'origens' | 'destinos' | 'responsaveis', value: string) => {
+    setHiddenOptions(prev => ({ ...prev, [field]: [...(prev[field] || []), value] }));
+  };
+  const handleClearAll = (field: 'origens' | 'destinos' | 'responsaveis') => {
+    setHiddenOptions(prev => ({ ...prev, [field]: [...(prev[field] || []), ...sugestoes[field]] }));
+  };
+
+  // Shared label row (label + gear button)
+  const FieldLabel = ({ label, field }: { label: string; field: 'origens' | 'destinos' | 'responsaveis' }) => (
+    <div className="d-flex justify-content-between align-items-center mb-1">
+      <label className="form-label mb-0">{label}</label>
+      <button
+        type="button"
+        className="btn-manage-discreet"
+        style={{ height: '24px', padding: '0 6px' }}
+        onClick={() => { setManageField(field); setShowManageModal(true); }}
+        title="Gerenciar histórico"
+      >
+        <IconGear />
+      </button>
+    </div>
+  );
 
   return (
     <>
-      <style>{customFormStyles}</style>
-      
-      <Form onSubmit={handleSubmit} className="p-4 border rounded bg-white shadow-sm d-flex flex-column h-100">
-        
-        <h5 className="mb-4 border-bottom pb-2 text-primary d-flex align-items-center fw-bold">
-          <CalendarEventFill className="me-2" />
-          {deliveryToEdit ? 'Editar Entrega' : 'Nova Entrega'}
-        </h5>
+      {/* ── FORM ── */}
+      <form
+        onSubmit={handleSubmit}
+        className="d-flex flex-column h-100"
+        style={{ padding: '20px', border: '1px solid var(--border)', borderRadius: 'var(--radius)', background: 'var(--surface)' }}
+      >
+        {/* Title */}
+        <div
+          className="d-flex align-items-center gap-2 mb-4"
+          style={{ paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}
+        >
+          <span style={{ color: 'var(--primary)' }}><IconCalendar /></span>
+          <h5 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-1)', letterSpacing: '-.3px' }}>
+            {deliveryToEdit ? 'Editar Entrega' : 'Nova Entrega'}
+          </h5>
+        </div>
 
-        <Row className="g-3 mb-3">
-          <Col xs={6}>
-            <Form.Label className="text-muted small fw-bold mb-1">Data</Form.Label>
-            <Form.Control type="date" value={data} onChange={(e) => setData(e.target.value)} required />
-          </Col>
-          <Col xs={6}>
-            <Form.Label className="text-muted small fw-bold mb-1">Hora</Form.Label>
-            <Form.Control type="time" value={hora} onChange={(e) => setHora(e.target.value)} required />
-          </Col>
-        </Row>
+        {/* Data + Hora */}
+        <div className="row g-3 mb-3">
+          <div className="col-6">
+            <label className="form-label">Data</label>
+            <input type="date" className="form-control" value={data} onChange={e => setData(e.target.value)} required />
+          </div>
+          <div className="col-6">
+            <label className="form-label">Hora</label>
+            <input type="time" className="form-control" value={hora} onChange={e => setHora(e.target.value)} required />
+          </div>
+        </div>
 
-        <Row className="g-3 mb-3">
-          <Col xs={12}>
-            <Form.Label className="text-muted small fw-bold mb-1">Produto *</Form.Label>
-            <Select
-              value={selectedOption}
-              onChange={(opt: any) => {
-                setSelectedOption(opt);
-                setFormData({ ...formData, produtoId: opt?.value || '', itemNome: opt?.nomeProduto || '' });
-              }}
-              options={options}
-              placeholder="Selecione o Produto..."
-              isClearable
-              styles={customStyles}
-              menuPortalTarget={document.body}
-            />
-          </Col>
-          
-          <Col xs={12}>
-            <Form.Label className="text-muted small fw-bold mb-1">Quantidade *</Form.Label>
-            <Form.Control
-              type="number"
-              min="0.01"
-              step="0.01"
-              value={formData.itemQuantidade}
-              onChange={(e) => setFormData({ ...formData, itemQuantidade: Number(e.target.value) })}
-              required
-            />
-          </Col>
-        </Row>
+        {/* Produto */}
+        <div className="mb-3">
+          <label className="form-label">Produto *</label>
+          <Select
+            value={selectedOption}
+            onChange={(opt: any) => {
+              setSelectedOption(opt);
+              setFormData(prev => ({ ...prev, produtoId: opt?.value || '', itemNome: opt?.nomeProduto || '' }));
+            }}
+            options={options}
+            placeholder="Selecione o Produto..."
+            isClearable
+            styles={selectStyles}
+            menuPortalTarget={document.body}
+          />
+        </div>
 
-        <Row className="g-3 mb-3">
-          <Col xs={12}>
-            <div className="d-flex justify-content-between align-items-center mb-1">
-              <Form.Label className="text-muted small fw-bold mb-0">Origem (Armazém) *</Form.Label>
-              <button type="button" className="btn-icon-subtle p-1 text-muted border-0 bg-transparent" onClick={() => openManage('origens')} title="Gerenciar histórico">
-                <Gear size={15} className="text-secondary" />
-              </button>
-            </div>
-            <CreatableSelect
-              isClearable
-              options={origensOptions}
-              value={formData.localArmazenagem ? { value: formData.localArmazenagem, label: formData.localArmazenagem } : null}
-              onChange={(newValue: any) => handleInputChange({ target: { value: newValue?.value || '' } } as any, 'localArmazenagem')}
-              placeholder="Selecione ou digite..."
-              formatCreateLabel={(inputValue: string) => `Usar "${inputValue}"`}
-              styles={customStyles}
-              menuPortalTarget={document.body}
-            />
-          </Col>
-          
-          <Col xs={12}>
-            <div className="d-flex justify-content-between align-items-center mb-1">
-              <Form.Label className="text-muted small fw-bold mb-0">Destino (Obra) *</Form.Label>
-              <button type="button" className="btn-icon-subtle p-1 text-muted border-0 bg-transparent" onClick={() => openManage('destinos')} title="Gerenciar histórico">
-                <Gear size={15} className="text-secondary" />
-              </button>
-            </div>
-            <CreatableSelect
-              isClearable
-              options={destinosOptions}
-              value={formData.localObra ? { value: formData.localObra, label: formData.localObra } : null}
-              onChange={(newValue: any) => handleInputChange({ target: { value: newValue?.value || '' } } as any, 'localObra')}
-              placeholder="Ex: Bloco A"
-              formatCreateLabel={(inputValue: string) => `Usar "${inputValue}"`}
-              styles={customStyles}
-              menuPortalTarget={document.body}
-            />
-          </Col>
-        </Row>
+        {/* Quantidade */}
+        <div className="mb-3">
+          <label className="form-label">Quantidade *</label>
+          <input
+            type="number" min="0.01" step="0.01" className="form-control"
+            value={formData.itemQuantidade}
+            onChange={e => setFormData(prev => ({ ...prev, itemQuantidade: Number(e.target.value) }))}
+            required
+          />
+        </div>
 
-        <Row className="g-3 mb-3">
-          <Col xs={12}>
-            <div className="d-flex justify-content-between align-items-center mb-1">
-              <Form.Label className="text-muted small fw-bold mb-0">Responsável</Form.Label>
-              <button type="button" className="btn-icon-subtle p-1 text-muted border-0 bg-transparent" onClick={() => openManage('responsaveis')} title="Gerenciar histórico">
-                <Gear size={15} className="text-secondary" />
-              </button>
-            </div>
-            <CreatableSelect
-              isClearable
-              options={responsaveisOptions}
-              value={formData.responsavelNome ? { value: formData.responsavelNome, label: formData.responsavelNome } : null}
-              onChange={(newValue: any) => handleResponsavelChange({ target: { value: newValue?.value || '' } } as any)}
-              placeholder="Nome de quem recebe"
-              formatCreateLabel={(inputValue: string) => `Usar "${inputValue}"`}
-              styles={customStyles}
-              menuPortalTarget={document.body}
-            />
-          </Col>
-          
-          <Col xs={12}>
-            <Form.Label className="text-muted small fw-bold mb-1">Telefone</Form.Label>
-            <CreatableSelect
-               isClearable
-               options={telefonesOptions}
-               value={formData.responsavelTelefone ? { value: formData.responsavelTelefone, label: formData.responsavelTelefone } : null}
-               onChange={(newValue: any) => handleInputChange({ target: { value: newValue?.value || '' } } as any, 'responsavelTelefone')}
-               placeholder="(00) 00000-0000"
-               formatCreateLabel={(inputValue: string) => `Usar "${inputValue}"`}
-               styles={customStyles}
-               menuPortalTarget={document.body}
-            />
-          </Col>
-        </Row>
+        {/* Origem */}
+        <div className="mb-3">
+          <FieldLabel label="Origem (Armazém) *" field="origens" />
+          <CreatableSelect
+            isClearable
+            options={origensOptions}
+            value={formData.localArmazenagem ? { value: formData.localArmazenagem, label: formData.localArmazenagem } : null}
+            onChange={(v: any) => setFormData(prev => ({ ...prev, localArmazenagem: v?.value || '' }))}
+            placeholder="Selecione ou digite..."
+            formatCreateLabel={(i: string) => `Usar "${i}"`}
+            styles={selectStyles}
+            menuPortalTarget={document.body}
+          />
+        </div>
 
-        <div className="form-actions-container d-flex flex-column gap-2 mt-auto">
-          <Button 
-            type="submit" 
-            variant="primary" 
-            className="w-100 py-2 fw-bold shadow-sm"
-          >
-            <Save className="me-2" /> {deliveryToEdit ? 'Salvar Alterações' : 'Agendar Entrega'}
-          </Button>
-          
+        {/* Destino */}
+        <div className="mb-3">
+          <FieldLabel label="Destino (Obra) *" field="destinos" />
+          <CreatableSelect
+            isClearable
+            options={destinosOptions}
+            value={formData.localObra ? { value: formData.localObra, label: formData.localObra } : null}
+            onChange={(v: any) => setFormData(prev => ({ ...prev, localObra: v?.value || '' }))}
+            placeholder="Ex: Bloco A"
+            formatCreateLabel={(i: string) => `Usar "${i}"`}
+            styles={selectStyles}
+            menuPortalTarget={document.body}
+          />
+        </div>
+
+        {/* Responsável */}
+        <div className="mb-3">
+          <FieldLabel label="Responsável" field="responsaveis" />
+          <CreatableSelect
+            isClearable
+            options={responsaveisOptions}
+            value={formData.responsavelNome ? { value: formData.responsavelNome, label: formData.responsavelNome } : null}
+            onChange={handleResponsavelChange}
+            placeholder="Nome de quem recebe"
+            formatCreateLabel={(i: string) => `Usar "${i}"`}
+            styles={selectStyles}
+            menuPortalTarget={document.body}
+          />
+        </div>
+
+        {/* Telefone */}
+        <div className="mb-3">
+          <label className="form-label">Telefone</label>
+          <CreatableSelect
+            isClearable
+            options={telefonesOptions}
+            value={formData.responsavelTelefone ? { value: formData.responsavelTelefone, label: formData.responsavelTelefone } : null}
+            onChange={(v: any) => setFormData(prev => ({ ...prev, responsavelTelefone: v?.value || '' }))}
+            placeholder="(00) 00000-0000"
+            formatCreateLabel={(i: string) => `Usar "${i}"`}
+            styles={selectStyles}
+            menuPortalTarget={document.body}
+          />
+        </div>
+
+        {/* Actions */}
+        <div
+          className="d-flex flex-column gap-2 mt-auto"
+          style={{ paddingTop: '16px', borderTop: '1px solid var(--border)', marginTop: '8px' }}
+        >
+          <button type="submit" className="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2" style={{ height: '42px', fontWeight: 700 }}>
+            <IconSave /> {deliveryToEdit ? 'Salvar Alterações' : 'Agendar Entrega'}
+          </button>
           {deliveryToEdit && (
-            <Button 
-              variant="outline-secondary" 
-              onClick={onCancelEdit} 
-              className="w-100 py-2"
-            >
-              <XCircle className="me-2" /> Cancelar
-            </Button>
+            <button type="button" className="btn btn-ghost w-100 d-flex align-items-center justify-content-center gap-2" onClick={onCancelEdit} style={{ height: '40px' }}>
+              <IconX /> Cancelar
+            </button>
           )}
         </div>
-      </Form>
+      </form>
 
-      <Modal 
-        show={showManageModal} 
-        onHide={() => setShowManageModal(false)} 
-        centered 
-        className="modern-modal"
-      >
-        <Modal.Header closeButton className="border-0 px-4 pt-4">
-          <Modal.Title className="fw-bold">Gerenciar Histórico</Modal.Title>
-        </Modal.Header>
-        <Modal.Body className="px-4 pb-2">
-          <p className="text-muted small mb-3">
-            Remova itens que você não deseja mais que apareçam como sugestão neste campo.
-          </p>
-          <div style={{ maxHeight: '45vh', overflowY: 'auto' }} className="pe-1">
-            {manageField && sugestoes[manageField].length > 0 ? (
-              sugestoes[manageField].map((item, idx) => (
-                <div key={idx} className="history-item-row">
-                  <span className="history-item-text">{item}</span>
-                  <Button 
-                    variant="link" 
-                    className="text-danger p-0"
-                    onClick={() => handleRemoveOption(manageField!, item)}
-                  >
-                    <Trash3Fill size={18} />
-                  </Button>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-5">
-                <div className="text-muted opacity-50 mb-2">
-                   <Gear size={40} className="text-secondary" />
-                </div>
-                <p className="text-muted small">Nenhum item encontrado no histórico.</p>
-              </div>
-            )}
-          </div>
-        </Modal.Body>
-        <Modal.Footer className="border-0 px-4 pb-4 justify-content-between">
-          <Button 
-            variant="link" 
-            className="text-danger text-decoration-none fw-bold p-0" 
-            onClick={() => handleClearAllOptions(manageField!)}
+      {/* ── MANAGE HISTORY MODAL ── */}
+      {showManageModal && (
+        <div
+          className="modal"
+          style={{ display: 'block', backgroundColor: 'rgba(0,0,0,.55)', zIndex: 9999 }}
+          onClick={() => setShowManageModal(false)}
+        >
+          <div
+            className="modal-dialog modal-dialog-centered"
+            style={{ maxWidth: '480px' }}
+            onClick={e => e.stopPropagation()}
           >
-            Limpar tudo
-          </Button>
-          <Button variant="primary" onClick={() => setShowManageModal(false)} className="px-4 rounded-pill fw-bold">
-            Concluído
-          </Button>
-        </Modal.Footer>
-      </Modal>
+            <div className="modal-content">
+              {/* Header */}
+              <div className="modal-header">
+                <h5 className="modal-title">Gerenciar Histórico</h5>
+                <button type="button" className="btn-close" onClick={() => setShowManageModal(false)} />
+              </div>
+
+              {/* Body */}
+              <div className="modal-body">
+                <p style={{ fontSize: '13px', color: 'var(--text-3)', marginBottom: '16px' }}>
+                  Remova itens que não deseja mais como sugestão neste campo.
+                </p>
+                <div style={{ maxHeight: '45vh', overflowY: 'auto', paddingRight: '4px' }}>
+                  {manageField && sugestoes[manageField].length > 0 ? (
+                    sugestoes[manageField].map((item, idx) => (
+                      <div key={idx} className="history-card-item">
+                        <span className="history-card-text">{item}</span>
+                        <button
+                          type="button"
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', padding: 0, display: 'flex', alignItems: 'center' }}
+                          onClick={() => handleRemoveOption(manageField!, item)}
+                          title="Remover"
+                        >
+                          <IconTrash />
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ textAlign: 'center', padding: '40px 16px', color: 'var(--text-3)' }}>
+                      <div style={{ marginBottom: '8px' }}><IconEmptyHistory /></div>
+                      <p style={{ fontSize: '13px', margin: 0 }}>Nenhum item no histórico deste campo.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="modal-footer" style={{ justifyContent: 'space-between' }}>
+                <button
+                  type="button"
+                  style={{ background: 'none', border: 'none', color: 'var(--danger)', fontWeight: 700, fontSize: '13.5px', cursor: 'pointer', padding: 0 }}
+                  onClick={() => manageField && handleClearAll(manageField)}
+                  disabled={!manageField || sugestoes[manageField]?.length === 0}
+                >
+                  Limpar tudo
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  style={{ borderRadius: '999px', padding: '0 24px', height: '38px', fontWeight: 700 }}
+                  onClick={() => setShowManageModal(false)}
+                >
+                  Concluído
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
