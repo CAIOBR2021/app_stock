@@ -862,10 +862,10 @@ export default function App() {
         fontSize: 8.5,
         textColor: TEXT1,
         cellPadding: { top: 5, bottom: 5, left: 4, right: 4 },
-        minCellHeight: 10,
+        valign: 'middle',
       },
       columnStyles: {
-        0: { cellWidth: 8,            halign: 'center', fontStyle: 'bold', fontSize: 8 },
+        0: { cellWidth: 8,            halign: 'center', fontStyle: 'bold', valign: 'middle' },
         1: { cellWidth: 10,           halign: 'center' },
         2: { cellWidth: 16,           halign: 'center' },
         3: { cellWidth: colLocal,     halign: 'left',   overflow: 'linebreak', fontSize: 8 },
@@ -895,13 +895,16 @@ export default function App() {
     const finalY = (doc as any).lastAutoTable.finalY || pageH - 40;
 
     // ── RESUMO POR OBRA ───────────────────────────────────────────────────────
+    // Só renderiza se couber na página atual (antes das assinaturas)
     const totaisPorLocal: Record<string, number> = {};
     selected.forEach(d => {
       totaisPorLocal[d.localObra] = (totaisPorLocal[d.localObra] || 0) + 1;
     });
     const locaisUnicos = Object.keys(totaisPorLocal);
+    const spaceForResume = pageH - finalY;
 
-    if (finalY + 26 < pageH - 20 && locaisUnicos.length > 0) {
+    if (spaceForResume >= 80 && locaisUnicos.length > 0) {
+      // Cabe na mesma página — desenha logo abaixo da tabela
       const resumY = finalY + 8;
       doc.setFillColor(...NAVY);
       doc.roundedRect(ML, resumY, CW, 14, 2, 2, 'F');
@@ -926,19 +929,42 @@ export default function App() {
     }
 
     // ── LINHAS DE ASSINATURA ──────────────────────────────────────────────────
-    const sigY = Math.min(finalY + 30, pageH - 30);
-    if (sigY + 10 < pageH - 18) {
-      doc.setDrawColor(...BORDER);
-      doc.setLineWidth(0.4);
-      const sigLineW = CW * 0.36;
-      doc.line(ML, sigY, ML + sigLineW, sigY);
-      doc.line(pageW - MR - sigLineW, sigY, pageW - MR, sigY);
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(...TEXT3);
-      doc.text('Assinatura do Motorista',  ML + sigLineW / 2,           sigY + 5, { align: 'center' });
-      doc.text('Assinatura do Solicitante', pageW - MR - sigLineW / 2,  sigY + 5, { align: 'center' });
+    // Espaço necessário: resumo (18mm) + gap (8mm) + assinatura (20mm) + rodapé (18mm) = 64mm
+    // Se não couber na página atual, adiciona nova página
+    const spaceNeeded = 80;  // margem generosa para não cortar última linha
+    const spaceLeft   = pageH - finalY;
+
+    if (spaceLeft < spaceNeeded) {
+      doc.addPage();
+      doc.setFillColor(...NAVY);
+      doc.rect(0, 0, pageW, 28, 'F');
+      doc.setFillColor(...AMBER);
+      doc.roundedRect(ML, 5, 18, 18, 2, 2, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.setTextColor(...WHITE);
+      doc.text('P', ML + 9, 17.5, { align: 'center' });
+      doc.setFontSize(11);
+      doc.setTextColor(...WHITE);
+      doc.text('Assinaturas — Programação de Entregas', ML + 22, 16);
     }
+
+    const sigPageH = doc.internal.pageSize.getHeight();
+    // Posição das assinaturas: sempre na metade inferior da página disponível
+    const sigY = spaceLeft < spaceNeeded
+      ? sigPageH - 50   // nova página: posição fixa confortável
+      : finalY + (spaceLeft > 80 ? 28 : 16); // mesma página: gap proporcional ao espaço
+
+    doc.setDrawColor(...BORDER);
+    doc.setLineWidth(0.4);
+    const sigLineW = CW * 0.36;
+    doc.line(ML, sigY, ML + sigLineW, sigY);
+    doc.line(pageW - MR - sigLineW, sigY, pageW - MR, sigY);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...TEXT3);
+    doc.text('Assinatura do Motorista',   ML + sigLineW / 2,          sigY + 5, { align: 'center' });
+    doc.text('Assinatura do Solicitante', pageW - MR - sigLineW / 2,  sigY + 5, { align: 'center' });
 
     // ── RODAPÉ EM TODAS AS PÁGINAS ────────────────────────────────────────────
     const totalPages = (doc as any).internal.getNumberOfPages();
