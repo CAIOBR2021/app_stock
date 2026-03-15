@@ -289,6 +289,18 @@ export default function App() {
 
   const debouncedQ = useDebounce(q, 500);
 
+  // 👇 COLE O CÓDIGO DO KEEP-ALIVE AQUI 👇
+  useEffect(() => {
+    // Ping para manter o backend (Koyeb) acordado enquanto o utilizador usa a app
+    const keepAliveInterval = setInterval(() => {
+      fetch('https://small-lanae-caiobezerra-b22ba187.koyeb.app/ping')
+        .catch(err => console.error('Falha no ping:', err));
+    }, 5 * 60 * 1000); // 5 minutos
+
+    return () => clearInterval(keepAliveInterval);
+  }, []);
+  // 👆 -------------------------------- 👆
+
   // ── DATA FETCH ───────────────────────────────────────────────────────────
 
   useEffect(() => {
