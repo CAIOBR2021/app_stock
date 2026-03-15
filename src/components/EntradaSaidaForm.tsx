@@ -71,10 +71,34 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
   }, [produtos]);
 
   const produtosDisponiveis = useMemo(() => {
+    // ── MULTI-WORD SEARCH ────────────────────────────────────────────────
+    // Split the query into individual tokens. ALL tokens must appear
+    // somewhere in the product's searchable fields (any order/position).
+    const tokens = busca
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(Boolean);
+
     return produtos.filter(p => {
-      const atendeBusca     = p.nome.toLowerCase().includes(busca.toLowerCase()) || p.sku.toLowerCase().includes(busca.toLowerCase());
+      const searchableText = [
+        p.nome,
+        p.sku,
+        p.categoria ?? '',
+        p.descricao ?? '',
+        p.localArmazenamento ?? '',
+        p.fornecedor ?? '',
+      ]
+        .join(' ')
+        .toLowerCase();
+
+      const atendeBusca =
+        tokens.length === 0 ||
+        tokens.every(token => searchableText.includes(token));
+
       const atendeEstoque   = tipo !== 'saida' || p.quantidade > 0;
       const atendeCategoria = !categoriaFiltro || p.categoria === categoriaFiltro;
+
       return atendeBusca && atendeEstoque && atendeCategoria;
     });
   }, [produtos, tipo, busca, categoriaFiltro]);
@@ -223,7 +247,7 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
                 <input
                   type="text"
                   className="form-control"
-                  placeholder="Buscar por nome ou SKU..."
+                  placeholder="Nome, SKU, categoria... (várias palavras)"
                   value={busca}
                   onChange={e => setBusca(e.target.value)}
                 />

@@ -949,19 +949,43 @@ export default function App() {
 
   const filteredProdutos = useMemo(() => {
     if (loadingAll) return produtos;
+
+    // ── MULTI-WORD SEARCH ────────────────────────────────────────────────
+    // Split the query into individual tokens (whitespace-separated).
+    // ALL tokens must appear somewhere in the product's searchable fields —
+    // order and position don't matter. E.g. "paraf 6mm zinc" will match a
+    // product whose combined text contains all three words independently.
     let result = allProdutos.filter((p) => {
-      const q2 = debouncedQ.trim().toLowerCase();
+      const tokens = debouncedQ
+        .trim()
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(Boolean);
+
+      const searchableText = [
+        p.nome,
+        p.sku,
+        p.categoria ?? '',
+        p.descricao ?? '',
+        p.localArmazenamento ?? '',
+        p.fornecedor ?? '',
+      ]
+        .join(' ')
+        .toLowerCase();
+
+      const matchesQuery =
+        tokens.length === 0 ||
+        tokens.every((token) => searchableText.includes(token));
+
       return (
-        (q2 === '' ||
-          p.nome.toLowerCase().includes(q2) ||
-          p.sku.toLowerCase().includes(q2) ||
-          p.categoria?.toLowerCase().includes(q2)) &&
+        matchesQuery &&
         (!categoriaFilter || p.categoria === categoriaFilter) &&
         (!mostrarAbaixoMin ||
           (p.estoqueMinimo != null && p.quantidade <= p.estoqueMinimo)) &&
         (!mostrarPrioritarios || p.prioritario)
       );
     });
+
     if (sortOrder)
       result = [...result].sort((a, b) =>
         sortOrder === 'asc'
@@ -1202,10 +1226,10 @@ export default function App() {
                       placeholder={
                         loadingAll
                           ? 'Carregando...'
-                          : 'Nome, SKU ou categoria...'
+                          : 'Nome, SKU, categoria... (várias palavras)'
                       }
                       value={q}
-                      onChange={(e) => setQ(e.target.value)}
+                      onChange={(e) => { setQ(e.target.value); setPage(1); }}
                       disabled={loadingAll}
                     />
                   </div>
@@ -1274,27 +1298,6 @@ export default function App() {
               <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div className="d-flex align-items-center gap-3">
                   <ValorTotalEstoque allProdutos={allProdutos} />
-                  {!loadingAll && (
-                    <span style={{ fontSize: '13px', color: 'var(--text-3)' }}>
-                      Exibindo{' '}
-                      <strong style={{ color: 'var(--text-1)' }}>
-                        {Math.min(
-                          (page - 1) * ITEMS_PER_PAGE + 1,
-                          filteredProdutos.length,
-                        )}
-                        –
-                        {Math.min(
-                          page * ITEMS_PER_PAGE,
-                          filteredProdutos.length,
-                        )}
-                      </strong>{' '}
-                      de{' '}
-                      <strong style={{ color: 'var(--text-1)' }}>
-                        {filteredProdutos.length}
-                      </strong>{' '}
-                      produtos
-                    </span>
-                  )}
                 </div>
                 <div className="d-flex gap-2">
                   <Relatorios
