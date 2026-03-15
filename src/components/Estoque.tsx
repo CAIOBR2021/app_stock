@@ -217,10 +217,10 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
     setLoading(true);
     try {
       const { jsPDF } = window.jspdf || { jsPDF: (window as any).jspdf.jsPDF };
-      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      const pageW = doc.internal.pageSize.getWidth();
-      const pageH = doc.internal.pageSize.getHeight();
-      const ML = 14, MR = 14, CW = pageW - ML - MR;
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      const pageW = doc.internal.pageSize.getWidth();  // 297 mm
+      const pageH = doc.internal.pageSize.getHeight(); // 210 mm
+      const ML = 14, MR = 14, CW = pageW - ML - MR;  // 269 mm úteis
 
       // ── PALETA ────────────────────────────────────────────────────────────
       const NAVY    = [26,  34,  56]  as [number,number,number];
@@ -329,7 +329,7 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
       y += 28;
 
       // ── KPI CARDS ─────────────────────────────────────────────────────────
-      const kpiW = (CW - 8) / 3;
+      const kpiW = (CW - 10) / 3;  // ~86 mm cada em landscape
       const kpiH = 22;
       const kpis = [
         { label: 'ITENS PARA REPOR', value: String(itemsToReorder.length), color: NAVY },
@@ -403,11 +403,13 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
         ];
       });
 
+      // Larguras calibradas para 269 mm úteis em landscape
+      // 22+80+30+25+25+30+17+22 = 251 — folga de 18 mm distribuída pelo autoTable
       (doc as any).autoTable({
         startY: y,
         margin: { left: ML, right: MR },
-        tableWidth: CW,
-        head: [['SKU', 'Produto', 'Categoria', 'Estoque Atual', 'Nível Crítico', 'Qtd. Necessária', 'Nível %', 'Status']],
+        tableWidth: 'auto',
+        head: [['SKU', 'Produto', 'Categoria', 'Estoque\nAtual', 'Nível\nCrítico', 'Qtd.\nNecessária', '%', 'Status']],
         body: tableBody,
         headStyles: {
           fillColor: NAVY,
@@ -416,6 +418,7 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
           fontSize: 8,
           cellPadding: { top: 5, bottom: 5, left: 4, right: 4 },
           halign: 'center',
+          minCellHeight: 12,
         },
         bodyStyles: {
           fontSize: 8.5,
@@ -423,14 +426,14 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
           cellPadding: { top: 5, bottom: 5, left: 4, right: 4 },
         },
         columnStyles: {
-          0: { cellWidth: 22, fontStyle: 'bold', halign: 'center' },
-          1: { cellWidth: 52 },
-          2: { cellWidth: 26, halign: 'center' },
-          3: { cellWidth: 22, halign: 'center' },
-          4: { cellWidth: 22, halign: 'center' },
-          5: { cellWidth: 24, halign: 'center', fontStyle: 'bold' },
-          6: { cellWidth: 14, halign: 'center' },
-          7: { cellWidth: 18, halign: 'center', fontStyle: 'bold' },
+          0: { cellWidth: 22,  fontStyle: 'bold', halign: 'center' },
+          1: { cellWidth: 80,  overflow: 'linebreak' },
+          2: { cellWidth: 30,  halign: 'center', overflow: 'linebreak' },
+          3: { cellWidth: 25,  halign: 'center' },
+          4: { cellWidth: 25,  halign: 'center' },
+          5: { cellWidth: 30,  halign: 'center', fontStyle: 'bold' },
+          6: { cellWidth: 17,  halign: 'center' },
+          7: { cellWidth: 22,  halign: 'center', fontStyle: 'bold' },
         },
         alternateRowStyles: { fillColor: LIGHT },
         styles: { lineColor: BORDER, lineWidth: 0.2, valign: 'middle' },
