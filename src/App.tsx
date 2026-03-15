@@ -877,7 +877,20 @@ export default function App() {
       alternateRowStyles: { fillColor: LIGHT },
       styles: { lineColor: BORDER, lineWidth: 0.2, valign: 'middle', overflow: 'linebreak' },
       didDrawCell: (data: any) => {
-        if (data.section === 'body' && data.column.index === 1) {
+        if (data.section !== 'body') return;
+
+        // Col 0 (#): desenha o número manualmente no centro exato da célula
+        if (data.column.index === 0) {
+          const cx = data.cell.x + data.cell.width  / 2;
+          const cy = data.cell.y + data.cell.height / 2 + 1.5; // +1.5 compensa baseline
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(8.5);
+          doc.setTextColor(...TEXT1);
+          doc.text(String(data.row.index + 1), cx, cy, { align: 'center' });
+        }
+
+        // Col 1 (OK): checkbox centralizado
+        if (data.column.index === 1) {
           const sz = 3.5;
           const bx = data.cell.x + (data.cell.width  - sz) / 2;
           const by = data.cell.y + (data.cell.height - sz) / 2;
@@ -890,6 +903,10 @@ export default function App() {
         if (data.section !== 'body') return;
         data.cell.styles.fillColor = data.row.index % 2 === 0 ? WHITE : LIGHT;
         data.cell.styles.valign    = 'middle';
+        // Col 0: apaga o texto — número é desenhado manualmente no didDrawCell
+        if (data.column.index === 0) {
+          data.cell.text = [''];
+        }
       },
     });
 
@@ -985,7 +1002,6 @@ export default function App() {
     // ── SALVAR ────────────────────────────────────────────────────────────────
     doc.save(`Programacao-Diaria-${dataRelatorio.replace(/\s+/g, '-')}.pdf`);
   };
-
   const handleReprogramDeliveries = async () => {
     if (!newDeliveryDate) {
       toast.error('Escolha uma nova data.');
