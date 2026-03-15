@@ -889,6 +889,7 @@ export default function App() {
       didParseCell: (data: any) => {
         if (data.section !== 'body') return;
         data.cell.styles.fillColor = data.row.index % 2 === 0 ? WHITE : LIGHT;
+        data.cell.styles.valign    = 'middle';
       },
     });
 
