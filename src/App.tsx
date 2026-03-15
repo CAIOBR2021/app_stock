@@ -676,7 +676,7 @@ export default function App() {
 
   // ── PDF ENTREGAS ─────────────────────────────────────────────────────────
 
-  // =============================================================================
+// =============================================================================
 // INSTRUÇÃO: Em src/App.tsx, localize a função handleGenerateDeliveryReport
 // e substitua TODO o bloco (do "const handleGenerateDeliveryReport" até o
 // "doc.save(...)" + "};" de fechamento) pelo código abaixo.
@@ -755,56 +755,67 @@ export default function App() {
 
     // ── TÍTULO ────────────────────────────────────────────────────────────────
     let y = 38;
-    doc.setFontSize(18);
+    doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...NAVY);
     doc.text('Programação de Caminhões — Entrega de Materiais', ML, y);
 
-    y += 4;
+    y += 3;
     doc.setFillColor(...AMBER);
-    doc.rect(ML, y, 60, 1.5, 'F');
-    y += 8;
+    doc.rect(ML, y, 55, 1.5, 'F');
+    y += 7;
 
     // ── CARD DE RESPONSÁVEL ───────────────────────────────────────────────────
     doc.setFillColor(...LIGHT);
     doc.setDrawColor(...BORDER);
     doc.roundedRect(ML, y, CW, 16, 3, 3, 'FD');
 
-    doc.setFontSize(7.5);
+    // Helper: trunca texto para caber na largura máxima
+    const clamp = (text: string, maxW: number) => {
+      doc.setFontSize(10); doc.setFont('helvetica', 'bold');
+      if (doc.getTextWidth(text) <= maxW) return text;
+      while (text.length > 3 && doc.getTextWidth(text + '...') > maxW) text = text.slice(0, -1);
+      return text + '...';
+    };
+
+    const col1W = CW * 0.35 - 12;
+    const col2W = CW * 0.27 - 12;
+
+    doc.setFontSize(7);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...TEXT3);
     doc.text('RESPONSÁVEL', ML + 6, y + 6);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...NAVY);
-    doc.text(responsavel, ML + 6, y + 12);
+    doc.text(clamp(responsavel, col1W), ML + 6, y + 13);
 
     doc.setDrawColor(...BORDER);
     doc.setLineWidth(0.4);
-    doc.line(ML + CW * 0.35, y + 3, ML + CW * 0.35, y + 13);
+    doc.line(ML + CW * 0.35, y + 2, ML + CW * 0.35, y + 14);
 
-    doc.setFontSize(7.5);
+    doc.setFontSize(7);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...TEXT3);
     doc.text('TELEFONE', ML + CW * 0.35 + 6, y + 6);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...NAVY);
-    doc.text(telefone, ML + CW * 0.35 + 6, y + 12);
+    doc.text(clamp(telefone, col2W), ML + CW * 0.35 + 6, y + 13);
 
     doc.setDrawColor(...BORDER);
-    doc.line(ML + CW * 0.62, y + 3, ML + CW * 0.62, y + 13);
+    doc.line(ML + CW * 0.62, y + 2, ML + CW * 0.62, y + 14);
 
-    doc.setFontSize(7.5);
+    doc.setFontSize(7);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...TEXT3);
     doc.text('TOTAL DE ENTREGAS', ML + CW * 0.62 + 6, y + 6);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...NAVY);
-    doc.text(`${selected.length} item(ns) programado(s)`, ML + CW * 0.62 + 6, y + 12);
+    doc.text(`${selected.length} item(ns) programado(s)`, ML + CW * 0.62 + 6, y + 13);
 
-    y += 22;
+    y += 20;
 
     // ── CABEÇALHO DA SEÇÃO ────────────────────────────────────────────────────
     doc.setFontSize(9);
@@ -816,13 +827,13 @@ export default function App() {
     y += 10;
 
     // ── TABELA ────────────────────────────────────────────────────────────────
-    // Fixas: N=10 OK=14 Hora=18 Qtd=16 Un=16 Armazém=32 → 106
-    // Local + Material dividem: 269 - 106 = 163 → Local=60, Material=103
-    const colLocal    = 60;
-    const colMaterial = CW - (10 + 14 + 18 + colLocal + 16 + 16 + 32);
+    // Fixas: N=8 OK=10 Hora=16 Qtd=14 Un=18 Armazém=28 → 94
+    // Local + Material = 269 - 94 = 175 → Local=52, Material=123
+    const colLocal    = 52;
+    const colMaterial = CW - (8 + 10 + 16 + colLocal + 14 + 18 + 28);
 
     const tableBody = selected.map((d, i) => [
-      String(i + 1).padStart(2, '0'),
+      String(i + 1),        // sem zero à esquerda — evita quebra de linha
       '',
       new Date(d.dataHoraSolicitacao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
       d.localObra,
@@ -836,41 +847,42 @@ export default function App() {
       startY: y,
       margin: { left: ML, right: MR },
       tableWidth: CW,
-      head: [['N.', 'OK', 'Hora', 'Local da Obra', 'Material', 'Qtd.', 'Un.', 'Armazém']],
+      head: [['#', '✓', 'Hora', 'Local da Obra', 'Material', 'Qtd.', 'Un.', 'Armazém']],
       body: tableBody,
       headStyles: {
         fillColor: NAVY,
         textColor: WHITE,
         fontStyle: 'bold',
         fontSize: 8,
-        cellPadding: { top: 5, bottom: 5, left: 4, right: 4 },
+        cellPadding: { top: 5, bottom: 5, left: 3, right: 3 },
         halign: 'center',
-        minCellHeight: 12,
+        minCellHeight: 10,
       },
       bodyStyles: {
         fontSize: 8.5,
         textColor: TEXT1,
-        cellPadding: { top: 6, bottom: 6, left: 5, right: 5 },
+        cellPadding: { top: 5, bottom: 5, left: 4, right: 4 },
+        minCellHeight: 10,
       },
       columnStyles: {
-        0: { cellWidth: 10,           halign: 'center', fontStyle: 'bold' },
-        1: { cellWidth: 14,           halign: 'center' },
-        2: { cellWidth: 18,           halign: 'center' },
-        3: { cellWidth: colLocal,     halign: 'left',   overflow: 'linebreak' },
+        0: { cellWidth: 8,            halign: 'center', fontStyle: 'bold', fontSize: 8 },
+        1: { cellWidth: 10,           halign: 'center' },
+        2: { cellWidth: 16,           halign: 'center' },
+        3: { cellWidth: colLocal,     halign: 'left',   overflow: 'linebreak', fontSize: 8 },
         4: { cellWidth: colMaterial,  halign: 'left',   overflow: 'linebreak', fontStyle: 'bold' },
-        5: { cellWidth: 16,           halign: 'center' },
-        6: { cellWidth: 16,           halign: 'center' },
-        7: { cellWidth: 32,           halign: 'center', overflow: 'linebreak' },
+        5: { cellWidth: 14,           halign: 'center' },
+        6: { cellWidth: 18,           halign: 'center', overflow: 'visible' },
+        7: { cellWidth: 28,           halign: 'center', overflow: 'linebreak', fontSize: 8 },
       },
       alternateRowStyles: { fillColor: LIGHT },
-      styles: { lineColor: BORDER, lineWidth: 0.2, valign: 'middle' },
+      styles: { lineColor: BORDER, lineWidth: 0.2, valign: 'middle', overflow: 'linebreak' },
       didDrawCell: (data: any) => {
         if (data.section === 'body' && data.column.index === 1) {
-          const sz = 4;
+          const sz = 3.5;
           const bx = data.cell.x + (data.cell.width  - sz) / 2;
           const by = data.cell.y + (data.cell.height - sz) / 2;
           doc.setDrawColor(...BORDER);
-          doc.setLineWidth(0.35);
+          doc.setLineWidth(0.3);
           doc.rect(bx, by, sz, sz);
         }
       },
