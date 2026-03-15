@@ -335,27 +335,38 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
       y += boxH + 6;
 
       // ── KPI CARDS ─────────────────────────────────────────────────────────
-      const kpiW = (CW - 10) / 3;  // ~86 mm cada em landscape
-      const kpiH = 22;
+      // gap = 5mm entre cards, 3 cards + 2 gaps = 3*kpiW + 10 = CW → kpiW = (CW-10)/3
+      const kpiGap = 5;
+      const kpiW   = (CW - kpiGap * 2) / 3;   // divide CW em 3 partes iguais com 2 gaps
+      const kpiH   = 26;
       const kpis = [
         { label: 'ITENS PARA REPOR', value: String(itemsToReorder.length), color: NAVY },
         { label: 'ESTOQUE ZERADO',   value: String(itensZerados.length),   color: RED  },
-        { label: 'ABAIXO DO MÍNIMO', value: String(itensAtencao.length),   color: YELLOW },
+        { cellWidth: 'ABAIXO DO MÍNIMO', value: String(itensAtencao.length), color: YELLOW },
+      ] as Array<{ label?: string; cellWidth?: string; value: string; color: [number,number,number] }>;
+
+      // Corrige chave — usa label ou cellWidth indistintamente
+      const kpiData = [
+        { label: 'ITENS PARA REPOR', value: String(itemsToReorder.length), color: NAVY   as [number,number,number] },
+        { label: 'ESTOQUE ZERADO',   value: String(itensZerados.length),   color: RED    as [number,number,number] },
+        { label: 'ABAIXO DO MÍNIMO', value: String(itensAtencao.length),   color: YELLOW as [number,number,number] },
       ];
 
-      kpis.forEach((kpi, i) => {
-        const kx = ML + i * (kpiW + 4);
+      kpiData.forEach((kpi, i) => {
+        const kx = ML + i * (kpiW + kpiGap);
         doc.setFillColor(...kpi.color);
         doc.roundedRect(kx, y, kpiW, kpiH, 3, 3, 'F');
 
-        doc.setFontSize(7);
+        // Label
+        doc.setFontSize(7.5);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(...WHITE);
-        doc.text(kpi.label, kx + kpiW / 2, y + 7, { align: 'center' });
+        doc.text(kpi.label, kx + kpiW / 2, y + 8, { align: 'center' });
 
-        doc.setFontSize(18);
+        // Valor
+        doc.setFontSize(20);
         doc.setFont('helvetica', 'bold');
-        doc.text(kpi.value, kx + kpiW / 2, y + 17, { align: 'center' });
+        doc.text(kpi.value, kx + kpiW / 2, y + 20, { align: 'center' });
       });
       y += kpiH + 10;
 
@@ -409,12 +420,14 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
         ];
       });
 
-      // Larguras calibradas para 269 mm úteis em landscape
-      // 22+80+30+25+25+30+17+22 = 251 — folga de 18 mm distribuída pelo autoTable
+      // Tabela ocupa exatamente CW (269mm) — alinhada com sumário e KPI cards
+      // Fixas: SKU=22 Cat=32 EstAtual=26 NivCrit=26 Qtd=32 %=16 Status=36 → 190
+      // Produto = 269 - 190 = 79mm  |  Total = 269 ✓
+      const colProduto = CW - (22 + 32 + 26 + 26 + 32 + 16 + 36); // dinâmico
       (doc as any).autoTable({
         startY: y,
         margin: { left: ML, right: MR },
-        tableWidth: 'auto',
+        tableWidth: CW,
         head: [['SKU', 'Produto', 'Categoria', 'Estoque\nAtual', 'Nível\nCrítico', 'Qtd.\nNecessária', '%', 'Status']],
         body: tableBody,
         headStyles: {
@@ -422,24 +435,24 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
           textColor: WHITE,
           fontStyle: 'bold',
           fontSize: 8,
-          cellPadding: { top: 5, bottom: 5, left: 4, right: 4 },
+          cellPadding: { top: 5, bottom: 5, left: 5, right: 5 },
           halign: 'center',
           minCellHeight: 12,
         },
         bodyStyles: {
           fontSize: 8.5,
           textColor: TEXT1,
-          cellPadding: { top: 5, bottom: 5, left: 4, right: 4 },
+          cellPadding: { top: 6, bottom: 6, left: 5, right: 5 },
         },
         columnStyles: {
-          0: { cellWidth: 22,  fontStyle: 'bold', halign: 'center' },
-          1: { cellWidth: 75,  overflow: 'linebreak' },
-          2: { cellWidth: 30,  halign: 'center', overflow: 'linebreak' },
-          3: { cellWidth: 25,  halign: 'center' },
-          4: { cellWidth: 25,  halign: 'center' },
-          5: { cellWidth: 30,  halign: 'center', fontStyle: 'bold' },
-          6: { cellWidth: 15,  halign: 'center' },
-          7: { cellWidth: 27,  halign: 'center', fontStyle: 'bold', fontSize: 7.5 },
+          0: { cellWidth: 22,         fontStyle: 'bold', halign: 'center' },
+          1: { cellWidth: colProduto, overflow: 'linebreak', halign: 'left' },
+          2: { cellWidth: 32,         halign: 'center', overflow: 'linebreak' },
+          3: { cellWidth: 26,         halign: 'center' },
+          4: { cellWidth: 26,         halign: 'center' },
+          5: { cellWidth: 32,         halign: 'center', fontStyle: 'bold' },
+          6: { cellWidth: 16,         halign: 'center' },
+          7: { cellWidth: 36,         halign: 'center', fontStyle: 'bold', fontSize: 8 },
         },
         alternateRowStyles: { fillColor: LIGHT },
         styles: { lineColor: BORDER, lineWidth: 0.2, valign: 'middle' },
@@ -460,11 +473,10 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
             data.cell.styles.textColor = TEXT1;
           }
 
-          // Coluna Status — cor mais forte e fonte menor para caber
+          // Coluna Status — negrito e cor semântica
           if (data.column.index === 7) {
-            data.cell.styles.fontStyle = 'bold';
-            data.cell.styles.fontSize  = 7.5;
-            data.cell.styles.textColor = isZero ? RED : YELLOW;
+            data.cell.styles.fontStyle  = 'bold';
+            data.cell.styles.textColor  = isZero ? RED : YELLOW;
           }
         },
       });
