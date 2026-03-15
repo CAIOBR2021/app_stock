@@ -217,18 +217,36 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
     setLoading(true);
     try {
       const { jsPDF } = window.jspdf || { jsPDF: (window as any).jspdf.jsPDF };
-      const doc = new jsPDF();
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const ML = 14, MR = 14, CW = pageW - ML - MR;
+
+      // ── PALETA ────────────────────────────────────────────────────────────
+      const NAVY    = [26,  34,  56]  as [number,number,number];
+      const AMBER   = [245,166,  35]  as [number,number,number];
+      const RED     = [192, 57,  43]  as [number,number,number];
+      const YELLOW  = [230,126,  34]  as [number,number,number];
+      const WHITE   = [255,255, 255]  as [number,number,number];
+      const LIGHT   = [244,246, 249]  as [number,number,number];
+      const BORDER  = [218,224, 232]  as [number,number,number];
+      const TEXT1   = [ 44, 62,  80]  as [number,number,number];
+      const TEXT3   = [127,140, 141]  as [number,number,number];
+      const RED_BG  = [255,235, 232]  as [number,number,number];
+      const YEL_BG  = [255,251, 235]  as [number,number,number];
+
+      // ── DADOS ─────────────────────────────────────────────────────────────
       const produtosParaRelatorio = categoriaSelecionada
         ? produtos.filter(p => p.categoria === categoriaSelecionada)
         : produtos;
+
       const itemsToReorder = produtosParaRelatorio
         .filter(p => p.estoqueMinimo !== undefined && p.quantidade < p.estoqueMinimo)
         .map(p => ({ ...p, qtdRepor: p.estoqueMinimo! - p.quantidade }));
 
       if (itemsToReorder.length === 0) {
         setModalInfo({
-          show: true,
-          title: 'Aviso',
+          show: true, title: 'Aviso',
           message: `Nenhum item precisa de reposição${categoriaSelecionada ? ` na categoria "${categoriaSelecionada}"` : ''}.`,
           type: 'info',
         });
@@ -236,23 +254,247 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
         return;
       }
 
-      const title = `Relatório de Reposição${categoriaSelecionada ? `: ${categoriaSelecionada}` : ''}`;
-      doc.text(title, 14, 22);
-      doc.setFontSize(10);
-      doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 14, 28);
-      (doc as any).autoTable({
-        startY: 35,
-        head: [['SKU', 'Nome', 'Estoque Atual', 'Estoque Mínimo', 'Qtd. a Repor']],
-        body: itemsToReorder.map(item => [
-          item.sku, item.nome,
+      const itensZerados  = itemsToReorder.filter(i => i.quantidade === 0);
+      const itensAtencao  = itemsToReorder.filter(i => i.quantidade > 0);
+      const now           = new Date();
+      const dataEmissao   = now.toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
+      const horaEmissao   = now.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+      const dataValidade  = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
+                              .toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
+
+      // ── CABEÇALHO CORPORATIVO ─────────────────────────────────────────────
+      doc.setFillColor(...NAVY);
+      doc.rect(0, 0, pageW, 28, 'F');
+
+      // Bloco ícone âmbar
+      doc.setFillColor(...AMBER);
+      doc.roundedRect(ML, 5, 18, 18, 2, 2, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.setTextColor(...WHITE);
+      doc.text('P', ML + 9, 17.5, { align: 'center' });
+
+      // Nome e subtítulo da empresa
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...WHITE);
+      doc.text('Portal de Suprimentos', ML + 22, 13);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(180, 195, 225);
+      doc.text('Sistema de Controle de Estoque', ML + 22, 20);
+
+      // Data/hora no canto direito
+      doc.setFontSize(8);
+      doc.setTextColor(180, 195, 225);
+      doc.text(`Emitido em: ${dataEmissao} às ${horaEmissao}`, pageW - MR, 13, { align: 'right' });
+      doc.text(`Válido até: ${dataValidade}`, pageW - MR, 20, { align: 'right' });
+
+      // ── TÍTULO DO DOCUMENTO ───────────────────────────────────────────────
+      let y = 38;
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...NAVY);
+      const titulo = categoriaSelecionada
+        ? `Relatório de Reposição — ${categoriaSelecionada}`
+        : 'Relatório de Reposição de Estoque';
+      doc.text(titulo, ML, y);
+
+      // Linha divisória âmbar sob o título
+      y += 4;
+      doc.setFillColor(...AMBER);
+      doc.rect(ML, y, 40, 1.5, 'F');
+      y += 8;
+
+      // ── SUMÁRIO EXECUTIVO ─────────────────────────────────────────────────
+      doc.setFillColor(...LIGHT);
+      doc.setDrawColor(...BORDER);
+      doc.roundedRect(ML, y, CW, 22, 3, 3, 'FD');
+
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...TEXT3);
+      doc.text('SUMÁRIO EXECUTIVO', ML + 5, y + 7);
+
+      doc.setFontSize(9.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...TEXT1);
+      const resumo =
+        `Este relatório identifica ${itemsToReorder.length} item(ns) abaixo do nível crítico de operação` +
+        (categoriaSelecionada ? ` na categoria "${categoriaSelecionada}"` : '') +
+        `. ${itensZerados.length > 0 ? `${itensZerados.length} item(ns) com estoque zerado requerem compra emergencial. ` : ''}` +
+        `Recomenda-se a emissão de ordem de compra até ${dataValidade} para evitar paralisação operacional.`;
+      const resumoLines = doc.splitTextToSize(resumo, CW - 10);
+      doc.text(resumoLines, ML + 5, y + 14);
+      y += 28;
+
+      // ── KPI CARDS ─────────────────────────────────────────────────────────
+      const kpiW = (CW - 8) / 3;
+      const kpiH = 22;
+      const kpis = [
+        { label: 'ITENS PARA REPOR', value: String(itemsToReorder.length), color: NAVY },
+        { label: 'ESTOQUE ZERADO',   value: String(itensZerados.length),   color: RED  },
+        { label: 'ABAIXO DO MÍNIMO', value: String(itensAtencao.length),   color: YELLOW },
+      ];
+
+      kpis.forEach((kpi, i) => {
+        const kx = ML + i * (kpiW + 4);
+        doc.setFillColor(...kpi.color);
+        doc.roundedRect(kx, y, kpiW, kpiH, 3, 3, 'F');
+
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...WHITE);
+        doc.text(kpi.label, kx + kpiW / 2, y + 7, { align: 'center' });
+
+        doc.setFontSize(18);
+        doc.setFont('helvetica', 'bold');
+        doc.text(kpi.value, kx + kpiW / 2, y + 17, { align: 'center' });
+      });
+      y += kpiH + 10;
+
+      // ── LEGENDA ───────────────────────────────────────────────────────────
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...TEXT3);
+      doc.text('LEGENDA:', ML, y);
+
+      const legendas: Array<{ cor: [number,number,number]; texto: string }> = [
+        { cor: RED,    texto: 'Zerado — compra urgente' },
+        { cor: YELLOW, texto: 'Abaixo do mínimo — programar reposição' },
+      ];
+      let lx = ML + 22;
+      legendas.forEach(leg => {
+        doc.setFillColor(...leg.cor);
+        doc.roundedRect(lx, y - 4, 3, 3.5, 0.5, 0.5, 'F');
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(...TEXT1);
+        doc.text(leg.texto, lx + 5, y);
+        lx += doc.getTextWidth(leg.texto) + 14;
+      });
+      y += 8;
+
+      // ── CABEÇALHO DA SEÇÃO DA TABELA ──────────────────────────────────────
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...NAVY);
+      doc.setFillColor(...AMBER);
+      doc.rect(ML, y, 3, 6, 'F');
+      doc.text('DETALHAMENTO POR ITEM', ML + 6, y + 5);
+      y += 10;
+
+      // ── TABELA PRINCIPAL ──────────────────────────────────────────────────
+      const tableBody = itemsToReorder.map(item => {
+        const isZero = item.quantidade === 0;
+        const pct    = item.estoqueMinimo! > 0
+          ? Math.round((item.quantidade / item.estoqueMinimo!) * 100)
+          : 0;
+        const status = isZero ? 'URGENTE' : 'ATENÇÃO';
+        return [
+          item.sku,
+          item.nome,
+          item.categoria || '—',
           `${item.quantidade} ${item.unidade}`,
           `${item.estoqueMinimo} ${item.unidade}`,
           `${item.qtdRepor} ${item.unidade}`,
-        ]),
-        headStyles: { fillColor: [245, 166, 35], textColor: 255 },
-        alternateRowStyles: { fillColor: [247, 248, 250] },
+          `${pct}%`,
+          status,
+        ];
       });
-      doc.save(`relatorio-reposicao-${categoriaSelecionada || 'geral'}-${Date.now()}.pdf`);
+
+      (doc as any).autoTable({
+        startY: y,
+        margin: { left: ML, right: MR },
+        tableWidth: CW,
+        head: [['SKU', 'Produto', 'Categoria', 'Estoque Atual', 'Nível Crítico', 'Qtd. Necessária', 'Nível %', 'Status']],
+        body: tableBody,
+        headStyles: {
+          fillColor: NAVY,
+          textColor: WHITE,
+          fontStyle: 'bold',
+          fontSize: 8,
+          cellPadding: { top: 5, bottom: 5, left: 4, right: 4 },
+          halign: 'center',
+        },
+        bodyStyles: {
+          fontSize: 8.5,
+          textColor: TEXT1,
+          cellPadding: { top: 5, bottom: 5, left: 4, right: 4 },
+        },
+        columnStyles: {
+          0: { cellWidth: 22, fontStyle: 'bold', halign: 'center' },
+          1: { cellWidth: 52 },
+          2: { cellWidth: 26, halign: 'center' },
+          3: { cellWidth: 22, halign: 'center' },
+          4: { cellWidth: 22, halign: 'center' },
+          5: { cellWidth: 24, halign: 'center', fontStyle: 'bold' },
+          6: { cellWidth: 14, halign: 'center' },
+          7: { cellWidth: 18, halign: 'center', fontStyle: 'bold' },
+        },
+        alternateRowStyles: { fillColor: LIGHT },
+        styles: { lineColor: BORDER, lineWidth: 0.2, valign: 'middle' },
+        didParseCell: (data: any) => {
+          if (data.section !== 'body') return;
+          const raw    = data.row.raw as string[];
+          const isZero = raw[3]?.startsWith('0 ');
+
+          // Cor de fundo por linha
+          if (isZero) {
+            data.cell.styles.fillColor = RED_BG;
+            data.cell.styles.textColor = RED;
+          } else if (data.row.index % 2 === 0) {
+            data.cell.styles.fillColor = WHITE;
+            data.cell.styles.textColor = TEXT1;
+          } else {
+            data.cell.styles.fillColor = YEL_BG;
+            data.cell.styles.textColor = TEXT1;
+          }
+
+          // Coluna Status — cor mais forte
+          if (data.column.index === 7) {
+            data.cell.styles.fontStyle = 'bold';
+            data.cell.styles.textColor = isZero ? RED : YELLOW;
+          }
+        },
+      });
+
+      const finalY = (doc as any).lastAutoTable.finalY || pageH - 40;
+
+      // ── LINHA DE ASSINATURAS ──────────────────────────────────────────────
+      const sigY = Math.min(finalY + 18, pageH - 35);
+      doc.setDrawColor(...BORDER);
+      doc.setLineWidth(0.4);
+      const sigLineW = CW * 0.38;
+      doc.line(ML, sigY, ML + sigLineW, sigY);
+      doc.line(pageW - MR - sigLineW, sigY, pageW - MR, sigY);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...TEXT3);
+      doc.text('Aprovação — Gestor de Suprimentos', ML + sigLineW / 2, sigY + 5, { align: 'center' });
+      doc.text('Aprovação — Diretoria', pageW - MR - sigLineW / 2, sigY + 5, { align: 'center' });
+
+      // ── RODAPÉ EM TODAS AS PÁGINAS ────────────────────────────────────────
+      const totalPages = (doc as any).internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFillColor(...NAVY);
+        doc.rect(0, pageH - 14, pageW, 14, 'F');
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(180, 195, 225);
+        doc.text('Portal de Suprimentos — Documento Confidencial — Uso Interno', ML, pageH - 6);
+        doc.setTextColor(...AMBER);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Página ${i} de ${totalPages}`, pageW - MR, pageH - 6, { align: 'right' });
+      }
+
+      // ── SALVAR ────────────────────────────────────────────────────────────
+      const slug = categoriaSelecionada
+        ? categoriaSelecionada.toLowerCase().replace(/\s+/g, '-')
+        : 'geral';
+      doc.save(`relatorio-reposicao-${slug}-${now.toISOString().slice(0, 10)}.pdf`);
+
     } catch (error) {
       console.error('Erro ao gerar relatório:', error);
       setModalInfo({ show: true, title: 'Erro', message: 'Ocorreu um erro ao gerar o relatório. Tente novamente.', type: 'error' });
@@ -378,7 +620,6 @@ export function ProdutoForm({
             <textarea className="form-control" placeholder="Detalhes do produto (opcional)" value={descricao} onChange={e => setDescricao(e.target.value)} style={{ height: '72px', resize: 'none' }} />
           </div>
 
-          {/* ── Categoria — label + engrenagem acima, input abaixo (padrão DeliveryForm) ── */}
           <div className="col-12 col-md-6">
             <div className="d-flex justify-content-between align-items-center mb-1">
               <label className="form-label mb-0">Categoria</label>
@@ -396,7 +637,6 @@ export function ProdutoForm({
             <datalist id="cats">{visibleCategorias.map(c => <option key={c} value={c} />)}</datalist>
           </div>
 
-          {/* ── Local de Armazenamento — label + engrenagem acima, input abaixo (padrão DeliveryForm) ── */}
           <div className="col-12 col-md-6">
             <div className="d-flex justify-content-between align-items-center mb-1">
               <label className="form-label mb-0">Local de Armazenamento</label>
