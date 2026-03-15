@@ -1126,7 +1126,7 @@ export default function App() {
               marginTop: '2px',
             }}
           >
-            Caio Vinícius
+            Caio Vinícius de Carvalho Bezerra
           </div>
         </div>
       </aside>
