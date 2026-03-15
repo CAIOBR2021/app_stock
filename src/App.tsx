@@ -676,191 +676,275 @@ export default function App() {
 
   // ── PDF ENTREGAS ─────────────────────────────────────────────────────────
 
+  // =============================================================================
+// INSTRUÇÃO: Em src/App.tsx, localize a função handleGenerateDeliveryReport
+// e substitua TODO o bloco (do "const handleGenerateDeliveryReport" até o
+// "doc.save(...)" + "};" de fechamento) pelo código abaixo.
+// =============================================================================
+
   const handleGenerateDeliveryReport = () => {
     if (selectedEntregaIds.length === 0) {
       toast.error('Selecione ao menos uma entrega.');
       return;
     }
+
     const selected = entregas
-      .filter(
-        (d) => selectedEntregaIds.includes(d.id) && !isDelivered(d.status),
-      )
+      .filter(d => selectedEntregaIds.includes(d.id) && !isDelivered(d.status))
       .sort(
         (a, b) =>
           new Date(a.dataHoraSolicitacao).getTime() -
           new Date(b.dataHoraSolicitacao).getTime(),
       );
+
     if (selected.length === 0) {
       toast.error('Nenhum item pendente selecionado.');
       return;
     }
-    const first = selected[0];
-    const reportDate = new Date(first.dataHoraSolicitacao).toLocaleDateString(
-      'pt-BR',
-    );
-    const responsavel = first.responsavelNome || 'Nao informado';
-    const telefone = first.responsavelTelefone
+
+    const first       = selected[0];
+    const responsavel = first.responsavelNome     || 'Não informado';
+    const telefone    = first.responsavelTelefone
       ? formatPhoneNumber(first.responsavelTelefone)
-      : 'Nao informado';
-    const DARK = [22, 34, 56] as [number, number, number];
-    const HEADER = [40, 58, 100] as [number, number, number];
-    const ACCENT = [60, 90, 160] as [number, number, number];
-    const GRAY = [110, 120, 140] as [number, number, number];
-    const LGRAY = [180, 188, 205] as [number, number, number];
-    const LIGHT = [246, 247, 250] as [number, number, number];
-    const BORDER = [215, 220, 232] as [number, number, number];
-    const WHITE = [255, 255, 255] as [number, number, number];
+      : 'Não informado';
+
+    // ── jsPDF setup ──────────────────────────────────────────────────────────
     const { jsPDF } = (window as any).jspdf;
-    const doc = new jsPDF('l', 'mm', 'a4');
-    const pageW = doc.internal.pageSize.getWidth();
-    const pageH = doc.internal.pageSize.getHeight();
-    const ML = 20,
-      MR = 20,
-      cw = pageW - ML - MR;
-    doc.setFillColor(...HEADER);
-    doc.rect(0, 0, pageW, 14, 'F');
+    const doc   = new jsPDF('l', 'mm', 'a4');
+    const pageW = doc.internal.pageSize.getWidth();   // 297 mm
+    const pageH = doc.internal.pageSize.getHeight();  // 210 mm
+    const ML = 14, MR = 14, CW = pageW - ML - MR;    // 269 mm úteis
+
+    // ── PALETA ────────────────────────────────────────────────────────────────
+    const NAVY   = [26,  34,  56]  as [number,number,number];
+    const AMBER  = [245,166,  35]  as [number,number,number];
+    const WHITE  = [255,255, 255]  as [number,number,number];
+    const LIGHT  = [244,246, 249]  as [number,number,number];
+    const BORDER = [218,224, 232]  as [number,number,number];
+    const TEXT1  = [ 44, 62,  80]  as [number,number,number];
+    const TEXT3  = [127,140, 141]  as [number,number,number];
+
+    const now           = new Date(first.dataHoraSolicitacao);
+    const dataRelatorio = now.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+    const dataEmissao   = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+    const horaEmissao   = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+    // ── CABEÇALHO CORPORATIVO ─────────────────────────────────────────────────
+    doc.setFillColor(...NAVY);
+    doc.rect(0, 0, pageW, 28, 'F');
+
+    doc.setFillColor(...AMBER);
+    doc.roundedRect(ML, 5, 18, 18, 2, 2, 'F');
     doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(...WHITE);
+    doc.text('P', ML + 9, 17.5, { align: 'center' });
+
     doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
     doc.setTextColor(...WHITE);
-    doc.text('Programacao de Caminhoes para Entrega de Materiais', ML, 9);
+    doc.text('Portal de Suprimentos', ML + 22, 13);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
     doc.setTextColor(180, 195, 225);
-    doc.text(
-      'Data:',
-      pageW - MR - doc.getTextWidth('Data:  ') - doc.getTextWidth(reportDate),
-      9,
-    );
+    doc.text('Sistema de Controle de Estoque', ML + 22, 20);
+
+    doc.setFontSize(8);
+    doc.setTextColor(180, 195, 225);
+    doc.text(`Emitido em: ${dataEmissao} às ${horaEmissao}`, pageW - MR, 13, { align: 'right' });
+    doc.text(`Data da programação: ${dataRelatorio}`,        pageW - MR, 20, { align: 'right' });
+
+    // ── TÍTULO ────────────────────────────────────────────────────────────────
+    let y = 38;
+    doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...WHITE);
-    doc.text(reportDate, pageW - MR, 9, { align: 'right' });
-    let y = 22;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.setTextColor(...GRAY);
-    doc.text('Responsavel:', ML, y);
-    let cx = ML + doc.getTextWidth('Responsavel:  ');
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...DARK);
-    doc.text(responsavel, cx, y);
-    cx += doc.getTextWidth(responsavel + '   ');
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...LGRAY);
-    doc.text('|', cx, y);
-    cx += doc.getTextWidth('|   ');
-    doc.setTextColor(...GRAY);
-    doc.text('Telefone:', cx, y);
-    cx += doc.getTextWidth('Telefone:  ');
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...DARK);
-    doc.text(telefone, cx, y);
+    doc.setTextColor(...NAVY);
+    doc.text('Programação de Caminhões — Entrega de Materiais', ML, y);
+
     y += 4;
-    doc.setDrawColor(...BORDER);
-    doc.setLineWidth(0.25);
-    doc.line(ML, y, ML + cw, y);
+    doc.setFillColor(...AMBER);
+    doc.rect(ML, y, 60, 1.5, 'F');
     y += 8;
-    doc.setFillColor(...ACCENT);
-    doc.rect(ML, y - 3.5, 3, 4.5, 'F');
+
+    // ── CARD DE RESPONSÁVEL ───────────────────────────────────────────────────
+    doc.setFillColor(...LIGHT);
+    doc.setDrawColor(...BORDER);
+    doc.roundedRect(ML, y, CW, 16, 3, 3, 'FD');
+
+    doc.setFontSize(7.5);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7);
-    doc.setTextColor(...ACCENT);
-    doc.text('PROGRAMACAO DE ENTREGAS', ML + 5, y);
-    y += 5;
-    const colRatios = [0.05, 0.07, 0.08, 0.285, 0.275, 0.065, 0.075, 0.1];
-    const colW = colRatios.map((r) => r * cw);
+    doc.setTextColor(...TEXT3);
+    doc.text('RESPONSÁVEL', ML + 6, y + 6);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...NAVY);
+    doc.text(responsavel, ML + 6, y + 12);
+
+    doc.setDrawColor(...BORDER);
+    doc.setLineWidth(0.4);
+    doc.line(ML + CW * 0.35, y + 3, ML + CW * 0.35, y + 13);
+
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...TEXT3);
+    doc.text('TELEFONE', ML + CW * 0.35 + 6, y + 6);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...NAVY);
+    doc.text(telefone, ML + CW * 0.35 + 6, y + 12);
+
+    doc.setDrawColor(...BORDER);
+    doc.line(ML + CW * 0.62, y + 3, ML + CW * 0.62, y + 13);
+
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...TEXT3);
+    doc.text('TOTAL DE ENTREGAS', ML + CW * 0.62 + 6, y + 6);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...NAVY);
+    doc.text(`${selected.length} item(ns) programado(s)`, ML + CW * 0.62 + 6, y + 12);
+
+    y += 22;
+
+    // ── CABEÇALHO DA SEÇÃO ────────────────────────────────────────────────────
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...NAVY);
+    doc.setFillColor(...AMBER);
+    doc.rect(ML, y, 3, 6, 'F');
+    doc.text('RELAÇÃO DE ENTREGAS', ML + 6, y + 5);
+    y += 10;
+
+    // ── TABELA ────────────────────────────────────────────────────────────────
+    // Fixas: N=10 OK=14 Hora=18 Qtd=16 Un=16 Armazém=32 → 106
+    // Local + Material dividem: 269 - 106 = 163 → Local=60, Material=103
+    const colLocal    = 60;
+    const colMaterial = CW - (10 + 14 + 18 + colLocal + 16 + 16 + 32);
+
+    const tableBody = selected.map((d, i) => [
+      String(i + 1).padStart(2, '0'),
+      '',
+      new Date(d.dataHoraSolicitacao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      d.localObra,
+      d.itemNome || '—',
+      String(d.itemQuantidade),
+      d.itemUnidadeMedida || '—',
+      d.localArmazenagem  || '—',
+    ]);
+
     (doc as any).autoTable({
-      head: [
-        [
-          'N.',
-          'OK',
-          'Hora',
-          'Local da Obra',
-          'Material',
-          'Qtd',
-          'Un',
-          'Armazem',
-        ],
-      ],
-      body: selected.map((d, i) => [
-        String(i + 1).padStart(2, '0'),
-        '',
-        new Date(d.dataHoraSolicitacao).toLocaleTimeString('pt-BR', {
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
-        d.localObra,
-        d.itemNome || '-',
-        String(d.itemQuantidade),
-        d.itemUnidadeMedida || '-',
-        d.localArmazenagem || '-',
-      ]),
       startY: y,
       margin: { left: ML, right: MR },
-      tableWidth: cw,
-      columnStyles: {
-        0: { cellWidth: colW[0], halign: 'center', fontStyle: 'bold' },
-        1: { cellWidth: colW[1], halign: 'center' },
-        2: { cellWidth: colW[2], halign: 'center' },
-        3: { cellWidth: colW[3], halign: 'left' },
-        4: { cellWidth: colW[4], halign: 'left', fontStyle: 'bold' },
-        5: { cellWidth: colW[5], halign: 'center' },
-        6: { cellWidth: colW[6], halign: 'center' },
-        7: { cellWidth: colW[7], halign: 'center' },
-      },
+      tableWidth: CW,
+      head: [['N.', 'OK', 'Hora', 'Local da Obra', 'Material', 'Qtd.', 'Un.', 'Armazém']],
+      body: tableBody,
       headStyles: {
-        fillColor: HEADER,
+        fillColor: NAVY,
         textColor: WHITE,
         fontStyle: 'bold',
         fontSize: 8,
         cellPadding: { top: 5, bottom: 5, left: 4, right: 4 },
         halign: 'center',
+        minCellHeight: 12,
       },
       bodyStyles: {
         fontSize: 8.5,
-        textColor: DARK,
-        cellPadding: { top: 6, bottom: 6, left: 4, right: 4 },
+        textColor: TEXT1,
+        cellPadding: { top: 6, bottom: 6, left: 5, right: 5 },
+      },
+      columnStyles: {
+        0: { cellWidth: 10,           halign: 'center', fontStyle: 'bold' },
+        1: { cellWidth: 14,           halign: 'center' },
+        2: { cellWidth: 18,           halign: 'center' },
+        3: { cellWidth: colLocal,     halign: 'left',   overflow: 'linebreak' },
+        4: { cellWidth: colMaterial,  halign: 'left',   overflow: 'linebreak', fontStyle: 'bold' },
+        5: { cellWidth: 16,           halign: 'center' },
+        6: { cellWidth: 16,           halign: 'center' },
+        7: { cellWidth: 32,           halign: 'center', overflow: 'linebreak' },
       },
       alternateRowStyles: { fillColor: LIGHT },
       styles: { lineColor: BORDER, lineWidth: 0.2, valign: 'middle' },
       didDrawCell: (data: any) => {
         if (data.section === 'body' && data.column.index === 1) {
-          const sz = 3.8,
-            bx = data.cell.x + (data.cell.width - sz) / 2,
-            by = data.cell.y + (data.cell.height - sz) / 2;
-          doc.setDrawColor(...LGRAY);
-          doc.setLineWidth(0.3);
+          const sz = 4;
+          const bx = data.cell.x + (data.cell.width  - sz) / 2;
+          const by = data.cell.y + (data.cell.height - sz) / 2;
+          doc.setDrawColor(...BORDER);
+          doc.setLineWidth(0.35);
           doc.rect(bx, by, sz, sz);
         }
       },
+      didParseCell: (data: any) => {
+        if (data.section !== 'body') return;
+        data.cell.styles.fillColor = data.row.index % 2 === 0 ? WHITE : LIGHT;
+      },
     });
-    const endY = (doc as any).lastAutoTable.finalY;
-    const sigY = endY + 22,
-      lineLen = cw * 0.36,
-      lX = ML,
-      rX = ML + cw - lineLen;
-    doc.setDrawColor(...GRAY);
-    doc.setLineWidth(0.4);
-    doc.line(lX, sigY, lX + lineLen, sigY);
-    doc.line(rX, sigY, rX + lineLen, sigY);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(...GRAY);
-    doc.text('Assinatura do Motorista', lX + lineLen / 2, sigY + 5, {
-      align: 'center',
+
+    const finalY = (doc as any).lastAutoTable.finalY || pageH - 40;
+
+    // ── RESUMO POR OBRA ───────────────────────────────────────────────────────
+    const totaisPorLocal: Record<string, number> = {};
+    selected.forEach(d => {
+      totaisPorLocal[d.localObra] = (totaisPorLocal[d.localObra] || 0) + 1;
     });
-    doc.text('Assinatura do Solicitante', rX + lineLen / 2, sigY + 5, {
-      align: 'center',
-    });
-    doc.setDrawColor(...BORDER);
-    doc.setLineWidth(0.3);
-    doc.line(ML, pageH - 12, ML + cw, pageH - 12);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(...GRAY);
-    doc.text('Sistema de Gestao de Entregas', pageW / 2, pageH - 7, {
-      align: 'center',
-    });
-    doc.save(`Programacao-Diaria-${reportDate.replace(/\//g, '-')}.pdf`);
+    const locaisUnicos = Object.keys(totaisPorLocal);
+
+    if (finalY + 26 < pageH - 20 && locaisUnicos.length > 0) {
+      const resumY = finalY + 8;
+      doc.setFillColor(...NAVY);
+      doc.roundedRect(ML, resumY, CW, 14, 2, 2, 'F');
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...AMBER);
+      doc.text('RESUMO POR OBRA:', ML + 5, resumY + 9);
+      let rx = ML + 46;
+      locaisUnicos.slice(0, 5).forEach(local => {
+        const count = totaisPorLocal[local];
+        doc.setTextColor(180, 195, 225);
+        doc.setFont('helvetica', 'normal');
+        const label = `${local}: `;
+        doc.text(label, rx, resumY + 9);
+        rx += doc.getTextWidth(label);
+        doc.setTextColor(...WHITE);
+        doc.setFont('helvetica', 'bold');
+        const val = `${count} item(ns)   `;
+        doc.text(val, rx, resumY + 9);
+        rx += doc.getTextWidth(val);
+      });
+    }
+
+    // ── LINHAS DE ASSINATURA ──────────────────────────────────────────────────
+    const sigY = Math.min(finalY + 30, pageH - 30);
+    if (sigY + 10 < pageH - 18) {
+      doc.setDrawColor(...BORDER);
+      doc.setLineWidth(0.4);
+      const sigLineW = CW * 0.36;
+      doc.line(ML, sigY, ML + sigLineW, sigY);
+      doc.line(pageW - MR - sigLineW, sigY, pageW - MR, sigY);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...TEXT3);
+      doc.text('Assinatura do Motorista',  ML + sigLineW / 2,           sigY + 5, { align: 'center' });
+      doc.text('Assinatura do Solicitante', pageW - MR - sigLineW / 2,  sigY + 5, { align: 'center' });
+    }
+
+    // ── RODAPÉ EM TODAS AS PÁGINAS ────────────────────────────────────────────
+    const totalPages = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFillColor(...NAVY);
+      doc.rect(0, pageH - 14, pageW, 14, 'F');
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(180, 195, 225);
+      doc.text('Portal de Suprimentos — Documento Confidencial — Uso Interno', ML, pageH - 6);
+      doc.setTextColor(...AMBER);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Página ${i} de ${totalPages}`, pageW - MR, pageH - 6, { align: 'right' });
+    }
+
+    // ── SALVAR ────────────────────────────────────────────────────────────────
+    doc.save(`Programacao-Diaria-${dataRelatorio.replace(/\s+/g, '-')}.pdf`);
   };
 
   const handleReprogramDeliveries = async () => {
