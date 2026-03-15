@@ -307,26 +307,32 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
       y += 8;
 
       // ── SUMÁRIO EXECUTIVO ─────────────────────────────────────────────────
-      doc.setFillColor(...LIGHT);
-      doc.setDrawColor(...BORDER);
-      doc.roundedRect(ML, y, CW, 22, 3, 3, 'FD');
-
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...TEXT3);
-      doc.text('SUMÁRIO EXECUTIVO', ML + 5, y + 7);
-
-      doc.setFontSize(9.5);
+      // Calcula o texto primeiro para dimensionar o box dinamicamente
+      doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
-      doc.setTextColor(...TEXT1);
       const resumo =
         `Este relatório identifica ${itemsToReorder.length} item(ns) abaixo do nível crítico de operação` +
         (categoriaSelecionada ? ` na categoria "${categoriaSelecionada}"` : '') +
         `. ${itensZerados.length > 0 ? `${itensZerados.length} item(ns) com estoque zerado requerem compra emergencial. ` : ''}` +
         `Recomenda-se a emissão de ordem de compra até ${dataValidade} para evitar paralisação operacional.`;
-      const resumoLines = doc.splitTextToSize(resumo, CW - 10);
+      const resumoLines = doc.splitTextToSize(resumo, CW - 12);
+      const resumoLineH = 5;
+      const boxH = 8 + 5 + resumoLines.length * resumoLineH + 5;
+
+      doc.setFillColor(...LIGHT);
+      doc.setDrawColor(...BORDER);
+      doc.roundedRect(ML, y, CW, boxH, 3, 3, 'FD');
+
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...TEXT3);
+      doc.text('SUMÁRIO EXECUTIVO', ML + 5, y + 8);
+
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...TEXT1);
       doc.text(resumoLines, ML + 5, y + 14);
-      y += 28;
+      y += boxH + 6;
 
       // ── KPI CARDS ─────────────────────────────────────────────────────────
       const kpiW = (CW - 10) / 3;  // ~86 mm cada em landscape
@@ -427,13 +433,13 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
         },
         columnStyles: {
           0: { cellWidth: 22,  fontStyle: 'bold', halign: 'center' },
-          1: { cellWidth: 80,  overflow: 'linebreak' },
+          1: { cellWidth: 75,  overflow: 'linebreak' },
           2: { cellWidth: 30,  halign: 'center', overflow: 'linebreak' },
           3: { cellWidth: 25,  halign: 'center' },
           4: { cellWidth: 25,  halign: 'center' },
           5: { cellWidth: 30,  halign: 'center', fontStyle: 'bold' },
-          6: { cellWidth: 17,  halign: 'center' },
-          7: { cellWidth: 22,  halign: 'center', fontStyle: 'bold' },
+          6: { cellWidth: 15,  halign: 'center' },
+          7: { cellWidth: 27,  halign: 'center', fontStyle: 'bold', fontSize: 7.5 },
         },
         alternateRowStyles: { fillColor: LIGHT },
         styles: { lineColor: BORDER, lineWidth: 0.2, valign: 'middle' },
@@ -454,9 +460,10 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
             data.cell.styles.textColor = TEXT1;
           }
 
-          // Coluna Status — cor mais forte
+          // Coluna Status — cor mais forte e fonte menor para caber
           if (data.column.index === 7) {
             data.cell.styles.fontStyle = 'bold';
+            data.cell.styles.fontSize  = 7.5;
             data.cell.styles.textColor = isZero ? RED : YELLOW;
           }
         },
