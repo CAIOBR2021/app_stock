@@ -339,11 +339,6 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
       const kpiGap = 5;
       const kpiW   = (CW - kpiGap * 2) / 3;   // divide CW em 3 partes iguais com 2 gaps
       const kpiH   = 26;
-      const kpis = [
-        { label: 'ITENS PARA REPOR', value: String(itemsToReorder.length), color: NAVY },
-        { label: 'ESTOQUE ZERADO',   value: String(itensZerados.length),   color: RED  },
-        { cellWidth: 'ABAIXO DO MÍNIMO', value: String(itensAtencao.length), color: YELLOW },
-      ] as Array<{ label?: string; cellWidth?: string; value: string; color: [number,number,number] }>;
 
       // Corrige chave — usa label ou cellWidth indistintamente
       const kpiData = [
