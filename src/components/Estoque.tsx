@@ -529,7 +529,10 @@ export function ProdutoForm({
   locais: string[];
   allProdutos?: Produto[];
 }) {
-  const [nome, setNome] = useState(produto?.nome ?? '');
+  // ── Nome — CreatableSelect ──
+  const [nomeOption, setNomeOption] = useState<any>(
+    produto?.nome ? { value: produto.nome, label: produto.nome } : null
+  );
   const [descricao, setDescricao] = useState(produto?.descricao ?? '');
   const [unidade, setUnidade] = useState(produto?.unidade ?? 'un');
   const [quantidade, setQuantidade] = useState<number>(produto?.quantidade ?? 0);
@@ -571,6 +574,11 @@ export function ProdutoForm({
   }, [allProdutos, hiddenOptions]);
 
   // Options for selects
+  const nomesOptions = useMemo(() => {
+    const set = new Set<string>();
+    allProdutos.forEach(p => { if (p.nome) set.add(p.nome); });
+    return Array.from(set).map(n => ({ value: n, label: n }));
+  }, [allProdutos]);
   const categoriasOptions = visibleCategorias.map(c => ({ value: c, label: c }));
   const locaisOptions = visibleLocais.map(l => ({ value: l, label: l }));
   const fornecedoresOptions = fornecedoresList.map(f => ({ value: f, label: f }));
@@ -622,9 +630,10 @@ export function ProdutoForm({
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!nome.trim()) return;
+    const nomeVal = nomeOption?.value?.trim() || '';
+    if (!nomeVal) return;
     const baseData = {
-      nome: nome.trim(), descricao: descricao.trim(),
+      nome: nomeVal, descricao: descricao.trim(),
       categoria: categoriaOption?.value || undefined,
       unidade, estoqueMinimo,
       localArmazenamento: localOption?.value || undefined,
@@ -646,12 +655,15 @@ export function ProdutoForm({
           )}
           <div className={produto ? 'col-md-8' : 'col-md-12'}>
             <label className="form-label">Nome *</label>
-            <input
-              className="form-control"
+            <CreatableSelect
+              isClearable
+              options={nomesOptions}
+              value={nomeOption}
+              onChange={(opt: any) => setNomeOption(opt)}
               placeholder="Ex: Parafuso Sextavado"
-              value={nome}
-              onChange={e => setNome(e.target.value)}
-              required
+              formatCreateLabel={(i: string) => `Criar "${i}"`}
+              styles={selectStyles}
+              menuPortalTarget={document.body}
             />
           </div>
 
