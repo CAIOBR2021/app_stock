@@ -1,10 +1,53 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import Select from 'react-select';
+import CreatableSelect from 'react-select/creatable';
+import type { StylesConfig } from 'react-select';
 import type { Produto, Movimentacao, TipoMov, UUID } from '../types';
 import { API_URL } from '../constants';
 import { ModalComponent, PasswordEntryModal, GerenciarHistoricoModal } from './Shared';
 import { StockLevelBar } from './MetricCards';
 
-// ── SVG ICONS (inline, matching reference HTML) ──────────────────────────────
+// ── REACT-SELECT STYLES (aligned to design system) ────────────────────────────
+
+const selectStyles: StylesConfig = {
+  control: (base, state) => ({
+    ...base,
+    backgroundColor: state.isDisabled ? 'var(--surface-2)' : '#fff',
+    borderColor: state.isFocused ? 'var(--primary)' : 'var(--border)',
+    borderWidth: '1.5px',
+    minHeight: '38px',
+    borderRadius: '8px',
+    boxShadow: state.isFocused ? '0 0 0 3px rgba(245,166,35,.12)' : 'none',
+    fontFamily: 'DM Sans, sans-serif',
+    fontSize: '13.5px',
+    '&:hover': { borderColor: state.isFocused ? 'var(--primary)' : 'var(--border)' },
+  }),
+  placeholder: base => ({ ...base, color: 'var(--text-3)', fontSize: '13.5px' }),
+  singleValue: base => ({ ...base, color: 'var(--text-1)', fontSize: '13.5px' }),
+  option: (base, state) => ({
+    ...base,
+    backgroundColor: state.isSelected
+      ? 'var(--primary)'
+      : state.isFocused
+      ? 'var(--primary-light)'
+      : '#fff',
+    color: state.isSelected ? '#fff' : 'var(--text-1)',
+    fontSize: '13.5px',
+    fontFamily: 'DM Sans, sans-serif',
+    cursor: 'pointer',
+  }),
+  menu: base => ({
+    ...base,
+    zIndex: 9999,
+    borderRadius: '8px',
+    border: '1px solid var(--border)',
+    boxShadow: '0 4px 12px rgba(0,0,0,.08)',
+  }),
+  menuPortal: base => ({ ...base, zIndex: 9999 }),
+  indicatorSeparator: () => ({ display: 'none' }),
+};
+
+// ── SVG ICONS ─────────────────────────────────────────────────────────────────
 
 const IconEye = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15">
@@ -78,8 +121,7 @@ const IconFlag = ({ filled, active }: { filled?: boolean; active?: boolean }) =>
     fill={filled || active ? 'currentColor' : 'none'}
     stroke="currentColor"
     strokeWidth="2"
-    width="16"
-    height="16"
+    width="16" height="16"
     style={{ color: active ? 'var(--danger)' : 'var(--text-3)', opacity: active ? 1 : 0.3, transition: 'all .3s' }}
   >
     <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/>
@@ -218,11 +260,10 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
     try {
       const { jsPDF } = window.jspdf || { jsPDF: (window as any).jspdf.jsPDF };
       const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-      const pageW = doc.internal.pageSize.getWidth();  // 297 mm
-      const pageH = doc.internal.pageSize.getHeight(); // 210 mm
-      const ML = 14, MR = 14, CW = pageW - ML - MR;  // 269 mm úteis
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const ML = 14, MR = 14, CW = pageW - ML - MR;
 
-      // ── PALETA ────────────────────────────────────────────────────────────
       const NAVY    = [26,  34,  56]  as [number,number,number];
       const AMBER   = [245,166,  35]  as [number,number,number];
       const RED     = [192, 57,  43]  as [number,number,number];
@@ -235,7 +276,6 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
       const RED_BG  = [255,235, 232]  as [number,number,number];
       const YEL_BG  = [255,251, 235]  as [number,number,number];
 
-      // ── DADOS ─────────────────────────────────────────────────────────────
       const produtosParaRelatorio = categoriaSelecionada
         ? produtos.filter(p => p.categoria === categoriaSelecionada)
         : produtos;
@@ -254,27 +294,22 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
         return;
       }
 
-      const itensZerados  = itemsToReorder.filter(i => i.quantidade === 0);
-      const itensAtencao  = itemsToReorder.filter(i => i.quantidade > 0);
-      const now           = new Date();
-      const dataEmissao   = now.toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
-      const horaEmissao   = now.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
-      const dataValidade  = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
-                              .toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
+      const itensZerados = itemsToReorder.filter(i => i.quantidade === 0);
+      const itensAtencao = itemsToReorder.filter(i => i.quantidade > 0);
+      const now = new Date();
+      const dataEmissao = now.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+      const horaEmissao = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      const dataValidade = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
+        .toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
 
-      // ── CABEÇALHO CORPORATIVO ─────────────────────────────────────────────
       doc.setFillColor(...NAVY);
       doc.rect(0, 0, pageW, 28, 'F');
-
-      // Bloco ícone âmbar
       doc.setFillColor(...AMBER);
       doc.roundedRect(ML, 5, 18, 18, 2, 2, 'F');
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(14);
       doc.setTextColor(...WHITE);
       doc.text('P', ML + 9, 17.5, { align: 'center' });
-
-      // Nome e subtítulo da empresa
       doc.setFontSize(13);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...WHITE);
@@ -283,14 +318,11 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(180, 195, 225);
       doc.text('Sistema de Controle de Estoque', ML + 22, 20);
-
-      // Data/hora no canto direito
       doc.setFontSize(8);
       doc.setTextColor(180, 195, 225);
       doc.text(`Emitido em: ${dataEmissao} às ${horaEmissao}`, pageW - MR, 13, { align: 'right' });
       doc.text(`Válido até: ${dataValidade}`, pageW - MR, 20, { align: 'right' });
 
-      // ── TÍTULO DO DOCUMENTO ───────────────────────────────────────────────
       let y = 38;
       doc.setFontSize(18);
       doc.setFont('helvetica', 'bold');
@@ -299,15 +331,11 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
         ? `Relatório de Reposição — ${categoriaSelecionada}`
         : 'Relatório de Reposição de Estoque';
       doc.text(titulo, ML, y);
-
-      // Linha divisória âmbar sob o título
       y += 4;
       doc.setFillColor(...AMBER);
       doc.rect(ML, y, 40, 1.5, 'F');
       y += 8;
 
-      // ── SUMÁRIO EXECUTIVO ─────────────────────────────────────────────────
-      // Calcula o texto primeiro para dimensionar o box dinamicamente
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
       const resumo =
@@ -322,28 +350,22 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
       doc.setFillColor(...LIGHT);
       doc.setDrawColor(...BORDER);
       doc.roundedRect(ML, y, CW, boxH, 3, 3, 'FD');
-
       doc.setFontSize(7.5);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...TEXT3);
       doc.text('SUMÁRIO EXECUTIVO', ML + 5, y + 8);
-
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...TEXT1);
       doc.text(resumoLines, ML + 5, y + 14);
       y += boxH + 6;
 
-      // ── KPI CARDS ─────────────────────────────────────────────────────────
-      // gap = 5mm entre cards, 3 cards + 2 gaps = 3*kpiW + 10 = CW → kpiW = (CW-10)/3
       const kpiGap = 5;
-      const kpiW   = (CW - kpiGap * 2) / 3;   // divide CW em 3 partes iguais com 2 gaps
-      const kpiH   = 26;
-
-      // Corrige chave — usa label ou cellWidth indistintamente
+      const kpiW = (CW - kpiGap * 2) / 3;
+      const kpiH = 26;
       const kpiData = [
-        { label: 'ITENS PARA REPOR', value: String(itemsToReorder.length), color: NAVY   as [number,number,number] },
-        { label: 'ESTOQUE ZERADO',   value: String(itensZerados.length),   color: RED    as [number,number,number] },
+        { label: 'ITENS PARA REPOR', value: String(itemsToReorder.length), color: NAVY as [number,number,number] },
+        { label: 'ESTOQUE ZERADO',   value: String(itensZerados.length),   color: RED as [number,number,number] },
         { label: 'ABAIXO DO MÍNIMO', value: String(itensAtencao.length),   color: YELLOW as [number,number,number] },
       ];
 
@@ -351,21 +373,16 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
         const kx = ML + i * (kpiW + kpiGap);
         doc.setFillColor(...kpi.color);
         doc.roundedRect(kx, y, kpiW, kpiH, 3, 3, 'F');
-
-        // Label
         doc.setFontSize(7.5);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(...WHITE);
         doc.text(kpi.label, kx + kpiW / 2, y + 8, { align: 'center' });
-
-        // Valor
         doc.setFontSize(20);
         doc.setFont('helvetica', 'bold');
         doc.text(kpi.value, kx + kpiW / 2, y + 20, { align: 'center' });
       });
       y += kpiH + 10;
 
-      // ── LEGENDA ───────────────────────────────────────────────────────────
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...TEXT3);
@@ -387,7 +404,6 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
       });
       y += 8;
 
-      // ── CABEÇALHO DA SEÇÃO DA TABELA ──────────────────────────────────────
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...NAVY);
@@ -396,89 +412,48 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
       doc.text('DETALHAMENTO POR ITEM', ML + 6, y + 5);
       y += 10;
 
-      // ── TABELA PRINCIPAL ──────────────────────────────────────────────────
       const tableBody = itemsToReorder.map(item => {
         const isZero = item.quantidade === 0;
-        const pct    = item.estoqueMinimo! > 0
-          ? Math.round((item.quantidade / item.estoqueMinimo!) * 100)
-          : 0;
+        const pct = item.estoqueMinimo! > 0 ? Math.round((item.quantidade / item.estoqueMinimo!) * 100) : 0;
         const status = isZero ? 'URGENTE' : 'ATENÇÃO';
-        return [
-          item.sku,
-          item.nome,
-          item.categoria || '—',
-          `${item.quantidade} ${item.unidade}`,
-          `${item.estoqueMinimo} ${item.unidade}`,
-          `${item.qtdRepor} ${item.unidade}`,
-          `${pct}%`,
-          status,
-        ];
+        return [item.sku, item.nome, item.categoria || '—', `${item.quantidade} ${item.unidade}`,
+          `${item.estoqueMinimo} ${item.unidade}`, `${item.qtdRepor} ${item.unidade}`, `${pct}%`, status];
       });
 
-      // Tabela ocupa exatamente CW (269mm) — alinhada com sumário e KPI cards
-      // Fixas: SKU=22 Cat=32 EstAtual=26 NivCrit=26 Qtd=32 %=16 Status=36 → 190
-      // Produto = 269 - 190 = 79mm  |  Total = 269 ✓
-      const colProduto = CW - (22 + 32 + 26 + 26 + 32 + 16 + 36); // dinâmico
+      const colProduto = CW - (22 + 32 + 26 + 26 + 32 + 16 + 36);
       (doc as any).autoTable({
         startY: y,
         margin: { left: ML, right: MR },
         tableWidth: CW,
         head: [['SKU', 'Produto', 'Categoria', 'Estoque\nAtual', 'Nível\nCrítico', 'Qtd.\nNecessária', '%', 'Status']],
         body: tableBody,
-        headStyles: {
-          fillColor: NAVY,
-          textColor: WHITE,
-          fontStyle: 'bold',
-          fontSize: 8,
-          cellPadding: { top: 5, bottom: 5, left: 5, right: 5 },
-          halign: 'center',
-          minCellHeight: 12,
-        },
-        bodyStyles: {
-          fontSize: 8.5,
-          textColor: TEXT1,
-          cellPadding: { top: 6, bottom: 6, left: 5, right: 5 },
-        },
+        headStyles: { fillColor: NAVY, textColor: WHITE, fontStyle: 'bold', fontSize: 8,
+          cellPadding: { top: 5, bottom: 5, left: 5, right: 5 }, halign: 'center', minCellHeight: 12 },
+        bodyStyles: { fontSize: 8.5, textColor: TEXT1, cellPadding: { top: 6, bottom: 6, left: 5, right: 5 } },
         columnStyles: {
-          0: { cellWidth: 22,         fontStyle: 'bold', halign: 'center' },
+          0: { cellWidth: 22, fontStyle: 'bold', halign: 'center' },
           1: { cellWidth: colProduto, overflow: 'linebreak', halign: 'left' },
-          2: { cellWidth: 32,         halign: 'center', overflow: 'linebreak' },
-          3: { cellWidth: 26,         halign: 'center' },
-          4: { cellWidth: 26,         halign: 'center' },
-          5: { cellWidth: 32,         halign: 'center', fontStyle: 'bold' },
-          6: { cellWidth: 16,         halign: 'center' },
-          7: { cellWidth: 36,         halign: 'center', fontStyle: 'bold', fontSize: 8 },
+          2: { cellWidth: 32, halign: 'center', overflow: 'linebreak' },
+          3: { cellWidth: 26, halign: 'center' },
+          4: { cellWidth: 26, halign: 'center' },
+          5: { cellWidth: 32, halign: 'center', fontStyle: 'bold' },
+          6: { cellWidth: 16, halign: 'center' },
+          7: { cellWidth: 36, halign: 'center', fontStyle: 'bold', fontSize: 8 },
         },
         alternateRowStyles: { fillColor: LIGHT },
         styles: { lineColor: BORDER, lineWidth: 0.2, valign: 'middle' },
         didParseCell: (data: any) => {
           if (data.section !== 'body') return;
-          const raw    = data.row.raw as string[];
+          const raw = data.row.raw as string[];
           const isZero = raw[3]?.startsWith('0 ');
-
-          // Cor de fundo por linha
-          if (isZero) {
-            data.cell.styles.fillColor = RED_BG;
-            data.cell.styles.textColor = RED;
-          } else if (data.row.index % 2 === 0) {
-            data.cell.styles.fillColor = WHITE;
-            data.cell.styles.textColor = TEXT1;
-          } else {
-            data.cell.styles.fillColor = YEL_BG;
-            data.cell.styles.textColor = TEXT1;
-          }
-
-          // Coluna Status — negrito e cor semântica
-          if (data.column.index === 7) {
-            data.cell.styles.fontStyle  = 'bold';
-            data.cell.styles.textColor  = isZero ? RED : YELLOW;
-          }
+          if (isZero) { data.cell.styles.fillColor = RED_BG; data.cell.styles.textColor = RED; }
+          else if (data.row.index % 2 === 0) { data.cell.styles.fillColor = WHITE; data.cell.styles.textColor = TEXT1; }
+          else { data.cell.styles.fillColor = YEL_BG; data.cell.styles.textColor = TEXT1; }
+          if (data.column.index === 7) { data.cell.styles.fontStyle = 'bold'; data.cell.styles.textColor = isZero ? RED : YELLOW; }
         },
       });
 
       const finalY = (doc as any).lastAutoTable.finalY || pageH - 40;
-
-      // ── LINHA DE ASSINATURAS ──────────────────────────────────────────────
       const sigY = Math.min(finalY + 18, pageH - 35);
       doc.setDrawColor(...BORDER);
       doc.setLineWidth(0.4);
@@ -491,7 +466,6 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
       doc.text('Aprovação — Gestor de Suprimentos', ML + sigLineW / 2, sigY + 5, { align: 'center' });
       doc.text('Aprovação — Diretoria', pageW - MR - sigLineW / 2, sigY + 5, { align: 'center' });
 
-      // ── RODAPÉ EM TODAS AS PÁGINAS ────────────────────────────────────────
       const totalPages = (doc as any).internal.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
         doc.setPage(i);
@@ -506,10 +480,7 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
         doc.text(`Página ${i} de ${totalPages}`, pageW - MR, pageH - 6, { align: 'right' });
       }
 
-      // ── SALVAR ────────────────────────────────────────────────────────────
-      const slug = categoriaSelecionada
-        ? categoriaSelecionada.toLowerCase().replace(/\s+/g, '-')
-        : 'geral';
+      const slug = categoriaSelecionada ? categoriaSelecionada.toLowerCase().replace(/\s+/g, '-') : 'geral';
       doc.save(`relatorio-reposicao-${slug}-${now.toISOString().slice(0, 10)}.pdf`);
 
     } catch (error) {
@@ -549,29 +520,40 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
 // ── PRODUTO FORM ──────────────────────────────────────────────────────────────
 
 export function ProdutoForm({
-  onCancel, onSave, produto, categorias, locais,
+  onCancel, onSave, produto, categorias, locais, allProdutos = [],
 }: {
   onCancel: () => void;
   onSave: (p: any) => void;
   produto?: Produto;
   categorias: string[];
   locais: string[];
+  allProdutos?: Produto[];
 }) {
   const [nome, setNome] = useState(produto?.nome ?? '');
   const [descricao, setDescricao] = useState(produto?.descricao ?? '');
-  const [categoria, setCategoria] = useState(produto?.categoria ?? '');
   const [unidade, setUnidade] = useState(produto?.unidade ?? 'un');
   const [quantidade, setQuantidade] = useState<number>(produto?.quantidade ?? 0);
   const [estoqueMinimo, setEstoqueMinimo] = useState<number | undefined>(produto?.estoqueMinimo ?? undefined);
-  const [localArmazenamento, setLocalArmazenamento] = useState(produto?.localArmazenamento ?? '');
-  const [fornecedor, setFornecedor] = useState(produto?.fornecedor ?? '');
   const [valorUnitario, setValorUnitario] = useState<number | undefined>(produto?.valorUnitario ?? undefined);
 
+  // ── React-Select state for Categoria, Local and Fornecedor ──
+  const [categoriaOption, setCategoriaOption] = useState<any>(
+    produto?.categoria ? { value: produto.categoria, label: produto.categoria } : null
+  );
+  const [localOption, setLocalOption] = useState<any>(
+    produto?.localArmazenamento ? { value: produto.localArmazenamento, label: produto.localArmazenamento } : null
+  );
+
+  // ── Fornecedor react-select ──
+  const [fornecedorOption, setFornecedorOption] = useState<any>(
+    produto?.fornecedor ? { value: produto.fornecedor, label: produto.fornecedor } : null
+  );
+
   const [showManageModal, setShowManageModal] = useState(false);
-  const [manageField, setManageField] = useState<'categorias' | 'locais' | null>(null);
+  const [manageField, setManageField] = useState<'categorias' | 'locais' | 'fornecedores' | null>(null);
   const [hiddenOptions, setHiddenOptions] = useState<Record<string, string[]>>(() => {
     const saved = localStorage.getItem('produtoHiddenOptions');
-    return saved ? JSON.parse(saved) : { categorias: [], locais: [] };
+    return saved ? JSON.parse(saved) : { categorias: [], locais: [], fornecedores: [] };
   });
 
   useEffect(() => {
@@ -581,6 +563,18 @@ export function ProdutoForm({
   const visibleCategorias = categorias.filter(c => !hiddenOptions.categorias?.includes(c));
   const visibleLocais = locais.filter(l => !hiddenOptions.locais?.includes(l));
 
+  // Build fornecedores list from allProdutos
+  const fornecedoresList = useMemo(() => {
+    const set = new Set<string>();
+    allProdutos.forEach(p => { if (p.fornecedor) set.add(p.fornecedor); });
+    return Array.from(set).filter(f => !hiddenOptions.fornecedores?.includes(f));
+  }, [allProdutos, hiddenOptions]);
+
+  // Options for selects
+  const categoriasOptions = visibleCategorias.map(c => ({ value: c, label: c }));
+  const locaisOptions = visibleLocais.map(l => ({ value: l, label: l }));
+  const fornecedoresOptions = fornecedoresList.map(f => ({ value: f, label: f }));
+
   const handleRemoveOption = (item: string) => {
     if (manageField) {
       setHiddenOptions(prev => ({ ...prev, [manageField]: [...(prev[manageField] || []), item] }));
@@ -589,7 +583,11 @@ export function ProdutoForm({
 
   const handleClearAllOptions = () => {
     if (manageField) {
-      const currentVisible = manageField === 'categorias' ? visibleCategorias : visibleLocais;
+      const currentVisible = manageField === 'categorias'
+        ? visibleCategorias
+        : manageField === 'locais'
+        ? visibleLocais
+        : fornecedoresList;
       setHiddenOptions(prev => ({ ...prev, [manageField]: [...(prev[manageField] || []), ...currentVisible] }));
     }
   };
@@ -606,14 +604,32 @@ export function ProdutoForm({
     });
   }
 
+  // Shared label + gear row
+  const FieldLabel = ({ label, field }: { label: string; field: 'categorias' | 'locais' | 'fornecedores' }) => (
+    <div className="d-flex justify-content-between align-items-center mb-1">
+      <label className="form-label mb-0">{label}</label>
+      <button
+        type="button"
+        className="btn-manage-discreet"
+        style={{ height: '24px', padding: '0 6px' }}
+        onClick={() => { setManageField(field); setShowManageModal(true); }}
+        title="Gerenciar histórico"
+      >
+        <IconGear />
+      </button>
+    </div>
+  );
+
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!nome.trim()) return;
     const baseData = {
       nome: nome.trim(), descricao: descricao.trim(),
-      categoria: categoria.trim() || undefined, unidade, estoqueMinimo,
-      localArmazenamento: localArmazenamento.trim() || undefined,
-      fornecedor: fornecedor.trim() || undefined, valorUnitario,
+      categoria: categoriaOption?.value || undefined,
+      unidade, estoqueMinimo,
+      localArmazenamento: localOption?.value || undefined,
+      fornecedor: fornecedorOption?.value || undefined,
+      valorUnitario,
     };
     onSave(!produto ? { ...baseData, quantidade } : baseData);
   }
@@ -630,70 +646,111 @@ export function ProdutoForm({
           )}
           <div className={produto ? 'col-md-8' : 'col-md-12'}>
             <label className="form-label">Nome *</label>
-            <input className="form-control" placeholder="Ex: Parafuso Sextavado" value={nome} onChange={e => setNome(e.target.value)} required />
+            <input
+              className="form-control"
+              placeholder="Ex: Parafuso Sextavado"
+              value={nome}
+              onChange={e => setNome(e.target.value)}
+              required
+            />
           </div>
+
           <div className="col-12">
             <label className="form-label">Descrição</label>
-            <textarea className="form-control" placeholder="Detalhes do produto (opcional)" value={descricao} onChange={e => setDescricao(e.target.value)} style={{ height: '72px', resize: 'none' }} />
+            <textarea
+              className="form-control"
+              placeholder="Detalhes do produto (opcional)"
+              value={descricao}
+              onChange={e => setDescricao(e.target.value)}
+              style={{ height: '72px', resize: 'none' }}
+            />
           </div>
 
+          {/* Categoria — CreatableSelect */}
           <div className="col-12 col-md-6">
-            <div className="d-flex justify-content-between align-items-center mb-1">
-              <label className="form-label mb-0">Categoria</label>
-              <button
-                type="button"
-                className="btn-manage-discreet"
-                style={{ height: '24px', padding: '0 6px' }}
-                onClick={() => { setManageField('categorias'); setShowManageModal(true); }}
-                title="Gerenciar Categorias"
-              >
-                <IconGear />
-              </button>
-            </div>
-            <input className="form-control" placeholder="Ex: Ferragens" value={categoria} onChange={e => setCategoria(e.target.value)} list="cats" autoComplete="off" />
-            <datalist id="cats">{visibleCategorias.map(c => <option key={c} value={c} />)}</datalist>
+            <FieldLabel label="Categoria" field="categorias" />
+            <CreatableSelect
+              isClearable
+              options={categoriasOptions}
+              value={categoriaOption}
+              onChange={(opt: any) => setCategoriaOption(opt)}
+              placeholder="Ex: Ferragens"
+              formatCreateLabel={(i: string) => `Usar "${i}"`}
+              styles={selectStyles}
+              menuPortalTarget={document.body}
+            />
           </div>
 
+          {/* Local de Armazenamento — CreatableSelect */}
           <div className="col-12 col-md-6">
-            <div className="d-flex justify-content-between align-items-center mb-1">
-              <label className="form-label mb-0">Local de Armazenamento</label>
-              <button
-                type="button"
-                className="btn-manage-discreet"
-                style={{ height: '24px', padding: '0 6px' }}
-                onClick={() => { setManageField('locais'); setShowManageModal(true); }}
-                title="Gerenciar Locais"
-              >
-                <IconGear />
-              </button>
-            </div>
-            <input className="form-control" placeholder="Ex: Pátio 04" value={localArmazenamento} onChange={e => setLocalArmazenamento(e.target.value)} list="locais" autoComplete="off" />
-            <datalist id="locais">{visibleLocais.map(l => <option key={l} value={l} />)}</datalist>
+            <FieldLabel label="Local de Armazenamento" field="locais" />
+            <CreatableSelect
+              isClearable
+              options={locaisOptions}
+              value={localOption}
+              onChange={(opt: any) => setLocalOption(opt)}
+              placeholder="Ex: Pátio 04"
+              formatCreateLabel={(i: string) => `Usar "${i}"`}
+              styles={selectStyles}
+              menuPortalTarget={document.body}
+            />
           </div>
 
           <div className="col-12 col-sm-4">
             <label className="form-label">Unidade de Medida</label>
-            <input className="form-control" placeholder="un, kg, m, L" value={unidade} onChange={e => setUnidade(e.target.value)} required />
+            <input
+              className="form-control"
+              placeholder="un, kg, m, L"
+              value={unidade}
+              onChange={e => setUnidade(e.target.value)}
+              required
+            />
           </div>
           <div className="col-12 col-sm-4">
             <label className="form-label">Quantidade Inicial</label>
-            <input type="number" min={0} className="form-control" value={quantidade} onChange={e => setQuantidade(Number(e.target.value))} disabled={!!produto} />
+            <input
+              type="number" min={0} className="form-control"
+              value={quantidade}
+              onChange={e => setQuantidade(Number(e.target.value))}
+              disabled={!!produto}
+            />
           </div>
           <div className="col-12 col-sm-4">
             <label className="form-label">Estoque Mínimo</label>
-            <input type="number" min={0} className="form-control" value={estoqueMinimo ?? ''} onChange={e => setEstoqueMinimo(e.target.value === '' ? undefined : Number(e.target.value))} />
+            <input
+              type="number" min={0} className="form-control"
+              value={estoqueMinimo ?? ''}
+              onChange={e => setEstoqueMinimo(e.target.value === '' ? undefined : Number(e.target.value))}
+            />
           </div>
+
           <div className="col-12 col-md-6">
             <label className="form-label">Valor Unitário (R$)</label>
-            <input type="number" step="0.01" min="0" className="form-control" placeholder="opcional" value={valorUnitario ?? ''} onChange={e => setValorUnitario(e.target.value === '' ? undefined : Number(e.target.value))} />
+            <input
+              type="number" step="0.01" min="0" className="form-control"
+              placeholder="opcional"
+              value={valorUnitario ?? ''}
+              onChange={e => setValorUnitario(e.target.value === '' ? undefined : Number(e.target.value))}
+            />
           </div>
           <div className="col-12 col-md-6">
             <label className="form-label">Valor Total em Estoque (R$)</label>
             <input type="text" className="form-control" readOnly disabled value={valorTotalDisplay} />
           </div>
+
+          {/* Fornecedor — CreatableSelect */}
           <div className="col-md-12">
-            <label className="form-label">Fornecedor</label>
-            <input className="form-control" placeholder="Nome do fornecedor (opcional)" value={fornecedor} onChange={e => setFornecedor(e.target.value)} />
+            <FieldLabel label="Fornecedor" field="fornecedores" />
+            <CreatableSelect
+              isClearable
+              options={fornecedoresOptions}
+              value={fornecedorOption}
+              onChange={(opt: any) => setFornecedorOption(opt)}
+              placeholder="Nome do fornecedor (opcional)"
+              formatCreateLabel={(i: string) => `Usar "${i}"`}
+              styles={selectStyles}
+              menuPortalTarget={document.body}
+            />
           </div>
         </div>
 
@@ -710,8 +767,20 @@ export function ProdutoForm({
       <GerenciarHistoricoModal
         show={showManageModal}
         onClose={() => setShowManageModal(false)}
-        title={manageField === 'categorias' ? 'Categorias' : 'Locais de Armazenamento'}
-        items={manageField === 'categorias' ? visibleCategorias : visibleLocais}
+        title={
+          manageField === 'categorias'
+            ? 'Categorias'
+            : manageField === 'locais'
+            ? 'Locais de Armazenamento'
+            : 'Fornecedores'
+        }
+        items={
+          manageField === 'categorias'
+            ? visibleCategorias
+            : manageField === 'locais'
+            ? visibleLocais
+            : fornecedoresList
+        }
         onRemove={handleRemoveOption}
         onClearAll={handleClearAllOptions}
       />
@@ -722,11 +791,12 @@ export function ProdutoForm({
 // ── BOTÃO NOVO PRODUTO ────────────────────────────────────────────────────────
 
 export function BotaoNovoProduto({
-  onCreate, categorias, locais,
+  onCreate, categorias, locais, allProdutos = [],
 }: {
   onCreate: (p: Omit<Produto, 'id' | 'criadoEm' | 'atualizadoEm' | 'sku'>) => void;
   categorias: string[];
   locais: string[];
+  allProdutos?: Produto[];
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -741,6 +811,7 @@ export function BotaoNovoProduto({
             onSave={p => { onCreate(p); setOpen(false); }}
             categorias={categorias}
             locais={locais}
+            allProdutos={allProdutos}
           />
         </ModalComponent>
       )}
@@ -822,6 +893,12 @@ export function MovimentacaoForm({
   const [motivo, setMotivo] = useState<string>('');
   const [custoEntrada, setCustoEntrada] = useState<number | undefined>(undefined);
 
+  const tipoOptions = [
+    { value: 'saida',   label: 'Saída' },
+    { value: 'entrada', label: 'Entrada' },
+    { value: 'ajuste',  label: 'Ajuste de Estoque' },
+  ];
+
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (quantidade <= 0) return;
@@ -845,22 +922,31 @@ export function MovimentacaoForm({
       <div className="row g-3">
         <div className="col-md-4">
           <label className="form-label">Tipo</label>
-          <select className="form-select" value={tipo} onChange={e => setTipo(e.target.value as TipoMov)}>
-            <option value="saida">Saída</option>
-            <option value="entrada">Entrada</option>
-            <option value="ajuste">Ajuste de Estoque</option>
-          </select>
+          <Select
+            options={tipoOptions}
+            value={tipoOptions.find(o => o.value === tipo) || null}
+            onChange={(opt: any) => setTipo(opt?.value as TipoMov)}
+            styles={selectStyles}
+            menuPortalTarget={document.body}
+            isSearchable={false}
+          />
         </div>
         <div className="col-md-4">
           <label className="form-label">{tipo === 'ajuste' ? 'Nova Quantidade' : 'Quantidade'}</label>
-          <input type="number" min={1} className="form-control" value={quantidade} onChange={e => setQuantidade(Number(e.target.value))} required />
+          <input
+            type="number" min={1} className="form-control"
+            value={quantidade}
+            onChange={e => setQuantidade(Number(e.target.value))}
+            required
+          />
         </div>
         {tipo === 'entrada' && (
           <div className="col-md-4">
             <label className="form-label">Custo Unit. (Novo)</label>
             <input
               type="number" step="0.01" min="0" className="form-control"
-              placeholder="R$" value={custoEntrada ?? ''}
+              placeholder="R$"
+              value={custoEntrada ?? ''}
               onChange={e => setCustoEntrada(e.target.value === '' ? undefined : Number(e.target.value))}
             />
             <small style={{ fontSize: '11px', color: 'var(--text-3)' }}>Atualiza média ponderada</small>
@@ -868,7 +954,12 @@ export function MovimentacaoForm({
         )}
         <div className="col-md-12">
           <label className="form-label">Motivo (opcional)</label>
-          <input className="form-control" value={motivo} onChange={e => setMotivo(e.target.value)} placeholder="Ex: Uso na obra, Requisição" />
+          <input
+            className="form-control"
+            value={motivo}
+            onChange={e => setMotivo(e.target.value)}
+            placeholder="Ex: Uso na obra, Requisição"
+          />
         </div>
       </div>
 
@@ -888,7 +979,7 @@ export function MovimentacaoForm({
 
 export function ProdutosTable({
   produtos, onEdit, onDelete, onAddMov, onTogglePrioritario,
-  categorias, locais, sortOrder, onToggleSort,
+  categorias, locais, sortOrder, onToggleSort, allProdutos = [],
 }: {
   produtos: Produto[];
   onEdit: (id: UUID, patch: Partial<Produto>) => void;
@@ -899,6 +990,7 @@ export function ProdutosTable({
   locais: string[];
   sortOrder?: 'asc' | 'desc' | null;
   onToggleSort?: () => void;
+  allProdutos?: Produto[];
 }) {
   const [editingId, setEditingId] = useState<UUID | null>(null);
   const [movProdId, setMovProdId] = useState<UUID | null>(null);
@@ -957,12 +1049,8 @@ export function ProdutosTable({
                     <td><span className="sku">{p.sku}</span></td>
                     <td>
                       <span className="product-name">{p.nome}</span>
-                      {belowMin && (
-                        <span className="ms-2" title="Abaixo do mínimo"><IconWarning /></span>
-                      )}
-                      {p.valorUnitario != null && p.valorUnitario > 0 && (
-                        <span className="ms-2" title="Valor registrado"><IconTag /></span>
-                      )}
+                      {belowMin && <span className="ms-2" title="Abaixo do mínimo"><IconWarning /></span>}
+                      {p.valorUnitario != null && p.valorUnitario > 0 && <span className="ms-2" title="Valor registrado"><IconTag /></span>}
                     </td>
                     <td>
                       {p.categoria
@@ -971,14 +1059,7 @@ export function ProdutosTable({
                     </td>
                     <td>
                       <div className="d-flex align-items-center gap-1">
-                        <span
-                          className="stock-dot"
-                          style={{
-                            background: p.quantidade === 0
-                              ? 'var(--danger)'
-                              : belowMin ? 'var(--warning)' : 'var(--success)',
-                          }}
-                        />
+                        <span className="stock-dot" style={{ background: p.quantidade === 0 ? 'var(--danger)' : belowMin ? 'var(--warning)' : 'var(--success)' }} />
                         <strong>{p.quantidade}</strong>
                         <small style={{ color: 'var(--text-3)' }}>{p.unidade}</small>
                       </div>
@@ -1042,6 +1123,7 @@ export function ProdutosTable({
             onSave={vals => { onEdit(editingId!, vals); setEditingId(null); }}
             categorias={categorias}
             locais={locais}
+            allProdutos={allProdutos}
           />
         </ModalComponent>
       )}

@@ -889,7 +889,7 @@ export default function App() {
                 </div>
                 <div className="d-flex gap-2">
                   <Relatorios produtos={allProdutos} categoriaSelecionada={categoriaFilter} />
-                  <BotaoNovoProduto onCreate={addProduto} categorias={categorias} locais={locaisArmazenamento} />
+                  <BotaoNovoProduto onCreate={addProduto} categorias={categorias} locais={locaisArmazenamento} allProdutos={allProdutos} />
                 </div>
               </div>
             </div>
@@ -910,6 +910,7 @@ export default function App() {
                 locais={locaisArmazenamento}
                 sortOrder={sortOrder}
                 onToggleSort={handleToggleSort}
+                allProdutos={allProdutos}
               />
             )}
 

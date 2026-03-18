@@ -1,5 +1,47 @@
 import React, { useState, useMemo } from 'react';
+import Select from 'react-select';
+import type { StylesConfig } from 'react-select';
 import type { Produto } from '../types';
+
+// ── REACT-SELECT STYLES (aligned to design system) ────────────────────────────
+
+const selectStyles: StylesConfig = {
+  control: (base, state) => ({
+    ...base,
+    backgroundColor: state.isDisabled ? 'var(--surface-2)' : '#fff',
+    borderColor: state.isFocused ? 'var(--primary)' : 'var(--border)',
+    borderWidth: '1.5px',
+    minHeight: '38px',
+    borderRadius: '8px',
+    boxShadow: state.isFocused ? '0 0 0 3px rgba(245,166,35,.12)' : 'none',
+    fontFamily: 'DM Sans, sans-serif',
+    fontSize: '13.5px',
+    '&:hover': { borderColor: state.isFocused ? 'var(--primary)' : 'var(--border)' },
+  }),
+  placeholder: base => ({ ...base, color: 'var(--text-3)', fontSize: '13.5px' }),
+  singleValue: base => ({ ...base, color: 'var(--text-1)', fontSize: '13.5px' }),
+  option: (base, state) => ({
+    ...base,
+    backgroundColor: state.isSelected
+      ? 'var(--primary)'
+      : state.isFocused
+      ? 'var(--primary-light)'
+      : '#fff',
+    color: state.isSelected ? '#fff' : 'var(--text-1)',
+    fontSize: '13.5px',
+    fontFamily: 'DM Sans, sans-serif',
+    cursor: 'pointer',
+  }),
+  menu: base => ({
+    ...base,
+    zIndex: 9999,
+    borderRadius: '8px',
+    border: '1px solid var(--border)',
+    boxShadow: '0 4px 12px rgba(0,0,0,.08)',
+  }),
+  menuPortal: base => ({ ...base, zIndex: 9999 }),
+  indicatorSeparator: () => ({ display: 'none' }),
+};
 
 // ── SVG ICONS ─────────────────────────────────────────────────────────────────
 
@@ -64,38 +106,28 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
   const [tipo,        setTipo]        = useState<'entrada' | 'saida' | 'ajuste'>('entrada');
   const [selecionados, setSelecionados] = useState<Record<string, { quantidade: number; valorUnitario: number }>>({});
   const [busca, setBusca] = useState('');
-  const [categoriaFiltro, setCategoriaFiltro] = useState('');
+  const [categoriaOption, setCategoriaOption] = useState<any>(null);
 
   const categorias = useMemo(() => {
     return Array.from(new Set(produtos.map(p => p.categoria || '').filter(Boolean))).sort();
   }, [produtos]);
 
+  // Category options for react-select
+  const categoriasOptions = [
+    { value: '', label: 'Todas as categorias' },
+    ...categorias.map(c => ({ value: c, label: c })),
+  ];
+
+  const categoriaFiltro = categoriaOption?.value || '';
+
   const produtosDisponiveis = useMemo(() => {
-    // ── MULTI-WORD SEARCH ────────────────────────────────────────────────
-    // Split the query into individual tokens. ALL tokens must appear
-    // somewhere in the product's searchable fields (any order/position).
-    const tokens = busca
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)
-      .filter(Boolean);
+    const tokens = busca.trim().toLowerCase().split(/\s+/).filter(Boolean);
 
     return produtos.filter(p => {
-      const searchableText = [
-        p.nome,
-        p.sku,
-        p.categoria ?? '',
-        p.descricao ?? '',
-        p.localArmazenamento ?? '',
-        p.fornecedor ?? '',
-      ]
-        .join(' ')
-        .toLowerCase();
+      const searchableText = [p.nome, p.sku, p.categoria ?? '', p.descricao ?? '',
+        p.localArmazenamento ?? '', p.fornecedor ?? ''].join(' ').toLowerCase();
 
-      const atendeBusca =
-        tokens.length === 0 ||
-        tokens.every(token => searchableText.includes(token));
-
+      const atendeBusca = tokens.length === 0 || tokens.every(token => searchableText.includes(token));
       const atendeEstoque   = tipo !== 'saida' || p.quantidade > 0;
       const atendeCategoria = !categoriaFiltro || p.categoria === categoriaFiltro;
 
@@ -125,9 +157,7 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const itens = Object.entries(selecionados).map(([produtoId, dados]) => ({
-      produtoId,
-      quantidade:    dados.quantidade,
-      valorUnitario: dados.valorUnitario,
+      produtoId, quantidade: dados.quantidade, valorUnitario: dados.valorUnitario,
     }));
     onSubmit({ ordemCompra, nomeObra, tipo, itens });
     setOrdemCompra('');
@@ -137,8 +167,7 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
 
   const totalSelecionados = Object.keys(selecionados).length;
 
-  // ── Button styles ──────────────────────────────────────────────────────────
-
+  // Button styles
   const btnEntrada: React.CSSProperties = tipo === 'entrada'
     ? { background: 'var(--success)', borderColor: 'var(--success)', color: '#fff', boxShadow: '0 4px 12px rgba(47,158,68,.3)' }
     : { background: 'var(--surface)', borderColor: 'var(--success)', color: 'var(--success)' };
@@ -151,7 +180,6 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
     ? { background: '#1971C2', borderColor: '#1971C2', color: '#fff', boxShadow: '0 4px 12px rgba(25,113,194,.3)' }
     : { background: 'var(--surface)', borderColor: '#1971C2', color: '#1971C2' };
 
-  // Label helpers
   const tipoLabel = tipo === 'entrada' ? 'Entrada' : tipo === 'saida' ? 'Saída' : 'Ajuste';
   const quantidadeLabel = tipo === 'ajuste' ? 'Nova Qtd.' : 'Qtd.';
 
@@ -164,8 +192,7 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
           <div className="col-md-6">
             <label className="form-label">Ordem de Compra</label>
             <input
-              type="text"
-              className="form-control"
+              type="text" className="form-control"
               placeholder="Ex: OC-2026-001"
               value={ordemCompra}
               onChange={e => setOrdemCompra(e.target.value)}
@@ -174,8 +201,7 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
           <div className="col-md-6">
             <label className="form-label">Nome da Obra</label>
             <input
-              type="text"
-              className="form-control"
+              type="text" className="form-control"
               placeholder="Informe o local ou nome da obra..."
               value={nomeObra}
               onChange={e => setNomeObra(e.target.value)}
@@ -216,16 +242,10 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
           {/* Info banner for ajuste */}
           {tipo === 'ajuste' && (
             <div style={{
-              marginTop: '12px',
-              padding: '10px 14px',
-              background: '#EBF4FF',
-              border: '1px solid #BFD7FF',
-              borderRadius: '8px',
-              fontSize: '12.5px',
-              color: '#1971C2',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
+              marginTop: '12px', padding: '10px 14px',
+              background: '#EBF4FF', border: '1px solid #BFD7FF',
+              borderRadius: '8px', fontSize: '12.5px', color: '#1971C2',
+              display: 'flex', alignItems: 'center', gap: '8px',
             }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15" style={{ flexShrink: 0 }}>
                 <circle cx="12" cy="12" r="10"/>
@@ -245,25 +265,25 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
               <div className="input-wrap">
                 <IconSearch />
                 <input
-                  type="text"
-                  className="form-control"
+                  type="text" className="form-control"
                   placeholder="Nome, SKU, categoria... (várias palavras)"
                   value={busca}
                   onChange={e => setBusca(e.target.value)}
                 />
               </div>
             </div>
+
+            {/* Categoria — react-select padronizado */}
             <div className="col-12 col-sm-5">
-              <select
-                className="form-select"
-                value={categoriaFiltro}
-                onChange={e => setCategoriaFiltro(e.target.value)}
-              >
-                <option value="">Todas as categorias</option>
-                {categorias.map(c => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
+              <Select
+                options={categoriasOptions}
+                value={categoriaOption || categoriasOptions[0]}
+                onChange={(opt: any) => setCategoriaOption(opt?.value ? opt : null)}
+                styles={selectStyles}
+                menuPortalTarget={document.body}
+                isSearchable={false}
+                placeholder="Todas as categorias"
+              />
             </div>
           </div>
 
@@ -288,9 +308,7 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
                       padding: '12px 16px',
                       borderBottom: idx < produtosDisponiveis.length - 1 ? '1px solid var(--border)' : 'none',
                       background: isSelected
-                        ? tipo === 'ajuste'
-                          ? 'rgba(25,113,194,.04)'
-                          : 'rgba(245,166,35,.04)'
+                        ? tipo === 'ajuste' ? 'rgba(25,113,194,.04)' : 'rgba(245,166,35,.04)'
                         : 'transparent',
                       transition: 'background var(--transition)',
                       flexWrap: 'wrap',
@@ -351,9 +369,8 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
                           </div>
                         )}
 
-                        {/* Quantidade / Nova quantidade */}
+                        {/* Quantidade */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: 0, width: '160px' }}>
-                          {/* Label prefix for ajuste */}
                           {tipo === 'ajuste' && (
                             <span style={{
                               background: '#EBF4FF', border: '1.5px solid #BFD7FF',
@@ -446,12 +463,8 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
             Confirmar {tipoLabel}
             {totalSelecionados > 0 && (
               <span style={{
-                background: 'rgba(255,255,255,.25)',
-                borderRadius: '999px',
-                padding: '1px 8px',
-                fontSize: '12px',
-                fontWeight: 700,
-                marginLeft: '4px',
+                background: 'rgba(255,255,255,.25)', borderRadius: '999px',
+                padding: '1px 8px', fontSize: '12px', fontWeight: 700, marginLeft: '4px',
               }}>
                 {totalSelecionados}
               </span>

@@ -1,6 +1,49 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import Select from 'react-select';
+import CreatableSelect from 'react-select/creatable';
+import type { StylesConfig } from 'react-select';
 import type { Movimentacao, Produto, UUID, TipoMov } from '../types';
 import { ModalComponent, GerenciarHistoricoModal, Paginacao } from './Shared';
+
+// ── REACT-SELECT STYLES (aligned to design system) ────────────────────────────
+
+const selectStyles: StylesConfig = {
+  control: (base, state) => ({
+    ...base,
+    backgroundColor: state.isDisabled ? 'var(--surface-2)' : '#fff',
+    borderColor: state.isFocused ? 'var(--primary)' : 'var(--border)',
+    borderWidth: '1.5px',
+    minHeight: '38px',
+    borderRadius: '8px',
+    boxShadow: state.isFocused ? '0 0 0 3px rgba(245,166,35,.12)' : 'none',
+    fontFamily: 'DM Sans, sans-serif',
+    fontSize: '13.5px',
+    '&:hover': { borderColor: state.isFocused ? 'var(--primary)' : 'var(--border)' },
+  }),
+  placeholder: base => ({ ...base, color: 'var(--text-3)', fontSize: '13.5px' }),
+  singleValue: base => ({ ...base, color: 'var(--text-1)', fontSize: '13.5px' }),
+  option: (base, state) => ({
+    ...base,
+    backgroundColor: state.isSelected
+      ? 'var(--primary)'
+      : state.isFocused
+      ? 'var(--primary-light)'
+      : '#fff',
+    color: state.isSelected ? '#fff' : 'var(--text-1)',
+    fontSize: '13.5px',
+    fontFamily: 'DM Sans, sans-serif',
+    cursor: 'pointer',
+  }),
+  menu: base => ({
+    ...base,
+    zIndex: 9999,
+    borderRadius: '8px',
+    border: '1px solid var(--border)',
+    boxShadow: '0 4px 12px rgba(0,0,0,.08)',
+  }),
+  menuPortal: base => ({ ...base, zIndex: 9999 }),
+  indicatorSeparator: () => ({ display: 'none' }),
+};
 
 // ── SVG ICONS ─────────────────────────────────────────────────────────────────
 
@@ -73,6 +116,12 @@ export function MovimentacaoForm({
   const [motivo, setMotivo] = useState<string>('');
   const [custoEntrada, setCustoEntrada] = useState<number | undefined>(undefined);
 
+  const tipoOptions = [
+    { value: 'saida',   label: 'Saída' },
+    { value: 'entrada', label: 'Entrada' },
+    { value: 'ajuste',  label: 'Ajuste de Estoque' },
+  ];
+
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (quantidade <= 0) return;
@@ -96,22 +145,31 @@ export function MovimentacaoForm({
       <div className="row g-3">
         <div className="col-md-4">
           <label className="form-label">Tipo</label>
-          <select className="form-select" value={tipo} onChange={e => setTipo(e.target.value as TipoMov)}>
-            <option value="saida">Saída</option>
-            <option value="entrada">Entrada</option>
-            <option value="ajuste">Ajuste de Estoque</option>
-          </select>
+          <Select
+            options={tipoOptions}
+            value={tipoOptions.find(o => o.value === tipo) || null}
+            onChange={(opt: any) => setTipo(opt?.value as TipoMov)}
+            styles={selectStyles}
+            menuPortalTarget={document.body}
+            isSearchable={false}
+          />
         </div>
         <div className="col-md-4">
           <label className="form-label">{tipo === 'ajuste' ? 'Nova Quantidade' : 'Quantidade'}</label>
-          <input type="number" min={1} className="form-control" value={quantidade} onChange={e => setQuantidade(Number(e.target.value))} required />
+          <input
+            type="number" min={1} className="form-control"
+            value={quantidade}
+            onChange={e => setQuantidade(Number(e.target.value))}
+            required
+          />
         </div>
         {tipo === 'entrada' && (
           <div className="col-md-4">
             <label className="form-label">Custo Unit. (Novo)</label>
             <input
               type="number" step="0.01" min="0" className="form-control"
-              placeholder="R$" value={custoEntrada ?? ''}
+              placeholder="R$"
+              value={custoEntrada ?? ''}
               onChange={e => setCustoEntrada(e.target.value === '' ? undefined : Number(e.target.value))}
             />
             <small style={{ fontSize: '11px', color: 'var(--text-3)' }}>Atualiza média ponderada</small>
@@ -119,7 +177,12 @@ export function MovimentacaoForm({
         )}
         <div className="col-md-12">
           <label className="form-label">Motivo (opcional)</label>
-          <input className="form-control" value={motivo} onChange={e => setMotivo(e.target.value)} placeholder="Ex: Uso na obra, Requisição" />
+          <input
+            className="form-control"
+            value={motivo}
+            onChange={e => setMotivo(e.target.value)}
+            placeholder="Ex: Uso na obra, Requisição"
+          />
         </div>
       </div>
 
@@ -199,7 +262,9 @@ export function MovimentacaoEditForm({
   motivosDisponiveis?: string[];
 }) {
   const [quantidade, setQuantidade] = useState(movimentacao.quantidade);
-  const [motivo, setMotivo] = useState(movimentacao.motivo ?? '');
+  const [motivoOption, setMotivoOption] = useState<any>(
+    movimentacao.motivo ? { value: movimentacao.motivo, label: movimentacao.motivo } : null
+  );
 
   const [showManageModal, setShowManageModal] = useState(false);
   const [hiddenMotivos, setHiddenMotivos] = useState<string[]>(() => {
@@ -215,10 +280,12 @@ export function MovimentacaoEditForm({
   const handleRemoveMotivo    = (item: string) => setHiddenMotivos(prev => [...prev, item]);
   const handleClearAllMotivos = () => setHiddenMotivos(prev => [...prev, ...visibleMotivos]);
 
+  const motivosOptions = visibleMotivos.map(m => ({ value: m, label: m }));
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (quantidade <= 0) return;
-    onSave({ quantidade, motivo: motivo.trim() || undefined });
+    onSave({ quantidade, motivo: motivoOption?.value?.trim() || undefined });
   }
 
   return (
@@ -236,10 +303,16 @@ export function MovimentacaoEditForm({
         <div className="row g-3">
           <div className="col-md-6">
             <label className="form-label">Quantidade *</label>
-            <input type="number" className="form-control" value={quantidade} onChange={e => setQuantidade(Number(e.target.value))} min="1" required />
+            <input
+              type="number" className="form-control"
+              value={quantidade}
+              onChange={e => setQuantidade(Number(e.target.value))}
+              min="1"
+              required
+            />
           </div>
 
-          {/* ── Motivo — label + engrenagem acima, input abaixo (padrão DeliveryForm) ── */}
+          {/* Motivo — CreatableSelect com engrenagem */}
           <div className="col-md-6">
             <div className="d-flex justify-content-between align-items-center mb-1">
               <label className="form-label mb-0">Motivo (opcional)</label>
@@ -253,17 +326,16 @@ export function MovimentacaoEditForm({
                 <IconGear />
               </button>
             </div>
-            <input
-              type="text"
-              className="form-control"
-              value={motivo}
-              onChange={e => setMotivo(e.target.value)}
-              list="edit-motivos-list"
-              autoComplete="off"
+            <CreatableSelect
+              isClearable
+              options={motivosOptions}
+              value={motivoOption}
+              onChange={(opt: any) => setMotivoOption(opt)}
+              placeholder="Ex: Uso na obra, Requisição"
+              formatCreateLabel={(i: string) => `Usar "${i}"`}
+              styles={selectStyles}
+              menuPortalTarget={document.body}
             />
-            <datalist id="edit-motivos-list">
-              {visibleMotivos.map((m, i) => <option key={i} value={m} />)}
-            </datalist>
           </div>
         </div>
 
@@ -299,8 +371,8 @@ export function ConsultaMovimentacoes({
 }) {
   const [dataInicio,   setDataInicio]   = useState('');
   const [dataFim,      setDataFim]      = useState('');
-  const [categoria,    setCategoria]    = useState('');
-  const [filtroObra,   setFiltroObra]   = useState('');
+  const [categoriaOption, setCategoriaOption] = useState<any>(null);
+  const [obraOption,   setObraOption]   = useState<any>(null);
   const [currentPage,  setCurrentPage]  = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(30);
   const [deleteId,     setDeleteId]     = useState<UUID | null>(null);
@@ -319,6 +391,18 @@ export function ConsultaMovimentacoes({
     return Array.from(new Set(obras)).sort();
   }, [movs]);
 
+  // Build options for react-select
+  const categoriasOptions = [{ value: '', label: 'Todas as categorias' }, ...categorias.map(c => ({ value: c, label: c }))];
+  const obrasOptions = [{ value: '', label: 'Todas as obras' }, ...obrasUnicas.map(o => ({ value: o, label: o }))];
+  const itemsPerPageOptions = [
+    { value: 30,  label: '30 por página' },
+    { value: 70,  label: '70 por página' },
+    { value: 100, label: '100 por página' },
+  ];
+
+  const categoriaFiltro = categoriaOption?.value || '';
+  const filtroObra = obraOption?.value || '';
+
   const filteredMovs = useMemo(() => {
     return movs.filter(mov => {
       const movDate = new Date(mov.criadoEm);
@@ -328,11 +412,11 @@ export function ConsultaMovimentacoes({
         fimDate.setHours(23, 59, 59, 999);
         if (movDate > fimDate) return false;
       }
-      if (categoria) { const p = produtoMap.get(mov.produtoId); if (!p || p.categoria !== categoria) return false; }
+      if (categoriaFiltro) { const p = produtoMap.get(mov.produtoId); if (!p || p.categoria !== categoriaFiltro) return false; }
       if (filtroObra && mov.nomeObra !== filtroObra) return false;
       return true;
     });
-  }, [movs, produtoMap, dataInicio, dataFim, categoria, filtroObra]);
+  }, [movs, produtoMap, dataInicio, dataFim, categoriaFiltro, filtroObra]);
 
   const custoTotalObra = useMemo(() => {
     if (!filtroObra) return 0;
@@ -351,7 +435,12 @@ export function ConsultaMovimentacoes({
   const movParaDeletar = useMemo(() => movs.find(m => m.id === deleteId), [deleteId, movs]);
   const movParaEditar  = useMemo(() => movs.find(m => m.id === editId),   [editId,   movs]);
 
-  const handleLimpar = () => { setDataInicio(''); setDataFim(''); setCategoria(''); setFiltroObra(''); };
+  const handleLimpar = () => {
+    setDataInicio('');
+    setDataFim('');
+    setCategoriaOption(null);
+    setObraOption(null);
+  };
 
   return (
     <div>
@@ -367,34 +456,62 @@ export function ConsultaMovimentacoes({
         <div className="row g-3 align-items-end">
           <div className="col-12 col-sm-6 col-lg-2">
             <label className="form-label">Data Início</label>
-            <input type="date" className="form-control" value={dataInicio} onChange={e => setDataInicio(e.target.value)} />
+            <input
+              type="date" className="form-control"
+              value={dataInicio}
+              onChange={e => setDataInicio(e.target.value)}
+            />
           </div>
           <div className="col-12 col-sm-6 col-lg-2">
             <label className="form-label">Data Fim</label>
-            <input type="date" className="form-control" value={dataFim} onChange={e => setDataFim(e.target.value)} />
+            <input
+              type="date" className="form-control"
+              value={dataFim}
+              onChange={e => setDataFim(e.target.value)}
+            />
           </div>
+
+          {/* Categoria — react-select */}
           <div className="col-12 col-sm-4 col-lg-2">
             <label className="form-label">Categoria</label>
-            <select className="form-select" value={categoria} onChange={e => setCategoria(e.target.value)}>
-              <option value="">Todas</option>
-              {categorias.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
+            <Select
+              options={categoriasOptions}
+              value={categoriaOption || categoriasOptions[0]}
+              onChange={(opt: any) => setCategoriaOption(opt?.value ? opt : null)}
+              styles={selectStyles}
+              menuPortalTarget={document.body}
+              isSearchable={false}
+              placeholder="Todas"
+            />
           </div>
+
+          {/* Obra — react-select */}
           <div className="col-12 col-sm-4 col-lg-2">
             <label className="form-label">Obra</label>
-            <select className="form-select" value={filtroObra} onChange={e => setFiltroObra(e.target.value)}>
-              <option value="">Todas</option>
-              {obrasUnicas.map(o => <option key={o} value={o}>{o}</option>)}
-            </select>
+            <Select
+              options={obrasOptions}
+              value={obraOption || obrasOptions[0]}
+              onChange={(opt: any) => setObraOption(opt?.value ? opt : null)}
+              styles={selectStyles}
+              menuPortalTarget={document.body}
+              isSearchable={false}
+              placeholder="Todas"
+            />
           </div>
+
+          {/* Itens por página — react-select */}
           <div className="col-12 col-sm-4 col-lg-2">
             <label className="form-label">Itens/pág.</label>
-            <select className="form-select" value={itemsPerPage} onChange={e => setItemsPerPage(Number(e.target.value))}>
-              <option value={30}>30</option>
-              <option value={70}>70</option>
-              <option value={100}>100</option>
-            </select>
+            <Select
+              options={itemsPerPageOptions}
+              value={itemsPerPageOptions.find(o => o.value === itemsPerPage) || itemsPerPageOptions[0]}
+              onChange={(opt: any) => setItemsPerPage(opt?.value || 30)}
+              styles={selectStyles}
+              menuPortalTarget={document.body}
+              isSearchable={false}
+            />
           </div>
+
           <div className="col-12 col-lg-2">
             <button
               className="btn btn-ghost d-flex align-items-center gap-2 w-100 justify-content-center"
@@ -470,7 +587,6 @@ export function ConsultaMovimentacoes({
                   <small style={{ color: 'var(--text-3)' }}>{produtoMap.get(m.produtoId)?.unidade}</small>
                 </td>
 
-                {/* Obra / OC */}
                 <td className="d-none d-md-table-cell">
                   {m.nomeObra && (
                     <span
@@ -490,16 +606,13 @@ export function ConsultaMovimentacoes({
                       {m.ordemCompra}
                     </span>
                   )}
-                  {!m.nomeObra && !m.ordemCompra && (
-                    <span style={{ color: 'var(--text-3)' }}>—</span>
-                  )}
+                  {!m.nomeObra && !m.ordemCompra && <span style={{ color: 'var(--text-3)' }}>—</span>}
                 </td>
 
                 <td className="d-none d-md-table-cell" style={{ color: 'var(--text-2)', fontSize: '13px' }}>
                   {m.motivo ?? <span style={{ color: 'var(--text-3)' }}>—</span>}
                 </td>
 
-                {/* Ações */}
                 <td>
                   <div className="d-flex justify-content-end gap-1">
                     <button
@@ -535,7 +648,6 @@ export function ConsultaMovimentacoes({
         </table>
       </div>
 
-      {/* Paginação */}
       <div className="mt-3">
         <Paginacao
           totalItems={filteredMovs.length}
