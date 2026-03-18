@@ -660,8 +660,13 @@ export function ProdutoForm({
               options={nomesOptions}
               value={nomeOption}
               onChange={(opt: any) => setNomeOption(opt)}
+              onInputChange={(inputValue: string, { action }: { action: string }) => {
+                if (action === 'input-change') {
+                  setNomeOption({ value: inputValue, label: inputValue });
+                }
+              }}
               placeholder="Ex: Parafuso Sextavado"
-              formatCreateLabel={(i: string) => `Criar "${i}"`}
+              isValidNewOption={() => false}
               styles={selectStyles}
               menuPortalTarget={document.body}
             />
