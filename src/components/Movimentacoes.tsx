@@ -839,7 +839,7 @@ export function ConsultaMovimentacoes({
                   <div style={{ fontWeight: 600, color: 'var(--text-1)' }}>
                     {m.dataCompetencia
                       ? new Date(
-                          m.dataCompetencia + 'T12:00:00',
+                          String(m.dataCompetencia).split('T')[0] + 'T12:00:00',
                         ).toLocaleDateString('pt-BR')
                       : new Date(m.criadoEm).toLocaleDateString('pt-BR')}
                   </div>
@@ -860,8 +860,19 @@ export function ConsultaMovimentacoes({
                 </td>
                 <td>
                   <strong>{m.quantidade}</strong>{' '}
-                  <small style={{ color: 'var(--text-3)' }}>
-                    {produtoMap.get(m.produtoId)?.unidade}
+                  <small
+                    style={{
+                      color: 'var(--text-3)',
+                      fontSize: '12px',
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {m.dataCompetencia
+                      ? new Date(
+                          String(m.dataCompetencia).split('T')[0] + 'T12:00:00',
+                        ).toLocaleDateString('pt-BR')
+                      : new Date(m.criadoEm).toLocaleDateString('pt-BR')}
                   </small>
                 </td>
 
