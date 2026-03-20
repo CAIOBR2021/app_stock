@@ -865,7 +865,7 @@ export function ConsultaMovimentacoes({
                     {m.tipo.toUpperCase()}
                   </span>
                 </td>
-                <td>
+                <td style={{ textAlign: 'right' }}>
                   <strong>{m.quantidade}</strong>
                 </td>
 
