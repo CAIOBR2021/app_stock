@@ -277,7 +277,13 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
               className="form-control"
               value={dataCompetencia}
               max={hoje}
-              onChange={e => setDataCompetencia(e.target.value)}
+              onChange={e => {
+                setDataCompetencia(e.target.value);
+                // CORREÇÃO 3A: Se escolheu data passada e estava em "Ajuste", muda para "Saída"
+                if (e.target.value < hojeISO() && tipo === 'ajuste') {
+                  setTipo('saida');
+                }
+              }}
             />
           </div>
         </div>
@@ -337,8 +343,14 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
             <button
               type="button"
               className="btn d-flex align-items-center justify-content-center gap-2 flex-grow-1"
-              style={{ ...btnAjuste, height: '44px', fontSize: '13.5px', fontWeight: 700, borderRadius: '8px', border: '1.5px solid', transition: 'all 150ms' }}
+              style={{ 
+                ...btnAjuste, 
+                height: '44px', fontSize: '13.5px', fontWeight: 700, borderRadius: '8px', border: '1.5px solid', transition: 'all 150ms',
+                opacity: isRetroativa ? 0.5 : 1 /* Deixa o botão meio transparente se desabilitado */
+              }}
               onClick={() => { setTipo('ajuste'); setSelecionados({}); }}
+              disabled={isRetroativa} /* CORREÇÃO 3B: Trava o clique */
+              title={isRetroativa ? "Ajustes não são permitidos em datas passadas" : "Definir saldo absoluto"}
             >
               <IconAdjust /> AJUSTE
             </button>

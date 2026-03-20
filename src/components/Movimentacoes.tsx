@@ -612,7 +612,11 @@ export function ConsultaMovimentacoes({
 
   const filteredMovs = useMemo(() => {
     return movs.filter((mov) => {
-      const movDate = new Date(mov.criadoEm);
+
+      // CORREÇÃO 1: Usar dataCompetencia para o filtro, com fallback para criadoEm
+      const movDate = mov.dataCompetencia
+        ? new Date(String(mov.dataCompetencia).split('T')[0] + 'T12:00:00')
+        : new Date(mov.criadoEm);
       if (dataInicio && movDate < new Date(`${dataInicio}T00:00:00`))
         return false;
       if (dataFim) {
