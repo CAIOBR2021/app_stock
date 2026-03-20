@@ -271,20 +271,22 @@ export default function App() {
   // ── CRUD MOVIMENTAÇÕES ───────────────────────────────────────────────────
 
   // MUDANÇA 1: passa dataCompetencia no body da requisição
-  async function addMov(m: Omit<Movimentacao, 'id' | 'criadoEm'>, custoEntrada?: number) {
-    try {
-      const res = await fetch(`${API_URL}/movimentacoes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...m, custoEntrada, dataCompetencia: m.dataCompetencia }),
-      });
-      if (!res.ok) throw new Error('Falha ao criar movimentação');
-      const { movimentacao, produto } = await res.json();
-      setMovs((prev) => [movimentacao, ...prev]);
-      setAllProdutos((prev) => prev.map((p) => (p.id === produto.id ? produto : p)));
-    } catch (err: any) { toast.error(err.message); }
-  }
-
+async function addMov(m: Omit<Movimentacao, 'id' | 'criadoEm'>, custoEntrada?: number) {
+  try {
+    const res = await fetch(`${API_URL}/movimentacoes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...m, custoEntrada, dataCompetencia: m.dataCompetencia }),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({ error: 'Erro desconhecido' }));
+      throw new Error(errData.error || 'Falha ao criar movimentação');
+    }
+    const { movimentacao, produto } = await res.json();
+    setMovs((prev) => [movimentacao, ...prev]);
+    setAllProdutos((prev) => prev.map((p) => (p.id === produto.id ? produto : p)));
+  } catch (err: any) { toast.error(err.message); }
+}
   // MUDANÇA 2: passa dataCompetencia de dados para cada item
   const handleEntradaSaidaSubmit = async (dados: any) => {
     try {
