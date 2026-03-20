@@ -80,7 +80,6 @@ const IconSearch = () => (
   </svg>
 );
 
-// NOVO: ícones para o campo de data
 const IconCalendar = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -100,7 +99,15 @@ const IconInfo = () => (
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 
-const hojeISO = () => new Date().toISOString().split('T')[0];
+/**
+ * Retorna a data de hoje no formato YYYY-MM-DD respeitando o fuso horário
+ * local do navegador (evita o problema de UTC -3 aparecer como dia anterior).
+ */
+const hojeISO = () => {
+  const d = new Date();
+  const offset = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - offset).toISOString().split('T')[0];
+};
 
 const formatarDataExibicao = (iso: string) => {
   const [ano, mes, dia] = iso.split('-');
@@ -122,21 +129,21 @@ interface EntradaSaidaFormProps {
     nomeObra: string;
     tipo: 'entrada' | 'saida' | 'ajuste';
     itens: ProdutoSelecionado[];
-    dataCompetencia: string;  // NOVO
+    dataCompetencia: string;
   }) => void;
 }
 
 // ── COMPONENT ─────────────────────────────────────────────────────────────────
 
 export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) {
-  const [ordemCompra,    setOrdemCompra]    = useState('');
-  const [nomeObra,       setNomeObra]       = useState('');
-  const [tipo,           setTipo]           = useState<'entrada' | 'saida' | 'ajuste'>('entrada');
-  const [selecionados,   setSelecionados]   = useState<Record<string, { quantidade: number; valorUnitario: number }>>({});
-  const [busca,          setBusca]          = useState('');
-  const [categoriaOption, setCategoriaOption] = useState<any>(null);
+  const [ordemCompra,      setOrdemCompra]      = useState('');
+  const [nomeObra,         setNomeObra]         = useState('');
+  const [tipo,             setTipo]             = useState<'entrada' | 'saida' | 'ajuste'>('entrada');
+  const [selecionados,     setSelecionados]     = useState<Record<string, { quantidade: number; valorUnitario: number }>>({});
+  const [busca,            setBusca]            = useState('');
+  const [categoriaOption,  setCategoriaOption]  = useState<any>(null);
 
-  // NOVO: data de competência — padrão = hoje
+  // Data de competência — padrão = hoje (fuso local)
   const [dataCompetencia, setDataCompetencia] = useState(hojeISO());
 
   const hoje        = hojeISO();
@@ -157,8 +164,10 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
     const tokens = busca.trim().toLowerCase().split(/\s+/).filter(Boolean);
 
     return produtos.filter(p => {
-      const searchableText = [p.nome, p.sku, p.categoria ?? '', p.descricao ?? '',
-        p.localArmazenamento ?? '', p.fornecedor ?? ''].join(' ').toLowerCase();
+      const searchableText = [
+        p.nome, p.sku, p.categoria ?? '', p.descricao ?? '',
+        p.localArmazenamento ?? '', p.fornecedor ?? '',
+      ].join(' ').toLowerCase();
 
       const atendeBusca     = tokens.length === 0 || tokens.every(token => searchableText.includes(token));
       const atendeEstoque   = tipo !== 'saida' || p.quantidade > 0;
@@ -192,11 +201,11 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
     const itens = Object.entries(selecionados).map(([produtoId, dados]) => ({
       produtoId, quantidade: dados.quantidade, valorUnitario: dados.valorUnitario,
     }));
-    // NOVO: passa dataCompetencia para o handler pai
     onSubmit({ ordemCompra, nomeObra, tipo, itens, dataCompetencia });
     setOrdemCompra('');
     setNomeObra('');
     setSelecionados({});
+    // Reset usa hojeISO() com fuso local corrigido
     setDataCompetencia(hojeISO());
   };
 
@@ -243,7 +252,7 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
             />
           </div>
 
-          {/* NOVO: campo de data de competência */}
+          {/* Campo de data de competência */}
           <div className="col-md-4">
             <label className="form-label d-flex align-items-center gap-2">
               <IconCalendar />
@@ -273,7 +282,7 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
           </div>
         </div>
 
-        {/* NOVO: banner de aviso para lançamento retroativo */}
+        {/* Banner de aviso para lançamento retroativo */}
         {isRetroativa && (
           <div style={{
             marginBottom: 16,
@@ -557,7 +566,7 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
           >
             <IconCheck />
             Confirmar {tipoLabel}
-            {/* NOVO: mostra a data quando for retroativo */}
+            {/* Mostra a data quando for retroativo */}
             {isRetroativa && (
               <span style={{
                 background: 'rgba(255,255,255,.2)', borderRadius: 999,
