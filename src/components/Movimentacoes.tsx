@@ -362,6 +362,7 @@ export function MovsList({
             >
               {m.tipo.toUpperCase()}
             </span>
+            {/* 👇 A QUANTIDADE FICA AQUI */}
             <strong style={{ color: 'var(--text-1)', fontSize: '13.5px' }}>
               {m.quantidade}
             </strong>
@@ -382,6 +383,8 @@ export function MovsList({
               </small>
             )}
           </div>
+          
+          {/* 👇 A DATA CORRETA FICA AQUI NO CANTO DIREITO */}
           <small
             style={{
               color: 'var(--text-3)',
@@ -390,7 +393,9 @@ export function MovsList({
               flexShrink: 0,
             }}
           >
-            {new Date(m.criadoEm).toLocaleString('pt-BR')}
+            {m.dataCompetencia 
+              ? new Date(String(m.dataCompetencia).split('T')[0] + 'T12:00:00').toLocaleDateString('pt-BR') 
+              : new Date(m.criadoEm).toLocaleDateString('pt-BR')}
           </small>
         </li>
       ))}
