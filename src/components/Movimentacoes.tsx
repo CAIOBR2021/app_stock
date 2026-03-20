@@ -371,19 +371,12 @@ export function MovsList({
               — {getProdutoNome(m.produtoId)}
             </span>
             {m.motivo && (
-              <small
-                style={{
-                  display: 'block',
-                  color: 'var(--text-3)',
-                  fontSize: '12px',
-                  marginTop: '2px',
-                }}
-              >
-                {m.motivo}
-              </small>
+              <td>
+                <strong>{m.quantidade}</strong>
+              </td>
             )}
           </div>
-          
+
           {/* 👇 A DATA CORRETA FICA AQUI NO CANTO DIREITO */}
           <small
             style={{
@@ -393,8 +386,10 @@ export function MovsList({
               flexShrink: 0,
             }}
           >
-            {m.dataCompetencia 
-              ? new Date(String(m.dataCompetencia).split('T')[0] + 'T12:00:00').toLocaleDateString('pt-BR') 
+            {m.dataCompetencia
+              ? new Date(
+                  String(m.dataCompetencia).split('T')[0] + 'T12:00:00',
+                ).toLocaleDateString('pt-BR')
               : new Date(m.criadoEm).toLocaleDateString('pt-BR')}
           </small>
         </li>
