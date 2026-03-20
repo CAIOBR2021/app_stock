@@ -371,9 +371,16 @@ export function MovsList({
               — {getProdutoNome(m.produtoId)}
             </span>
             {m.motivo && (
-              <td>
-                <strong>{m.quantidade}</strong>
-              </td>
+              <small
+                style={{
+                  display: 'block',
+                  color: 'var(--text-3)',
+                  fontSize: '12px',
+                  marginTop: '2px',
+                }}
+              >
+                {m.motivo}
+              </small>
             )}
           </div>
 
@@ -859,21 +866,7 @@ export function ConsultaMovimentacoes({
                   </span>
                 </td>
                 <td>
-                  <strong>{m.quantidade}</strong>{' '}
-                  <small
-                    style={{
-                      color: 'var(--text-3)',
-                      fontSize: '12px',
-                      whiteSpace: 'nowrap',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {m.dataCompetencia
-                      ? new Date(
-                          String(m.dataCompetencia).split('T')[0] + 'T12:00:00',
-                        ).toLocaleDateString('pt-BR')
-                      : new Date(m.criadoEm).toLocaleDateString('pt-BR')}
-                  </small>
+                  <strong>{m.quantidade}</strong>
                 </td>
 
                 <td className="d-none d-md-table-cell">
