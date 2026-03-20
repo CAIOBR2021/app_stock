@@ -80,6 +80,33 @@ const IconSearch = () => (
   </svg>
 );
 
+// NOVO: ícones para o campo de data
+const IconCalendar = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+    <line x1="16" y1="2" x2="16" y2="6"/>
+    <line x1="8" y1="2" x2="8" y2="6"/>
+    <line x1="3" y1="10" x2="21" y2="10"/>
+  </svg>
+);
+
+const IconInfo = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="12" y1="8" x2="12" y2="12"/>
+    <line x1="12" y1="16" x2="12.01" y2="16"/>
+  </svg>
+);
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+
+const hojeISO = () => new Date().toISOString().split('T')[0];
+
+const formatarDataExibicao = (iso: string) => {
+  const [ano, mes, dia] = iso.split('-');
+  return `${dia}/${mes}/${ano}`;
+};
+
 // ── INTERFACES ────────────────────────────────────────────────────────────────
 
 interface ProdutoSelecionado {
@@ -95,24 +122,30 @@ interface EntradaSaidaFormProps {
     nomeObra: string;
     tipo: 'entrada' | 'saida' | 'ajuste';
     itens: ProdutoSelecionado[];
+    dataCompetencia: string;  // NOVO
   }) => void;
 }
 
 // ── COMPONENT ─────────────────────────────────────────────────────────────────
 
 export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) {
-  const [ordemCompra, setOrdemCompra] = useState('');
-  const [nomeObra,    setNomeObra]    = useState('');
-  const [tipo,        setTipo]        = useState<'entrada' | 'saida' | 'ajuste'>('entrada');
-  const [selecionados, setSelecionados] = useState<Record<string, { quantidade: number; valorUnitario: number }>>({});
-  const [busca, setBusca] = useState('');
+  const [ordemCompra,    setOrdemCompra]    = useState('');
+  const [nomeObra,       setNomeObra]       = useState('');
+  const [tipo,           setTipo]           = useState<'entrada' | 'saida' | 'ajuste'>('entrada');
+  const [selecionados,   setSelecionados]   = useState<Record<string, { quantidade: number; valorUnitario: number }>>({});
+  const [busca,          setBusca]          = useState('');
   const [categoriaOption, setCategoriaOption] = useState<any>(null);
+
+  // NOVO: data de competência — padrão = hoje
+  const [dataCompetencia, setDataCompetencia] = useState(hojeISO());
+
+  const hoje        = hojeISO();
+  const isRetroativa = dataCompetencia < hoje;
 
   const categorias = useMemo(() => {
     return Array.from(new Set(produtos.map(p => p.categoria || '').filter(Boolean))).sort();
   }, [produtos]);
 
-  // Category options for react-select
   const categoriasOptions = [
     { value: '', label: 'Todas as categorias' },
     ...categorias.map(c => ({ value: c, label: c })),
@@ -127,7 +160,7 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
       const searchableText = [p.nome, p.sku, p.categoria ?? '', p.descricao ?? '',
         p.localArmazenamento ?? '', p.fornecedor ?? ''].join(' ').toLowerCase();
 
-      const atendeBusca = tokens.length === 0 || tokens.every(token => searchableText.includes(token));
+      const atendeBusca     = tokens.length === 0 || tokens.every(token => searchableText.includes(token));
       const atendeEstoque   = tipo !== 'saida' || p.quantidade > 0;
       const atendeCategoria = !categoriaFiltro || p.categoria === categoriaFiltro;
 
@@ -159,10 +192,12 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
     const itens = Object.entries(selecionados).map(([produtoId, dados]) => ({
       produtoId, quantidade: dados.quantidade, valorUnitario: dados.valorUnitario,
     }));
-    onSubmit({ ordemCompra, nomeObra, tipo, itens });
+    // NOVO: passa dataCompetencia para o handler pai
+    onSubmit({ ordemCompra, nomeObra, tipo, itens, dataCompetencia });
     setOrdemCompra('');
     setNomeObra('');
     setSelecionados({});
+    setDataCompetencia(hojeISO());
   };
 
   const totalSelecionados = Object.keys(selecionados).length;
@@ -180,16 +215,16 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
     ? { background: '#1971C2', borderColor: '#1971C2', color: '#fff', boxShadow: '0 4px 12px rgba(25,113,194,.3)' }
     : { background: 'var(--surface)', borderColor: '#1971C2', color: '#1971C2' };
 
-  const tipoLabel = tipo === 'entrada' ? 'Entrada' : tipo === 'saida' ? 'Saída' : 'Ajuste';
+  const tipoLabel       = tipo === 'entrada' ? 'Entrada' : tipo === 'saida' ? 'Saída' : 'Ajuste';
   const quantidadeLabel = tipo === 'ajuste' ? 'Nova Qtd.' : 'Qtd.';
 
   return (
     <div className="card-modern">
       <form onSubmit={handleSubmit}>
 
-        {/* ── Cabeçalho: OC + Obra ── */}
+        {/* ── Cabeçalho: OC + Obra + Data de Competência ── */}
         <div className="row g-3 mb-4">
-          <div className="col-md-6">
+          <div className="col-md-4">
             <label className="form-label">Ordem de Compra</label>
             <input
               type="text" className="form-control"
@@ -198,7 +233,7 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
               onChange={e => setOrdemCompra(e.target.value)}
             />
           </div>
-          <div className="col-md-6">
+          <div className="col-md-4">
             <label className="form-label">Nome da Obra</label>
             <input
               type="text" className="form-control"
@@ -207,7 +242,68 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
               onChange={e => setNomeObra(e.target.value)}
             />
           </div>
+
+          {/* NOVO: campo de data de competência */}
+          <div className="col-md-4">
+            <label className="form-label d-flex align-items-center gap-2">
+              <IconCalendar />
+              Data de Competência
+              {isRetroativa && (
+                <span style={{
+                  fontSize: 10,
+                  background: '#FEF3DC',
+                  color: '#9A5A00',
+                  padding: '2px 7px',
+                  borderRadius: 999,
+                  fontWeight: 700,
+                  letterSpacing: '.4px',
+                  textTransform: 'uppercase',
+                }}>
+                  Retroativo
+                </span>
+              )}
+            </label>
+            <input
+              type="date"
+              className="form-control"
+              value={dataCompetencia}
+              max={hoje}
+              onChange={e => setDataCompetencia(e.target.value)}
+            />
+          </div>
         </div>
+
+        {/* NOVO: banner de aviso para lançamento retroativo */}
+        {isRetroativa && (
+          <div style={{
+            marginBottom: 16,
+            padding: '10px 14px',
+            background: '#FEF3DC',
+            border: '1px solid #FAD898',
+            borderRadius: 8,
+            fontSize: 13,
+            color: '#9A5A00',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 10,
+          }}>
+            <span style={{ flexShrink: 0, marginTop: 1 }}><IconInfo /></span>
+            <div>
+              <strong>Lançamento retroativo — {formatarDataExibicao(dataCompetencia)}</strong>
+              <br />
+              O saldo atual será ajustado normalmente.
+              {tipo === 'saida' && (
+                <> O sistema verificará se havia estoque suficiente nesta data antes de confirmar.</>
+              )}
+              {tipo === 'entrada' && (
+                <> Entradas retroativas são sempre permitidas.</>
+              )}
+              {tipo === 'ajuste' && (
+                <> O ajuste definirá o saldo absoluto do item independente da data.</>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* ── Tipo de movimentação ── */}
         <div className="mb-4">
@@ -461,6 +557,15 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
           >
             <IconCheck />
             Confirmar {tipoLabel}
+            {/* NOVO: mostra a data quando for retroativo */}
+            {isRetroativa && (
+              <span style={{
+                background: 'rgba(255,255,255,.2)', borderRadius: 999,
+                padding: '1px 8px', fontSize: 11, fontWeight: 700, marginLeft: 2,
+              }}>
+                {formatarDataExibicao(dataCompetencia)}
+              </span>
+            )}
             {totalSelecionados > 0 && (
               <span style={{
                 background: 'rgba(255,255,255,.25)', borderRadius: '999px',

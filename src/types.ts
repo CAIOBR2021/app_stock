@@ -30,6 +30,7 @@ export interface Movimentacao {
   nomeObra?: string;
   ordemCompra?: string;
   custoUnitarioHistorico?: number;
+  dataCompetencia?: string;   // ← adiciona esta linha
 }
 
 export interface Entrega {

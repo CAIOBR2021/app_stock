@@ -154,7 +154,7 @@ export default function App() {
   const [showScroll, setShowScroll] = useState(false);
   const [q, setQ] = useState('');
   const [categoriaFilter, setCategoriaFilter] = useState('');
-  const [localFilter, setLocalFilter] = useState('');   // ← NOVO
+  const [localFilter, setLocalFilter] = useState('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null);
   const [mostrarAbaixoMin, setMostrarAbaixoMin] = useState(false);
   const [mostrarPrioritarios, setMostrarPrioritarios] = useState(false);
@@ -270,12 +270,13 @@ export default function App() {
 
   // ── CRUD MOVIMENTAÇÕES ───────────────────────────────────────────────────
 
+  // MUDANÇA 1: passa dataCompetencia no body da requisição
   async function addMov(m: Omit<Movimentacao, 'id' | 'criadoEm'>, custoEntrada?: number) {
     try {
       const res = await fetch(`${API_URL}/movimentacoes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...m, custoEntrada }),
+        body: JSON.stringify({ ...m, custoEntrada, dataCompetencia: m.dataCompetencia }),
       });
       if (!res.ok) throw new Error('Falha ao criar movimentação');
       const { movimentacao, produto } = await res.json();
@@ -284,6 +285,7 @@ export default function App() {
     } catch (err: any) { toast.error(err.message); }
   }
 
+  // MUDANÇA 2: passa dataCompetencia de dados para cada item
   const handleEntradaSaidaSubmit = async (dados: any) => {
     try {
       setLoading(true);
@@ -301,6 +303,7 @@ export default function App() {
             nomeObra: dados.nomeObra || undefined,
             ordemCompra: dados.ordemCompra || undefined,
             custoUnitarioHistorico: item.valorUnitario,
+            dataCompetencia: dados.dataCompetencia,  // NOVO
           },
           dados.tipo === 'entrada' ? item.valorUnitario : undefined,
         );
@@ -473,7 +476,7 @@ export default function App() {
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
     );
 
-  // ── PDF ENTREGAS — substituído pela versão executiva ─────────────────────
+  // ── PDF ENTREGAS ─────────────────────────────────────────────────────────
   const handleGenerateDeliveryReport = () => {
     if (selectedEntregaIds.length === 0) { toast.error('Selecione ao menos uma entrega.'); return; }
     const selected = entregas
@@ -712,7 +715,6 @@ export default function App() {
       return (
         matchesQuery &&
         (!categoriaFilter || p.categoria === categoriaFilter) &&
-        // ── FILTRO DE LOCALIZAÇÃO ── busca parcial, case-insensitive
         (!localFilter || (p.localArmazenamento ?? '').toLowerCase().includes(localFilter.toLowerCase())) &&
         (!mostrarAbaixoMin || (p.estoqueMinimo != null && p.quantidade <= p.estoqueMinimo)) &&
         (!mostrarPrioritarios || p.prioritario)
@@ -725,15 +727,9 @@ export default function App() {
       );
     return result;
   }, [
-    debouncedQ,
-    categoriaFilter,
-    localFilter,          // ← NOVA DEPENDÊNCIA
-    mostrarAbaixoMin,
-    mostrarPrioritarios,
-    allProdutos,
-    produtos,
-    loadingAll,
-    sortOrder,
+    debouncedQ, categoriaFilter, localFilter,
+    mostrarAbaixoMin, mostrarPrioritarios,
+    allProdutos, produtos, loadingAll, sortOrder,
   ]);
 
   const paginatedProdutos = useMemo(() => {
@@ -830,7 +826,6 @@ export default function App() {
 
             <div className="card-modern">
               <div className="row gy-3 align-items-end">
-                {/* Busca */}
                 <div className="col-12 col-lg-5">
                   <label className="form-label">Pesquisar Produto</label>
                   <div className="input-wrap">
@@ -844,8 +839,6 @@ export default function App() {
                     />
                   </div>
                 </div>
-
-                {/* Categoria */}
                 <div className="col-12 col-md-4 col-lg-3">
                   <label className="form-label">Categoria</label>
                   <select className="form-select" value={categoriaFilter} onChange={(e) => { setCategoriaFilter(e.target.value); setPage(1); }}>
@@ -853,8 +846,6 @@ export default function App() {
                     {categorias.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
-
-                {/* Localização — agora conectado ao localFilter */}
                 <div className="col-12 col-md-4 col-lg-2">
                   <label className="form-label">Localização</label>
                   <select
@@ -866,8 +857,6 @@ export default function App() {
                     {locaisArmazenamento.map((l) => <option key={l} value={l}>{l}</option>)}
                   </select>
                 </div>
-
-                {/* Status toggles */}
                 <div className="col-12 col-md-4 col-lg-2">
                   <label className="form-label">Status</label>
                   <div className="d-flex flex-column gap-1">
