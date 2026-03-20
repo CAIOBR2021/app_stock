@@ -288,34 +288,63 @@ async function addMov(m: Omit<Movimentacao, 'id' | 'criadoEm'>, custoEntrada?: n
   } catch (err: any) { toast.error(err.message); }
 }
   // MUDANÇA 2: passa dataCompetencia de dados para cada item
-  const handleEntradaSaidaSubmit = async (dados: any) => {
-    try {
-      setLoading(true);
-      const partes = [];
-      if (dados.ordemCompra) partes.push(`OC: ${dados.ordemCompra}`);
-      if (dados.nomeObra) partes.push(`Obra: ${dados.nomeObra}`);
-      const motivoFinal = partes.length > 0 ? partes.join(' | ') : `Movimentação em lote (${dados.tipo})`;
-      for (const item of dados.itens) {
-        await addMov(
-          {
+const handleEntradaSaidaSubmit = async (dados: any) => {
+  try {
+    setLoading(true);
+    const partes = [];
+    if (dados.ordemCompra) partes.push(`OC: ${dados.ordemCompra}`);
+    if (dados.nomeObra) partes.push(`Obra: ${dados.nomeObra}`);
+    const motivoFinal = partes.length > 0 ? partes.join(' | ') : `Movimentação em lote (${dados.tipo})`;
+    
+    const erros: string[] = [];
+    
+    for (const item of dados.itens) {
+      try {
+        const res = await fetch(`${API_URL}/movimentacoes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
             produtoId: item.produtoId,
             tipo: dados.tipo,
             quantidade: item.quantidade,
             motivo: motivoFinal,
             nomeObra: dados.nomeObra || undefined,
             ordemCompra: dados.ordemCompra || undefined,
-            custoUnitarioHistorico: item.valorUnitario,
-            dataCompetencia: dados.dataCompetencia,  // NOVO
-          },
-          dados.tipo === 'entrada' ? item.valorUnitario : undefined,
-        );
+            custoUnitarioHistorico: dados.tipo === 'entrada' ? item.valorUnitario : undefined,
+            custoEntrada: dados.tipo === 'entrada' ? item.valorUnitario : undefined,
+            dataCompetencia: dados.dataCompetencia,
+          }),
+        });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({ error: 'Erro desconhecido' }));
+          const produto = allProdutos.find(p => p.id === item.produtoId);
+          erros.push(`${produto?.nome || item.produtoId}: ${errData.error}`);
+        } else {
+          const { movimentacao, produto } = await res.json();
+          setMovs(prev => [movimentacao, ...prev]);
+          setAllProdutos(prev => prev.map(p => p.id === produto.id ? produto : p));
+        }
+      } catch {
+        const produto = allProdutos.find(p => p.id === item.produtoId);
+        erros.push(`${produto?.nome || item.produtoId}: erro de conexão`);
       }
+    }
+
+    if (erros.length === 0) {
       toast.success('Movimentações registradas com sucesso!');
       setView('estoque');
       scrollTop();
-    } catch { toast.error('Erro ao registrar entradas/saídas.'); }
-    finally { setLoading(false); }
-  };
+    } else if (erros.length < dados.itens.length) {
+      toast.warning(`Parcialmente registrado. Erros:\n${erros.join('\n')}`);
+    } else {
+      toast.error(`Falha ao registrar:\n${erros.join('\n')}`);
+    }
+  } catch {
+    toast.error('Erro ao registrar entradas/saídas.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   async function updateMov(id: UUID, patch: { quantidade: number; motivo?: string }) {
     try {
