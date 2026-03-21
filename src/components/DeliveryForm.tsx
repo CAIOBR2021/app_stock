@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Select from 'react-select';
 import CreatableSelect from 'react-select/creatable';
 import type { StylesConfig } from 'react-select';
+import { safeLocalStorageGet, safeLocalStorageSet } from '../utils/storage';
 
 // ── SVG ICONS ─────────────────────────────────────────────────────────────────
 
@@ -54,6 +55,18 @@ const IconEmptyHistory = () => (
 
 // ── TYPES ─────────────────────────────────────────────────────────────────────
 
+interface HiddenOptions {
+  origens: string[];
+  destinos: string[];
+  responsaveis: string[];
+}
+
+const HIDDEN_OPTIONS_DEFAULT: HiddenOptions = {
+  origens: [],
+  destinos: [],
+  responsaveis: [],
+};
+
 interface DeliveryFormProps {
   onSave: (data: any) => void;
   onCancelEdit?: () => void;
@@ -62,7 +75,7 @@ interface DeliveryFormProps {
   historicoEntregas?: any[];
 }
 
-// ── REACT-SELECT STYLES (aligned to design system) ────────────────────────────
+// ── REACT-SELECT STYLES ───────────────────────────────────────────────────────
 
 const selectStyles: StylesConfig = {
   control: (base, state) => ({
@@ -101,7 +114,6 @@ export function DeliveryForm({
   deliveryToEdit,
   historicoEntregas = [],
 }: DeliveryFormProps) {
-  // Today string
   const todayStr = (() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -114,20 +126,21 @@ export function DeliveryForm({
   const [data,           setData]           = useState(todayStr);
   const [hora,           setHora]           = useState('08:00');
   const [selectedOption, setSelectedOption] = useState<any>(null);
+  const [formError,      setFormError]      = useState('');
 
-  // Manage history modal state
   const [showManageModal, setShowManageModal] = useState(false);
-  const [manageField, setManageField]         = useState<'origens' | 'destinos' | 'responsaveis' | null>(null);
-  const [hiddenOptions, setHiddenOptions]     = useState<Record<string, string[]>>(() => {
-    const saved = localStorage.getItem('deliveryHiddenOptions');
-    return saved ? JSON.parse(saved) : { origens: [], destinos: [], responsaveis: [] };
-  });
+  const [manageField, setManageField]         = useState<keyof HiddenOptions | null>(null);
+
+  // ── localStorage CORRIGIDO ───────────────────────────────────────────────
+  // Correção: safeLocalStorageGet trata erros de acesso e JSON inválido
+  const [hiddenOptions, setHiddenOptions] = useState<HiddenOptions>(() =>
+    safeLocalStorageGet('deliveryHiddenOptions', HIDDEN_OPTIONS_DEFAULT)
+  );
 
   useEffect(() => {
-    localStorage.setItem('deliveryHiddenOptions', JSON.stringify(hiddenOptions));
+    safeLocalStorageSet('deliveryHiddenOptions', hiddenOptions);
   }, [hiddenOptions]);
 
-  // Phone formatter
   const formatPhone = (value: string) => {
     if (!value) return '';
     let v = value.replace(/\D/g, '').substring(0, 11);
@@ -136,12 +149,11 @@ export function DeliveryForm({
     return v;
   };
 
-  // Build suggestion lists from history
   const sugestoes = useMemo(() => {
-    const origens     = new Set<string>(['Almoxarifado Central', 'Pátio 04', 'Galpão Externo']);
-    const destinos    = new Set<string>();
+    const origens      = new Set<string>(['Almoxarifado Central', 'Pátio 04', 'Galpão Externo']);
+    const destinos     = new Set<string>();
     const responsaveis = new Set<string>();
-    const telefones   = new Set<string>();
+    const telefones    = new Set<string>();
     const mapaTel: Record<string, string> = {};
 
     historicoEntregas.forEach(e => {
@@ -158,15 +170,14 @@ export function DeliveryForm({
     });
 
     return {
-      origens:     Array.from(origens).filter(o => !hiddenOptions.origens?.includes(o)),
-      destinos:    Array.from(destinos).filter(d => !hiddenOptions.destinos?.includes(d)),
+      origens:      Array.from(origens).filter(o => !hiddenOptions.origens?.includes(o)),
+      destinos:     Array.from(destinos).filter(d => !hiddenOptions.destinos?.includes(d)),
       responsaveis: Array.from(responsaveis).filter(r => !hiddenOptions.responsaveis?.includes(r)),
-      telefones:   Array.from(telefones),
+      telefones:    Array.from(telefones),
       mapaTelefonePorNome: mapaTel,
     };
   }, [historicoEntregas, hiddenOptions]);
 
-  // Product options for react-select
   const options = useMemo(() =>
     produtosDisponiveis.map(p => ({
       value: p.id,
@@ -176,7 +187,6 @@ export function DeliveryForm({
       quantidade: p.quantidade,
     })), [produtosDisponiveis]);
 
-  // Populate form when editing
   useEffect(() => {
     if (deliveryToEdit) {
       const d = new Date(deliveryToEdit.dataHoraSolicitacao);
@@ -195,16 +205,43 @@ export function DeliveryForm({
     }
   }, [deliveryToEdit, options]);
 
+  // ── SUBMIT COM VALIDAÇÃO ──────────────────────────────────────────────────
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedOption) { alert('Por favor, selecione um produto da lista.'); return; }
+    setFormError('');
+
+    // Validação: produto selecionado
+    if (!selectedOption) {
+      setFormError('Por favor, selecione um produto da lista.');
+      return;
+    }
+
+    // Validação: quantidade numérica e positiva
+    const qtd = Number(String(formData.itemQuantidade).replace(',', '.'));
+    if (!isFinite(qtd) || qtd <= 0) {
+      setFormError('A quantidade deve ser um número positivo.');
+      return;
+    }
+
+    // Validação: campos obrigatórios
+    if (!formData.localArmazenagem.trim()) {
+      setFormError('Informe a origem (armazém).');
+      return;
+    }
+    if (!formData.localObra.trim()) {
+      setFormError('Informe o destino (obra).');
+      return;
+    }
+
     const dataLocal = new Date(`${data}T${hora}:00`);
     onSave({
       ...formData,
+      itemQuantidade: qtd,
       produtoId: selectedOption.value,
       itemNome:  selectedOption.nomeProduto,
       dataHoraSolicitacao: dataLocal.toISOString(),
     });
+
     if (!deliveryToEdit) {
       setFormData({ localArmazenagem: '', localObra: '', produtoId: '', itemNome: '', itemQuantidade: 1, responsavelNome: '', responsavelTelefone: '' });
       setSelectedOption(null);
@@ -217,22 +254,19 @@ export function DeliveryForm({
     setFormData(prev => ({ ...prev, responsavelNome: nome, responsavelTelefone: tel }));
   };
 
-  // Creatable select option arrays
   const origensOptions     = sugestoes.origens.map(o => ({ value: o, label: o }));
   const destinosOptions    = sugestoes.destinos.map(d => ({ value: d, label: d }));
   const responsaveisOptions = sugestoes.responsaveis.map(r => ({ value: r, label: r }));
   const telefonesOptions   = sugestoes.telefones.map(t => ({ value: t, label: t }));
 
-  // History management helpers
-  const handleRemoveOption = (field: 'origens' | 'destinos' | 'responsaveis', value: string) => {
+  const handleRemoveOption = (field: keyof HiddenOptions, value: string) => {
     setHiddenOptions(prev => ({ ...prev, [field]: [...(prev[field] || []), value] }));
   };
-  const handleClearAll = (field: 'origens' | 'destinos' | 'responsaveis') => {
+  const handleClearAll = (field: keyof HiddenOptions) => {
     setHiddenOptions(prev => ({ ...prev, [field]: [...(prev[field] || []), ...sugestoes[field]] }));
   };
 
-  // Shared label row (label + gear button)
-  const FieldLabel = ({ label, field }: { label: string; field: 'origens' | 'destinos' | 'responsaveis' }) => (
+  const FieldLabel = ({ label, field }: { label: string; field: keyof HiddenOptions }) => (
     <div className="d-flex justify-content-between align-items-center mb-1">
       <label className="form-label mb-0">{label}</label>
       <button
@@ -249,24 +283,25 @@ export function DeliveryForm({
 
   return (
     <>
-      {/* ── FORM ── */}
       <form
         onSubmit={handleSubmit}
         className="d-flex flex-column h-100"
         style={{ padding: '20px', border: '1px solid var(--border)', borderRadius: 'var(--radius)', background: 'var(--surface)' }}
       >
-        {/* Title */}
-        <div
-          className="d-flex align-items-center gap-2 mb-4"
-          style={{ paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}
-        >
+        <div className="d-flex align-items-center gap-2 mb-4" style={{ paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
           <span style={{ color: 'var(--primary)' }}><IconCalendar /></span>
           <h5 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-1)', letterSpacing: '-.3px' }}>
             {deliveryToEdit ? 'Editar Entrega' : 'Nova Entrega'}
           </h5>
         </div>
 
-        {/* Data + Hora */}
+        {/* Mensagem de erro de validação */}
+        {formError && (
+          <div style={{ background: 'var(--danger-light)', border: '1px solid #FFC5C5', borderRadius: '8px', padding: '8px 12px', fontSize: '13px', color: 'var(--danger)', marginBottom: '12px' }}>
+            {formError}
+          </div>
+        )}
+
         <div className="row g-3 mb-3">
           <div className="col-6">
             <label className="form-label">Data</label>
@@ -278,7 +313,6 @@ export function DeliveryForm({
           </div>
         </div>
 
-        {/* Produto */}
         <div className="mb-3">
           <label className="form-label">Produto *</label>
           <Select
@@ -286,6 +320,7 @@ export function DeliveryForm({
             onChange={(opt: any) => {
               setSelectedOption(opt);
               setFormData(prev => ({ ...prev, produtoId: opt?.value || '', itemNome: opt?.nomeProduto || '' }));
+              setFormError('');
             }}
             options={options}
             placeholder="Selecione o Produto..."
@@ -295,7 +330,6 @@ export function DeliveryForm({
           />
         </div>
 
-        {/* Quantidade */}
         <div className="mb-3">
           <label className="form-label">Quantidade *</label>
           <input
@@ -306,71 +340,55 @@ export function DeliveryForm({
           />
         </div>
 
-        {/* Origem */}
         <div className="mb-3">
           <FieldLabel label="Origem (Armazém) *" field="origens" />
           <CreatableSelect
-            isClearable
-            options={origensOptions}
+            isClearable options={origensOptions}
             value={formData.localArmazenagem ? { value: formData.localArmazenagem, label: formData.localArmazenagem } : null}
             onChange={(v: any) => setFormData(prev => ({ ...prev, localArmazenagem: v?.value || '' }))}
             placeholder="Selecione ou digite..."
             formatCreateLabel={(i: string) => `Usar "${i}"`}
-            styles={selectStyles}
-            menuPortalTarget={document.body}
+            styles={selectStyles} menuPortalTarget={document.body}
           />
         </div>
 
-        {/* Destino */}
         <div className="mb-3">
           <FieldLabel label="Destino (Obra) *" field="destinos" />
           <CreatableSelect
-            isClearable
-            options={destinosOptions}
+            isClearable options={destinosOptions}
             value={formData.localObra ? { value: formData.localObra, label: formData.localObra } : null}
             onChange={(v: any) => setFormData(prev => ({ ...prev, localObra: v?.value || '' }))}
             placeholder="Ex: Bloco A"
             formatCreateLabel={(i: string) => `Usar "${i}"`}
-            styles={selectStyles}
-            menuPortalTarget={document.body}
+            styles={selectStyles} menuPortalTarget={document.body}
           />
         </div>
 
-        {/* Responsável */}
         <div className="mb-3">
           <FieldLabel label="Responsável" field="responsaveis" />
           <CreatableSelect
-            isClearable
-            options={responsaveisOptions}
+            isClearable options={responsaveisOptions}
             value={formData.responsavelNome ? { value: formData.responsavelNome, label: formData.responsavelNome } : null}
             onChange={handleResponsavelChange}
             placeholder="Nome de quem recebe"
             formatCreateLabel={(i: string) => `Usar "${i}"`}
-            styles={selectStyles}
-            menuPortalTarget={document.body}
+            styles={selectStyles} menuPortalTarget={document.body}
           />
         </div>
 
-        {/* Telefone */}
         <div className="mb-3">
           <label className="form-label">Telefone</label>
           <CreatableSelect
-            isClearable
-            options={telefonesOptions}
+            isClearable options={telefonesOptions}
             value={formData.responsavelTelefone ? { value: formData.responsavelTelefone, label: formData.responsavelTelefone } : null}
             onChange={(v: any) => setFormData(prev => ({ ...prev, responsavelTelefone: v?.value || '' }))}
             placeholder="(00) 00000-0000"
             formatCreateLabel={(i: string) => `Usar "${i}"`}
-            styles={selectStyles}
-            menuPortalTarget={document.body}
+            styles={selectStyles} menuPortalTarget={document.body}
           />
         </div>
 
-        {/* Actions */}
-        <div
-          className="d-flex flex-column gap-2 mt-auto"
-          style={{ paddingTop: '16px', borderTop: '1px solid var(--border)', marginTop: '8px' }}
-        >
+        <div className="d-flex flex-column gap-2 mt-auto" style={{ paddingTop: '16px', borderTop: '1px solid var(--border)', marginTop: '8px' }}>
           <button type="submit" className="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2" style={{ height: '42px', fontWeight: 700 }}>
             <IconSave /> {deliveryToEdit ? 'Salvar Alterações' : 'Agendar Entrega'}
           </button>
@@ -386,66 +404,61 @@ export function DeliveryForm({
       {showManageModal && (
         <div className="ds-modal-overlay" onClick={() => setShowManageModal(false)}>
           <div className="ds-modal" style={{ maxWidth: '480px' }} onClick={e => e.stopPropagation()}>
-              {/* Header */}
-              <div className="ds-modal-header">
-                <h5 className="ds-modal-title">Gerenciar Histórico</h5>
-                <button className="ds-modal-close" onClick={() => setShowManageModal(false)} aria-label="Fechar">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14">
-                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                  </svg>
-                </button>
-              </div>
-
-              {/* Body */}
-              <div className="ds-modal-body">
-                <p style={{ fontSize: '13px', color: 'var(--text-3)', marginBottom: '16px' }}>
-                  Remova itens que não deseja mais como sugestão neste campo.
-                </p>
-                <div style={{ maxHeight: '45vh', overflowY: 'auto', paddingRight: '4px' }}>
-                  {manageField && sugestoes[manageField].length > 0 ? (
-                    sugestoes[manageField].map((item, idx) => (
-                      <div key={idx} className="history-card-item">
-                        <span className="history-card-text">{item}</span>
-                        <button
-                          type="button"
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', padding: 0, display: 'flex', alignItems: 'center' }}
-                          onClick={() => handleRemoveOption(manageField!, item)}
-                          title="Remover"
-                        >
-                          <IconTrash />
-                        </button>
-                      </div>
-                    ))
-                  ) : (
-                    <div style={{ textAlign: 'center', padding: '40px 16px', color: 'var(--text-3)' }}>
-                      <div style={{ marginBottom: '8px' }}><IconEmptyHistory /></div>
-                      <p style={{ fontSize: '13px', margin: 0 }}>Nenhum item no histórico deste campo.</p>
+            <div className="ds-modal-header">
+              <h5 className="ds-modal-title">Gerenciar Histórico</h5>
+              <button className="ds-modal-close" onClick={() => setShowManageModal(false)} aria-label="Fechar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <div className="ds-modal-body">
+              <p style={{ fontSize: '13px', color: 'var(--text-3)', marginBottom: '16px' }}>
+                Remova itens que não deseja mais como sugestão neste campo.
+              </p>
+              <div style={{ maxHeight: '45vh', overflowY: 'auto', paddingRight: '4px' }}>
+                {manageField && sugestoes[manageField].length > 0 ? (
+                  sugestoes[manageField].map((item, idx) => (
+                    <div key={idx} className="history-card-item">
+                      <span className="history-card-text">{item}</span>
+                      <button
+                        type="button"
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', padding: 0, display: 'flex', alignItems: 'center' }}
+                        onClick={() => handleRemoveOption(manageField!, item)}
+                        title="Remover"
+                      >
+                        <IconTrash />
+                      </button>
                     </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className="ds-modal-footer">
-                <button
-                  type="button"
-                  style={{ background: 'none', border: 'none', color: 'var(--danger)', fontWeight: 700, fontSize: '13.5px', cursor: 'pointer', padding: 0 }}
-                  onClick={() => manageField && handleClearAll(manageField)}
-                  disabled={!manageField || sugestoes[manageField]?.length === 0}
-                >
-                  Limpar tudo
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  style={{ borderRadius: '999px', padding: '0 24px', height: '38px', fontWeight: 700 }}
-                  onClick={() => setShowManageModal(false)}
-                >
-                  Concluído
-                </button>
+                  ))
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '40px 16px', color: 'var(--text-3)' }}>
+                    <div style={{ marginBottom: '8px' }}><IconEmptyHistory /></div>
+                    <p style={{ fontSize: '13px', margin: 0 }}>Nenhum item no histórico deste campo.</p>
+                  </div>
+                )}
               </div>
             </div>
+            <div className="ds-modal-footer">
+              <button
+                type="button"
+                style={{ background: 'none', border: 'none', color: 'var(--danger)', fontWeight: 700, fontSize: '13.5px', cursor: 'pointer', padding: 0 }}
+                onClick={() => manageField && handleClearAll(manageField)}
+                disabled={!manageField || sugestoes[manageField]?.length === 0}
+              >
+                Limpar tudo
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                style={{ borderRadius: '999px', padding: '0 24px', height: '38px', fontWeight: 700 }}
+                onClick={() => setShowManageModal(false)}
+              >
+                Concluído
+              </button>
+            </div>
           </div>
+        </div>
       )}
     </>
   );
