@@ -58,55 +58,27 @@ const selectStyles: StylesConfig = {
 // ── SVG ICONS ─────────────────────────────────────────────────────────────────
 
 const IconX = () => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    width="14"
-    height="14"
-  >
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
     <line x1="18" y1="6" x2="6" y2="18" />
     <line x1="6" y1="6" x2="18" y2="18" />
   </svg>
 );
 
 const IconCheck = () => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    width="14"
-    height="14"
-  >
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14">
     <polyline points="20 6 9 17 4 12" />
   </svg>
 );
 
 const IconEdit = () => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    width="14"
-    height="14"
-  >
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
   </svg>
 );
 
 const IconTrash = () => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    width="14"
-    height="14"
-  >
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
     <polyline points="3 6 5 6 21 6" />
     <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
     <path d="M10 11v6" />
@@ -116,44 +88,21 @@ const IconTrash = () => (
 );
 
 const IconGear = () => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    width="15"
-    height="15"
-  >
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width="15" height="15">
     <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
   </svg>
 );
 
 const IconClear = () => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    width="14"
-    height="14"
-  >
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
     <line x1="18" y1="6" x2="6" y2="18" />
     <line x1="6" y1="6" x2="18" y2="18" />
   </svg>
 );
 
 const IconBuilding = () => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    width="18"
-    height="18"
-  >
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
     <rect x="3" y="3" width="18" height="18" rx="2" />
     <path d="M9 3v18M15 3v18M3 9h18M3 15h18" />
   </svg>
@@ -165,6 +114,8 @@ const tipoBadgeStyle = (tipo: string): React.CSSProperties => {
     return { background: 'var(--success-light)', color: 'var(--success)' };
   if (tipo === 'saida')
     return { background: 'var(--danger-light)', color: 'var(--danger)' };
+  if (tipo === 'saldo_inicial')
+    return { background: '#E5E0FA', color: '#6741D9' }; // Tom roxo para Saldo Inicial
   return { background: 'var(--warning-light)', color: 'var(--primary-dark)' };
 };
 
@@ -193,6 +144,7 @@ export function MovimentacaoForm({
     { value: 'saida', label: 'Saída' },
     { value: 'entrada', label: 'Entrada' },
     { value: 'ajuste', label: 'Ajuste de Estoque' },
+    { value: 'saldo_inicial', label: 'Saldo Inicial' },
   ];
 
   function submit(e: React.FormEvent) {
@@ -251,7 +203,9 @@ export function MovimentacaoForm({
         </div>
         <div className="col-md-4">
           <label className="form-label">
-            {tipo === 'ajuste' ? 'Nova Quantidade' : 'Quantidade'}
+            {tipo === 'ajuste' || tipo === 'saldo_inicial'
+              ? 'Nova Quantidade'
+              : 'Quantidade'}
           </label>
           <input
             type="number"
@@ -360,7 +314,7 @@ export function MovsList({
                 letterSpacing: '.5px',
               }}
             >
-              {m.tipo.toUpperCase()}
+              {m.tipo.replace('_', ' ').toUpperCase()}
             </span>
             {/* 👇 A QUANTIDADE FICA AQUI */}
             <strong style={{ color: 'var(--text-1)', fontSize: '13.5px' }}>
@@ -472,7 +426,7 @@ export function MovimentacaoEditForm({
           <label className="form-label">Tipo de Movimentação</label>
           <input
             className="form-control"
-            value={movimentacao.tipo.toUpperCase()}
+            value={movimentacao.tipo.replace('_', ' ').toUpperCase()}
             readOnly
             disabled
           />
@@ -612,7 +566,6 @@ export function ConsultaMovimentacoes({
 
   const filteredMovs = useMemo(() => {
     return movs.filter((mov) => {
-
       // CORREÇÃO 1: Usar dataCompetencia para o filtro, com fallback para criadoEm
       const movDate = mov.dataCompetencia
         ? new Date(String(mov.dataCompetencia).split('T')[0] + 'T12:00:00')
@@ -866,10 +819,10 @@ export function ConsultaMovimentacoes({
                 </td>
                 <td>
                   <span className="badge" style={tipoBadgeStyle(m.tipo)}>
-                    {m.tipo.toUpperCase()}
+                    {m.tipo.replace('_', ' ').toUpperCase()}
                   </span>
                 </td>
-                <td >
+                <td>
                   <strong>{m.quantidade}</strong>
                 </td>
 
@@ -919,10 +872,10 @@ export function ConsultaMovimentacoes({
                     <button
                       className="act-btn"
                       onClick={() => setEditId(m.id)}
-                      disabled={m.tipo === 'ajuste'}
+                      disabled={m.tipo === 'ajuste' || m.tipo === 'saldo_inicial'}
                       title={
-                        m.tipo === 'ajuste'
-                          ? 'Ajustes não são editáveis'
+                        m.tipo === 'ajuste' || m.tipo === 'saldo_inicial'
+                          ? 'Ajustes e Saldos Iniciais não são editáveis'
                           : 'Editar'
                       }
                       style={{ color: 'var(--text-3)' }}
@@ -932,10 +885,10 @@ export function ConsultaMovimentacoes({
                     <button
                       className="act-btn del"
                       onClick={() => setDeleteId(m.id)}
-                      disabled={m.tipo === 'ajuste'}
+                      disabled={m.tipo === 'ajuste' || m.tipo === 'saldo_inicial'}
                       title={
-                        m.tipo === 'ajuste'
-                          ? 'Ajustes não podem ser excluídos'
+                        m.tipo === 'ajuste' || m.tipo === 'saldo_inicial'
+                          ? 'Ajustes e Saldos Iniciais não podem ser excluídos'
                           : 'Excluir'
                       }
                     >

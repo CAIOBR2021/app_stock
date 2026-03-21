@@ -911,9 +911,10 @@ export function MovimentacaoForm({
   const [custoEntrada, setCustoEntrada] = useState<number | undefined>(undefined);
 
   const tipoOptions = [
-    { value: 'saida',   label: 'Saída' },
-    { value: 'entrada', label: 'Entrada' },
-    { value: 'ajuste',  label: 'Ajuste de Estoque' },
+    { value: 'saida',         label: 'Saída' },
+    { value: 'entrada',       label: 'Entrada' },
+    { value: 'ajuste',        label: 'Ajuste de Estoque' },
+    { value: 'saldo_inicial', label: 'Saldo Inicial' }, // ← Opção adicionada aqui
   ];
 
   function submit(e: React.FormEvent) {
@@ -949,7 +950,8 @@ export function MovimentacaoForm({
           />
         </div>
         <div className="col-md-4">
-          <label className="form-label">{tipo === 'ajuste' ? 'Nova Quantidade' : 'Quantidade'}</label>
+          {/* Label ajustada para contemplar o saldo_inicial */}
+          <label className="form-label">{tipo === 'ajuste' || tipo === 'saldo_inicial' ? 'Nova Quantidade' : 'Quantidade'}</label>
           <input
             type="number" min={1} className="form-control"
             value={quantidade}

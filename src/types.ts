@@ -17,7 +17,7 @@ export interface Produto {
   valorUnitario?: number;
 }
 
-export type TipoMov = 'entrada' | 'saida' | 'ajuste';
+export type TipoMov = 'entrada' | 'saida' | 'ajuste' | 'saldo_inicial';
 
 export interface Movimentacao {
   id: UUID;
