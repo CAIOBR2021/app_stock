@@ -15,6 +15,9 @@ export interface RelatorioFiltros {
 
 interface RelatorioModalProps {
   categorias: string[];
+  totalItens: number;
+  totalCriticos: number;
+  totalPrioritarios: number;
   onGerar: (filtros: RelatorioFiltros) => void;
   onClose: () => void;
 }
@@ -53,39 +56,16 @@ const selectStyles: StylesConfig = {
   dropdownIndicator:  (base) => ({ ...base, color: '#9BA3B2', padding: '0 10px' }),
 };
 
-// ── OPÇÕES ────────────────────────────────────────────────────────────────────
+// ── TIPOS DE OPÇÃO ────────────────────────────────────────────────────────────
 
 interface TipoOption {
   value: TipoRelatorio;
   label: string;
   descricao: string;
-  badge?: { text: string; bg: string; color: string; border: string };
-  icon?: React.ReactNode;
+  count: number;
+  countLabel: string;
+  countStyle: { bg: string; color: string; border: string };
 }
-
-const TIPO_OPTIONS: TipoOption[] = [
-  {
-    value: 'completo',
-    label: 'Estoque completo',
-    descricao: 'Todos os produtos cadastrados',
-  },
-  {
-    value: 'critico',
-    label: 'Abaixo do mínimo',
-    descricao: 'Quantidade ≤ estoque mínimo',
-    badge: { text: 'Crítico', bg: '#FEF2F2', color: '#DC2626', border: '#FECACA' },
-  },
-  {
-    value: 'prioritarios',
-    label: 'Prioritários',
-    descricao: 'Marcados com flag de prioridade',
-    icon: (
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="#DC2626" stroke="#DC2626" strokeWidth="1">
-        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/>
-      </svg>
-    ),
-  },
-];
 
 const TIPO_LABELS: Record<TipoRelatorio, string> = {
   completo:     'Estoque completo',
@@ -93,11 +73,83 @@ const TIPO_LABELS: Record<TipoRelatorio, string> = {
   prioritarios: 'Prioritários',
 };
 
+// ── ESTILOS DOS BOTÕES ────────────────────────────────────────────────────────
+
+const btnCancelarStyle: React.CSSProperties = {
+  all: 'unset' as any,
+  height: '40px',
+  padding: '0 18px',
+  borderRadius: '10px',
+  border: '1.5px solid #EAECF0',
+  background: '#fff',
+  fontSize: '13.5px',
+  fontWeight: 500,
+  color: '#667085',
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '6px',
+  fontFamily: 'DM Sans, sans-serif',
+  boxSizing: 'border-box',
+};
+
+const btnGerarStyle: React.CSSProperties = {
+  all: 'unset' as any,
+  height: '40px',
+  padding: '0 22px',
+  borderRadius: '10px',
+  background: '#F5A623',
+  fontSize: '13.5px',
+  fontWeight: 700,
+  color: '#fff',
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '7px',
+  fontFamily: 'DM Sans, sans-serif',
+  boxSizing: 'border-box',
+  boxShadow: '0 1px 3px rgba(245,166,35,.4), 0 4px 12px rgba(245,166,35,.2)',
+};
+
 // ── COMPONENT ─────────────────────────────────────────────────────────────────
 
-export function RelatorioModal({ categorias, onGerar, onClose }: RelatorioModalProps) {
+export function RelatorioModal({
+  categorias,
+  totalItens,
+  totalCriticos,
+  totalPrioritarios,
+  onGerar,
+  onClose,
+}: RelatorioModalProps) {
   const [tipo,      setTipo]      = useState<TipoRelatorio>('completo');
   const [categoria, setCategoria] = useState<{ value: string; label: string } | null>(null);
+
+  const TIPO_OPTIONS: TipoOption[] = [
+    {
+      value: 'completo',
+      label: 'Estoque completo',
+      descricao: 'Todos os produtos cadastrados',
+      count: totalItens,
+      countLabel: 'itens',
+      countStyle: { bg: '#F0FDF4', color: '#16A34A', border: '#BBF7D0' },
+    },
+    {
+      value: 'critico',
+      label: 'Abaixo do mínimo',
+      descricao: 'Quantidade ≤ estoque mínimo',
+      count: totalCriticos,
+      countLabel: 'críticos',
+      countStyle: { bg: '#FEF2F2', color: '#DC2626', border: '#FECACA' },
+    },
+    {
+      value: 'prioritarios',
+      label: 'Prioritários',
+      descricao: 'Marcados com flag de prioridade',
+      count: totalPrioritarios,
+      countLabel: 'itens',
+      countStyle: { bg: '#FFF7ED', color: '#EA580C', border: '#FED7AA' },
+    },
+  ];
 
   const categoriaOptions = [
     { value: '', label: 'Todas as categorias' },
@@ -153,7 +205,7 @@ export function RelatorioModal({ categorias, onGerar, onClose }: RelatorioModalP
           </div>
           <button
             onClick={onClose}
-            style={{ width: '30px', height: '30px', borderRadius: '8px', border: 'none', background: 'rgba(0,0,0,.04)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', flexShrink: 0 }}
+            style={{ all: 'unset' as any, width: '30px', height: '30px', borderRadius: '8px', background: 'rgba(0,0,0,.04)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', flexShrink: 0, boxSizing: 'border-box' }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -164,12 +216,10 @@ export function RelatorioModal({ categorias, onGerar, onClose }: RelatorioModalP
         {/* ── Corpo ── */}
         <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '0' }}>
 
-          {/* Label seção */}
           <p style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '.8px', textTransform: 'uppercase', color: '#9BA3B2', margin: '0 0 10px' }}>
             Tipo de estoque
           </p>
 
-          {/* Opções */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
             {TIPO_OPTIONS.map((opt) => {
               const active = tipo === opt.value;
@@ -187,12 +237,10 @@ export function RelatorioModal({ categorias, onGerar, onClose }: RelatorioModalP
                     position: 'relative', overflow: 'hidden',
                   }}
                 >
-                  {/* Barra lateral âmbar */}
                   {active && (
-                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px', background: '#F5A623', borderRadius: '0' }} />
+                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px', background: '#F5A623' }} />
                   )}
 
-                  {/* Radio */}
                   <div style={{
                     width: '17px', height: '17px', borderRadius: '50%',
                     border: active ? '2px solid #1A1A2E' : '2px solid #D0D5DD',
@@ -203,7 +251,6 @@ export function RelatorioModal({ categorias, onGerar, onClose }: RelatorioModalP
                     {active && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#F5A623' }} />}
                   </div>
 
-                  {/* Texto */}
                   <div style={{ flex: 1 }}>
                     <p style={{ fontSize: '13.5px', fontWeight: 600, margin: 0, color: active ? '#1A1A2E' : '#344054' }}>
                       {opt.label}
@@ -213,22 +260,23 @@ export function RelatorioModal({ categorias, onGerar, onClose }: RelatorioModalP
                     </p>
                   </div>
 
-                  {/* Indicador */}
-                  {opt.badge && (
-                    <span style={{ fontSize: '11px', fontWeight: 600, background: opt.badge.bg, color: opt.badge.color, padding: '3px 9px', borderRadius: '999px', border: `1px solid ${opt.badge.border}`, flexShrink: 0 }}>
-                      {opt.badge.text}
-                    </span>
-                  )}
-                  {opt.icon && <span style={{ flexShrink: 0 }}>{opt.icon}</span>}
+                  <span style={{
+                    fontSize: '11px', fontWeight: 600,
+                    background: opt.countStyle.bg,
+                    color: opt.countStyle.color,
+                    padding: '3px 9px', borderRadius: '999px',
+                    border: `1px solid ${opt.countStyle.border}`,
+                    flexShrink: 0, whiteSpace: 'nowrap',
+                  }}>
+                    {opt.count} {opt.countLabel}
+                  </span>
                 </div>
               );
             })}
           </div>
 
-          {/* Divisor */}
           <div style={{ height: '1px', background: '#F2F4F7', margin: '0 0 16px' }} />
 
-          {/* Categoria */}
           <p style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '.8px', textTransform: 'uppercase', color: '#9BA3B2', margin: '0 0 8px' }}>
             Categoria
           </p>
@@ -244,7 +292,6 @@ export function RelatorioModal({ categorias, onGerar, onClose }: RelatorioModalP
             menuPosition="fixed"
           />
 
-          {/* Preview escuro */}
           <div style={{ marginTop: '14px', background: 'linear-gradient(135deg, #1A1A2E 0%, #2D2D4E 100%)', borderRadius: '12px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(245,166,35,.15)', border: '1px solid rgba(245,166,35,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5A623" strokeWidth="2">
@@ -263,36 +310,12 @@ export function RelatorioModal({ categorias, onGerar, onClose }: RelatorioModalP
           </div>
         </div>
 
-
-   {/* ── Rodapé ── */}
-        <div style={{ padding: '16px 24px 24px', display: 'flex', gap: '8px', justifyContent: 'flex-end', borderTop: '1px solid #F2F4F7' }}>
-          <button
-            onClick={onClose}
-            style={{
-              all: 'unset' as any,
-              height: '40px', padding: '0 18px', borderRadius: '10px',
-              border: '1.5px solid #EAECF0', background: '#fff',
-              fontSize: '13.5px', fontWeight: 500, color: '#667085',
-              cursor: 'pointer', display: 'inline-flex', alignItems: 'center',
-              gap: '6px', fontFamily: 'DM Sans, sans-serif',
-              boxSizing: 'border-box' as const,
-            }}
-          >
+        {/* ── Rodapé ── */}
+        <div style={{ padding: '12px 24px 24px', display: 'flex', gap: '8px', justifyContent: 'flex-end', borderTop: '1px solid #F2F4F7' }}>
+          <button onClick={onClose} style={btnCancelarStyle}>
             Cancelar
           </button>
-          <button
-            onClick={handleGerar}
-            style={{
-              all: 'unset' as any,
-              height: '40px', padding: '0 20px', borderRadius: '10px',
-              border: 'none', background: '#F5A623',
-              fontSize: '13.5px', fontWeight: 700, color: '#fff',
-              cursor: 'pointer', display: 'inline-flex', alignItems: 'center',
-              gap: '7px', fontFamily: 'DM Sans, sans-serif',
-              boxShadow: '0 1px 3px rgba(245,166,35,.4), 0 4px 12px rgba(245,166,35,.2)',
-              boxSizing: 'border-box' as const,
-            }}
-          >
+          <button onClick={handleGerar} style={btnGerarStyle}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5">
               <polyline points="20 6 9 17 4 12"/>
             </svg>
