@@ -263,20 +263,35 @@ export function RelatorioModal({ categorias, onGerar, onClose }: RelatorioModalP
           </div>
         </div>
 
-        {/* ── Rodapé ── */}
-        <div style={{ padding: '12px 24px 24px', display: 'flex', gap: '8px', justifyContent: 'flex-end', borderTop: '1px solid #F2F4F7' }}>
+
+   {/* ── Rodapé ── */}
+        <div style={{ padding: '16px 24px 24px', display: 'flex', gap: '8px', justifyContent: 'flex-end', borderTop: '1px solid #F2F4F7' }}>
           <button
             onClick={onClose}
-            style={{ height: '40px', padding: '0 18px', borderRadius: '10px', border: '1.5px solid #EAECF0', background: '#fff', fontSize: '13.5px', color: '#667085', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontFamily: 'DM Sans, sans-serif', transition: 'all .15s' }}
+            style={{
+              all: 'unset' as any,
+              height: '40px', padding: '0 18px', borderRadius: '10px',
+              border: '1.5px solid #EAECF0', background: '#fff',
+              fontSize: '13.5px', fontWeight: 500, color: '#667085',
+              cursor: 'pointer', display: 'inline-flex', alignItems: 'center',
+              gap: '6px', fontFamily: 'DM Sans, sans-serif',
+              boxSizing: 'border-box' as const,
+            }}
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
             Cancelar
           </button>
           <button
             onClick={handleGerar}
-            style={{ height: '40px', padding: '0 22px', borderRadius: '10px', border: 'none', background: '#F5A623', fontSize: '13.5px', fontWeight: 700, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '7px', fontFamily: 'DM Sans, sans-serif', boxShadow: '0 1px 3px rgba(245,166,35,.4), 0 4px 12px rgba(245,166,35,.2)' }}
+            style={{
+              all: 'unset' as any,
+              height: '40px', padding: '0 20px', borderRadius: '10px',
+              border: 'none', background: '#F5A623',
+              fontSize: '13.5px', fontWeight: 700, color: '#fff',
+              cursor: 'pointer', display: 'inline-flex', alignItems: 'center',
+              gap: '7px', fontFamily: 'DM Sans, sans-serif',
+              boxShadow: '0 1px 3px rgba(245,166,35,.4), 0 4px 12px rgba(245,166,35,.2)',
+              boxSizing: 'border-box' as const,
+            }}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5">
               <polyline points="20 6 9 17 4 12"/>
@@ -284,6 +299,7 @@ export function RelatorioModal({ categorias, onGerar, onClose }: RelatorioModalP
             Gerar relatório
           </button>
         </div>
+
       </div>
     </div>,
     document.body
