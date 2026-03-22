@@ -10,7 +10,7 @@ export type TipoRelatorio = 'completo' | 'critico' | 'prioritarios';
 
 export interface RelatorioFiltros {
   tipo: TipoRelatorio;
-  categoria: string; // '' = todas
+  categoria: string;
 }
 
 interface RelatorioModalProps {
@@ -19,72 +19,77 @@ interface RelatorioModalProps {
   onClose: () => void;
 }
 
-// ── REACT-SELECT STYLES — idêntico ao padrão do app ───────────────────────────
+// ── REACT-SELECT STYLES ───────────────────────────────────────────────────────
 
 const selectStyles: StylesConfig = {
   control: (base, state) => ({
     ...base,
-    backgroundColor: state.isDisabled ? 'var(--surface-2)' : '#fff',
-    borderColor: state.isFocused ? 'var(--primary)' : 'var(--border)',
+    backgroundColor: '#FAFAFA',
+    borderColor: state.isFocused ? '#1A1A2E' : '#EAECF0',
     borderWidth: '1.5px',
-    minHeight: '38px',
-    borderRadius: '8px',
-    boxShadow: state.isFocused ? '0 0 0 3px rgba(245,166,35,.12)' : 'none',
+    minHeight: '40px',
+    borderRadius: '10px',
+    boxShadow: state.isFocused ? '0 0 0 3px rgba(26,26,46,.08)' : 'none',
     fontFamily: 'DM Sans, sans-serif',
     fontSize: '13.5px',
-    '&:hover': { borderColor: state.isFocused ? 'var(--primary)' : 'var(--border)' },
+    '&:hover': { borderColor: '#D0D5DD' },
   }),
-  placeholder: (base) => ({ ...base, color: 'var(--text-3)', fontSize: '13.5px' }),
-  singleValue:  (base) => ({ ...base, color: 'var(--text-1)', fontSize: '13.5px' }),
+  placeholder: (base) => ({ ...base, color: '#9BA3B2', fontSize: '13.5px' }),
+  singleValue:  (base) => ({ ...base, color: '#1A1A2E', fontSize: '13.5px' }),
   option: (base, state) => ({
     ...base,
-    backgroundColor: state.isSelected
-      ? 'var(--primary)'
-      : state.isFocused
-      ? 'var(--primary-light)'
-      : '#fff',
-    color: state.isSelected ? '#fff' : 'var(--text-1)',
+    backgroundColor: state.isSelected ? '#1A1A2E' : state.isFocused ? '#F8F9FA' : '#fff',
+    color: state.isSelected ? '#fff' : '#1A1A2E',
     fontSize: '13.5px',
     fontFamily: 'DM Sans, sans-serif',
     cursor: 'pointer',
+    borderRadius: '6px',
+    margin: '1px 4px',
+    width: 'calc(100% - 8px)',
   }),
-  menu:               (base) => ({ ...base, zIndex: 9999, borderRadius: '8px', border: '1px solid var(--border)', boxShadow: '0 4px 12px rgba(0,0,0,.08)' }),
-  menuPortal:         (base) => ({ ...base, zIndex: 10000 }), // acima do overlay do modal (9999)
+  menu:               (base) => ({ ...base, zIndex: 9999, borderRadius: '10px', border: '1px solid #EAECF0', boxShadow: '0 8px 24px rgba(0,0,0,.10)', padding: '4px 0' }),
+  menuPortal:         (base) => ({ ...base, zIndex: 10000 }),
   indicatorSeparator: ()    => ({ display: 'none' }),
+  dropdownIndicator:  (base) => ({ ...base, color: '#9BA3B2', padding: '0 10px' }),
 };
-
-// ── ICONS ─────────────────────────────────────────────────────────────────────
-
-const IconX = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-  </svg>
-);
-
-const IconCheck = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14">
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
-
-const IconFile = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13">
-    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-    <polyline points="14 2 14 8 20 8" />
-  </svg>
-);
 
 // ── OPÇÕES ────────────────────────────────────────────────────────────────────
 
-const TIPO_OPTIONS: { value: TipoRelatorio; label: string; descricao: string }[] = [
-  { value: 'completo',     label: 'Estoque completo',          descricao: 'Todos os produtos cadastrados'              },
-  { value: 'critico',      label: 'Abaixo do mínimo (crítico)', descricao: 'Produtos com quantidade ≤ estoque mínimo'  },
-  { value: 'prioritarios', label: 'Prioritários',               descricao: 'Produtos marcados com flag de prioridade'  },
+interface TipoOption {
+  value: TipoRelatorio;
+  label: string;
+  descricao: string;
+  badge?: { text: string; bg: string; color: string; border: string };
+  icon?: React.ReactNode;
+}
+
+const TIPO_OPTIONS: TipoOption[] = [
+  {
+    value: 'completo',
+    label: 'Estoque completo',
+    descricao: 'Todos os produtos cadastrados',
+  },
+  {
+    value: 'critico',
+    label: 'Abaixo do mínimo',
+    descricao: 'Quantidade ≤ estoque mínimo',
+    badge: { text: 'Crítico', bg: '#FEF2F2', color: '#DC2626', border: '#FECACA' },
+  },
+  {
+    value: 'prioritarios',
+    label: 'Prioritários',
+    descricao: 'Marcados com flag de prioridade',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="#DC2626" stroke="#DC2626" strokeWidth="1">
+        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/>
+      </svg>
+    ),
+  },
 ];
 
 const TIPO_LABELS: Record<TipoRelatorio, string> = {
   completo:     'Estoque completo',
-  critico:      'Abaixo do mínimo (crítico)',
+  critico:      'Abaixo do mínimo',
   prioritarios: 'Prioritários',
 };
 
@@ -94,7 +99,6 @@ export function RelatorioModal({ categorias, onGerar, onClose }: RelatorioModalP
   const [tipo,      setTipo]      = useState<TipoRelatorio>('completo');
   const [categoria, setCategoria] = useState<{ value: string; label: string } | null>(null);
 
-  // Opções do select de categoria
   const categoriaOptions = [
     { value: '', label: 'Todas as categorias' },
     ...categorias.map((c) => ({ value: c, label: c })),
@@ -105,115 +109,179 @@ export function RelatorioModal({ categorias, onGerar, onClose }: RelatorioModalP
     onClose();
   };
 
-  // Portal: escapa o stacking context dos ancestrais animados (animation: fadeUp)
   return ReactDOM.createPortal(
     <div
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0,
-        background: 'rgba(0,0,0,.55)',
+        background: 'rgba(10,12,18,.72)',
         zIndex: 9999,
-        display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-        padding: '16px', overflowY: 'auto',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '16px',
       }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: '#fff', borderRadius: '14px',
-          boxShadow: '0 12px 32px rgba(0,0,0,.12)',
-          width: '100%', maxWidth: '480px', margin: 'auto',
+          background: '#fff',
+          borderRadius: '20px',
+          boxShadow: '0 32px 64px rgba(0,0,0,.22), 0 0 0 1px rgba(0,0,0,.06)',
+          width: '100%', maxWidth: '420px',
           display: 'flex', flexDirection: 'column',
+          overflow: 'hidden',
         }}
       >
-        {/* Cabeçalho */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid var(--border)' }}>
-          <h5 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: 'var(--text-1)' }}>
-            Gerar Relatório
-          </h5>
-          <button onClick={onClose} style={{ width: '28px', height: '28px', borderRadius: '6px', border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-3)' }}>
-            <IconX />
-          </button>
-        </div>
-
-        {/* Corpo */}
-        <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-          {/* Tipo */}
-          <div>
-            <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, letterSpacing: '.4px', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: '10px' }}>
-              Tipo de Estoque
-            </label>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {TIPO_OPTIONS.map((opt) => (
-                <label
-                  key={opt.value}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '10px',
-                    cursor: 'pointer', padding: '10px 12px', borderRadius: '8px',
-                    border: `1.5px solid ${tipo === opt.value ? 'var(--primary)' : 'var(--border)'}`,
-                    background: tipo === opt.value ? 'var(--primary-light)' : 'var(--surface-2)',
-                    transition: 'all 150ms',
-                  }}
-                >
-                  <input
-                    type="radio"
-                    name="tipo-relatorio"
-                    value={opt.value}
-                    checked={tipo === opt.value}
-                    onChange={() => setTipo(opt.value)}
-                    style={{ accentColor: 'var(--primary)', width: '15px', height: '15px', flexShrink: 0 }}
-                  />
-                  <div>
-                    <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-1)' }}>
-                      {opt.label}
-                    </div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-3)', marginTop: '2px' }}>
-                      {opt.descricao}
-                    </div>
-                  </div>
-                </label>
-              ))}
+        {/* ── Cabeçalho ── */}
+        <div style={{ padding: '24px 24px 0', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#1A1A2E', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F5A623" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+              </svg>
+            </div>
+            <div>
+              <p style={{ fontSize: '15px', fontWeight: 700, color: '#1A1A2E', margin: 0, letterSpacing: '-.3px' }}>
+                Gerar relatório
+              </p>
+              <p style={{ fontSize: '12px', color: '#9BA3B2', margin: '2px 0 0' }}>
+                Selecione o escopo do relatório
+              </p>
             </div>
           </div>
+          <button
+            onClick={onClose}
+            style={{ width: '30px', height: '30px', borderRadius: '8px', border: 'none', background: 'rgba(0,0,0,.04)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', flexShrink: 0 }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
 
-          {/* Categoria — react-select padronizado */}
-          <div>
-            <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, letterSpacing: '.4px', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: '8px' }}>
-              Categoria
-            </label>
-            <Select
-              options={categoriaOptions}
-              value={categoria ?? categoriaOptions[0]}
-              onChange={(opt: { value: string; label: string } | null) => setCategoria(opt?.value ? opt : null)}
-              styles={selectStyles}
-              isSearchable={false}
-              menuPortalTarget={document.body}
-              menuPosition="fixed"
-            />
+        {/* ── Corpo ── */}
+        <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '0' }}>
+
+          {/* Label seção */}
+          <p style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '.8px', textTransform: 'uppercase', color: '#9BA3B2', margin: '0 0 10px' }}>
+            Tipo de estoque
+          </p>
+
+          {/* Opções */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
+            {TIPO_OPTIONS.map((opt) => {
+              const active = tipo === opt.value;
+              return (
+                <div
+                  key={opt.value}
+                  onClick={() => setTipo(opt.value)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    padding: '13px 14px', borderRadius: '12px', cursor: 'pointer',
+                    border: active ? '1.5px solid #1A1A2E' : '1.5px solid #EAECF0',
+                    background: active ? '#fff' : '#FAFAFA',
+                    boxShadow: active ? '0 2px 8px rgba(26,26,46,.08)' : 'none',
+                    transition: 'all .15s',
+                    position: 'relative', overflow: 'hidden',
+                  }}
+                >
+                  {/* Barra lateral âmbar */}
+                  {active && (
+                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px', background: '#F5A623', borderRadius: '0' }} />
+                  )}
+
+                  {/* Radio */}
+                  <div style={{
+                    width: '17px', height: '17px', borderRadius: '50%',
+                    border: active ? '2px solid #1A1A2E' : '2px solid #D0D5DD',
+                    background: active ? '#1A1A2E' : '#fff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0, transition: 'all .15s',
+                  }}>
+                    {active && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#F5A623' }} />}
+                  </div>
+
+                  {/* Texto */}
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: '13.5px', fontWeight: 600, margin: 0, color: active ? '#1A1A2E' : '#344054' }}>
+                      {opt.label}
+                    </p>
+                    <p style={{ fontSize: '11.5px', margin: '2px 0 0', color: '#9BA3B2' }}>
+                      {opt.descricao}
+                    </p>
+                  </div>
+
+                  {/* Indicador */}
+                  {opt.badge && (
+                    <span style={{ fontSize: '11px', fontWeight: 600, background: opt.badge.bg, color: opt.badge.color, padding: '3px 9px', borderRadius: '999px', border: `1px solid ${opt.badge.border}`, flexShrink: 0 }}>
+                      {opt.badge.text}
+                    </span>
+                  )}
+                  {opt.icon && <span style={{ flexShrink: 0 }}>{opt.icon}</span>}
+                </div>
+              );
+            })}
           </div>
 
-          {/* Preview */}
-          <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ color: 'var(--text-3)', flexShrink: 0 }}><IconFile /></span>
-            <span style={{ fontSize: '12.5px', color: 'var(--text-3)' }}>
-              Relatório:{' '}
-              <strong style={{ color: 'var(--text-1)' }}>{TIPO_LABELS[tipo]}</strong>
-              {' · '}
-              <strong style={{ color: 'var(--text-1)' }}>
-                {categoria?.value || 'Todas as categorias'}
-              </strong>
-            </span>
+          {/* Divisor */}
+          <div style={{ height: '1px', background: '#F2F4F7', margin: '0 0 16px' }} />
+
+          {/* Categoria */}
+          <p style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '.8px', textTransform: 'uppercase', color: '#9BA3B2', margin: '0 0 8px' }}>
+            Categoria
+          </p>
+          <Select
+            options={categoriaOptions}
+            value={categoria ?? categoriaOptions[0]}
+            onChange={(opt: { value: string; label: string } | null) =>
+              setCategoria(opt?.value ? opt : null)
+            }
+            styles={selectStyles}
+            isSearchable={false}
+            menuPortalTarget={document.body}
+            menuPosition="fixed"
+          />
+
+          {/* Preview escuro */}
+          <div style={{ marginTop: '14px', background: 'linear-gradient(135deg, #1A1A2E 0%, #2D2D4E 100%)', borderRadius: '12px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(245,166,35,.15)', border: '1px solid rgba(245,166,35,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5A623" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+            </div>
+            <div>
+              <p style={{ fontSize: '10.5px', color: 'rgba(255,255,255,.45)', margin: 0, letterSpacing: '.3px', textTransform: 'uppercase' }}>
+                Relatório a gerar
+              </p>
+              <p style={{ fontSize: '13px', fontWeight: 600, color: '#fff', margin: '3px 0 0' }}>
+                {TIPO_LABELS[tipo]} · {categoria?.label || 'Todas as categorias'}
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Rodapé */}
-        <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-          <button className="btn btn-secondary" onClick={onClose}>
-            <IconX /> Cancelar
+        {/* ── Rodapé ── */}
+        <div style={{ padding: '12px 24px 24px', display: 'flex', gap: '8px', justifyContent: 'flex-end', borderTop: '1px solid #F2F4F7' }}>
+          <button
+            onClick={onClose}
+            style={{ height: '40px', padding: '0 18px', borderRadius: '10px', border: '1.5px solid #EAECF0', background: '#fff', fontSize: '13.5px', color: '#667085', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontFamily: 'DM Sans, sans-serif', transition: 'all .15s' }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+            Cancelar
           </button>
-          <button className="btn btn-primary" onClick={handleGerar}>
-            <IconCheck /> Gerar relatório
+          <button
+            onClick={handleGerar}
+            style={{ height: '40px', padding: '0 22px', borderRadius: '10px', border: 'none', background: '#F5A623', fontSize: '13.5px', fontWeight: 700, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '7px', fontFamily: 'DM Sans, sans-serif', boxShadow: '0 1px 3px rgba(245,166,35,.4), 0 4px 12px rgba(245,166,35,.2)' }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            Gerar relatório
           </button>
         </div>
       </div>
