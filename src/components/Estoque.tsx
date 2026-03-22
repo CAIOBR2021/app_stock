@@ -231,18 +231,6 @@ export function Relatorios({ produtos }: { produtos: Produto[] }) {
     [produtos],
   );
 
-  const totalItens = useMemo(() => produtos.length, [produtos]);
-
-  const totalCriticos = useMemo(
-    () => produtos.filter((p) => p.estoqueMinimo != null && p.quantidade <= p.estoqueMinimo).length,
-    [produtos],
-  );
-
-  const totalPrioritarios = useMemo(
-    () => produtos.filter((p) => p.prioritario).length,
-    [produtos],
-  );
-
   const handleGerar = (filtros: RelatorioFiltros) => {
     setLoading(true);
     try {
@@ -282,9 +270,7 @@ export function Relatorios({ produtos }: { produtos: Produto[] }) {
       {showModal && (
         <RelatorioModal
           categorias={categorias}
-          totalItens={totalItens}
-          totalCriticos={totalCriticos}
-          totalPrioritarios={totalPrioritarios}
+          produtos={produtos}
           onGerar={handleGerar}
           onClose={() => setShowModal(false)}
         />

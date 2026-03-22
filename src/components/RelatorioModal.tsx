@@ -1,5 +1,5 @@
 // src/components/RelatorioModal.tsx
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import Select from 'react-select';
 import type { StylesConfig } from 'react-select';
@@ -13,11 +13,16 @@ export interface RelatorioFiltros {
   categoria: string;
 }
 
+interface ProdutoMinimo {
+  categoria?: string;
+  quantidade: number;
+  estoqueMinimo?: number;
+  prioritario?: boolean;
+}
+
 interface RelatorioModalProps {
   categorias: string[];
-  totalItens: number;
-  totalCriticos: number;
-  totalPrioritarios: number;
+  produtos: ProdutoMinimo[];
   onGerar: (filtros: RelatorioFiltros) => void;
   onClose: () => void;
 }
@@ -113,16 +118,33 @@ const btnGerarStyle: React.CSSProperties = {
 
 // ── COMPONENT ─────────────────────────────────────────────────────────────────
 
-export function RelatorioModal({
-  categorias,
-  totalItens,
-  totalCriticos,
-  totalPrioritarios,
-  onGerar,
-  onClose,
-}: RelatorioModalProps) {
+export function RelatorioModal({ categorias, produtos, onGerar, onClose }: RelatorioModalProps) {
   const [tipo,      setTipo]      = useState<TipoRelatorio>('completo');
   const [categoria, setCategoria] = useState<{ value: string; label: string } | null>(null);
+
+  const categoriaOptions = [
+    { value: '', label: 'Todas as categorias' },
+    ...categorias.map((c) => ({ value: c, label: c })),
+  ];
+
+  // Filtra produtos pela categoria selecionada
+  const produtosFiltrados = useMemo(() => {
+    if (!categoria?.value) return produtos;
+    return produtos.filter((p) => p.categoria === categoria.value);
+  }, [produtos, categoria]);
+
+  // Totais reativos à categoria
+  const totalItens = useMemo(() => produtosFiltrados.length, [produtosFiltrados]);
+
+  const totalCriticos = useMemo(
+    () => produtosFiltrados.filter((p) => p.estoqueMinimo != null && p.quantidade <= p.estoqueMinimo).length,
+    [produtosFiltrados],
+  );
+
+  const totalPrioritarios = useMemo(
+    () => produtosFiltrados.filter((p) => p.prioritario).length,
+    [produtosFiltrados],
+  );
 
   const TIPO_OPTIONS: TipoOption[] = [
     {
@@ -149,11 +171,6 @@ export function RelatorioModal({
       countLabel: 'itens',
       countStyle: { bg: '#FFF7ED', color: '#EA580C', border: '#FED7AA' },
     },
-  ];
-
-  const categoriaOptions = [
-    { value: '', label: 'Todas as categorias' },
-    ...categorias.map((c) => ({ value: c, label: c })),
   ];
 
   const handleGerar = () => {
@@ -267,6 +284,7 @@ export function RelatorioModal({
                     padding: '3px 9px', borderRadius: '999px',
                     border: `1px solid ${opt.countStyle.border}`,
                     flexShrink: 0, whiteSpace: 'nowrap',
+                    transition: 'all .2s',
                   }}>
                     {opt.count} {opt.countLabel}
                   </span>
