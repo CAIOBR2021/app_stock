@@ -1052,7 +1052,7 @@ export default function App() {
                   <ValorTotalEstoque allProdutos={allProdutos} />
                 </div>
                 <div className="d-flex gap-2">
-                  <Relatorios produtos={allProdutos} categoriaSelecionada={categoriaFilter} />
+                  <Relatorios produtos={allProdutos} />
                   <BotaoNovoProduto onCreate={addProduto} categorias={categorias} locais={locaisArmazenamento} allProdutos={allProdutos} />
                 </div>
               </div>

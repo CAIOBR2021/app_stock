@@ -1,3 +1,4 @@
+// src/components/Estoque.tsx
 import React, { useState, useEffect, useMemo } from 'react';
 import Select from 'react-select';
 import CreatableSelect from 'react-select/creatable';
@@ -7,7 +8,8 @@ import { API_URL } from '../constants';
 import { ModalComponent, PasswordEntryModal, GerenciarHistoricoModal } from './Shared';
 import { StockLevelBar } from './MetricCards';
 import { safeLocalStorageGet, safeLocalStorageSet } from '../utils/storage';
-import { sanitizePdfString } from '../utils/pdf';
+import { RelatorioModal, type RelatorioFiltros } from './RelatorioModal';
+import { gerarPdfEstoque } from '../utils/Gerarpdfestoque';
 
 // ── REACT-SELECT STYLES ───────────────────────────────────────────────────────
 
@@ -24,8 +26,8 @@ const selectStyles: StylesConfig = {
     fontSize: '13.5px',
     '&:hover': { borderColor: state.isFocused ? 'var(--primary)' : 'var(--border)' },
   }),
-  placeholder: base => ({ ...base, color: 'var(--text-3)', fontSize: '13.5px' }),
-  singleValue: base => ({ ...base, color: 'var(--text-1)', fontSize: '13.5px' }),
+  placeholder: (base) => ({ ...base, color: 'var(--text-3)', fontSize: '13.5px' }),
+  singleValue:  (base) => ({ ...base, color: 'var(--text-1)', fontSize: '13.5px' }),
   option: (base, state) => ({
     ...base,
     backgroundColor: state.isSelected ? 'var(--primary)' : state.isFocused ? 'var(--primary-light)' : '#fff',
@@ -34,9 +36,9 @@ const selectStyles: StylesConfig = {
     fontFamily: 'DM Sans, sans-serif',
     cursor: 'pointer',
   }),
-  menu: base => ({ ...base, zIndex: 9999, borderRadius: '8px', border: '1px solid var(--border)', boxShadow: '0 4px 12px rgba(0,0,0,.08)' }),
-  menuPortal: base => ({ ...base, zIndex: 9999 }),
-  indicatorSeparator: () => ({ display: 'none' }),
+  menu:               (base) => ({ ...base, zIndex: 9999, borderRadius: '8px', border: '1px solid var(--border)', boxShadow: '0 4px 12px rgba(0,0,0,.08)' }),
+  menuPortal:         (base) => ({ ...base, zIndex: 9999 }),
+  indicatorSeparator: ()    => ({ display: 'none' }),
 };
 
 // ── SVG ICONS ─────────────────────────────────────────────────────────────────
@@ -141,11 +143,11 @@ const IconInfoLg = () => (
 // ── VALOR TOTAL ESTOQUE ───────────────────────────────────────────────────────
 
 export function ValorTotalEstoque({ allProdutos }: { allProdutos: Produto[] }) {
-  const [valorTotal, setValorTotal] = useState<number | null>(null);
-  const [isVisible, setIsVisible] = useState(false);
+  const [valorTotal,        setValorTotal]        = useState<number | null>(null);
+  const [isVisible,         setIsVisible]         = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [error,             setError]             = useState('');
+  const [loading,           setLoading]           = useState(false);
 
   useEffect(() => {
     if (isVisible && allProdutos.length > 0) {
@@ -194,7 +196,8 @@ export function ValorTotalEstoque({ allProdutos }: { allProdutos: Produto[] }) {
           <strong>{valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong>
         </span>
       )}
-      <button className="btn btn-ghost btn-sm" onClick={toggleVisibility} title={isVisible ? 'Ocultar valor total' : 'Mostrar valor total'}>
+      <button className="btn btn-ghost btn-sm" onClick={toggleVisibility}
+        title={isVisible ? 'Ocultar valor total' : 'Mostrar valor total'}>
         {isVisible ? <IconEyeOff /> : <IconEye />}
       </button>
       {showPasswordModal && (
@@ -214,249 +217,38 @@ export function ValorTotalEstoque({ allProdutos }: { allProdutos: Produto[] }) {
 
 // ── RELATÓRIOS ────────────────────────────────────────────────────────────────
 
-export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produto[]; categoriaSelecionada: string }) {
-  const [loading, setLoading] = useState(false);
-  const [modalInfo, setModalInfo] = useState<{ show: boolean; title: string; message: string; type: 'info' | 'error' }>({
-    show: false, title: '', message: '', type: 'info',
-  });
+export function Relatorios({ produtos }: { produtos: Produto[] }) {
+  const [loading,   setLoading]   = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [modalInfo, setModalInfo] = useState<{
+    show: boolean; title: string; message: string; type: 'info' | 'error';
+  }>({ show: false, title: '', message: '', type: 'info' });
 
-  const closeModal = () => setModalInfo(prev => ({ ...prev, show: false }));
+  const closeInfo = () => setModalInfo((prev) => ({ ...prev, show: false }));
 
-  const handleGenerate = () => {
+  const categorias = useMemo(
+    () => Array.from(new Set(produtos.map((p) => p.categoria || '').filter(Boolean))),
+    [produtos],
+  );
+
+  const handleGerar = (filtros: RelatorioFiltros) => {
     setLoading(true);
     try {
-      const { jsPDF } = window.jspdf || { jsPDF: (window as any).jspdf.jsPDF };
-      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-      const pageW = doc.internal.pageSize.getWidth();
-      const pageH = doc.internal.pageSize.getHeight();
-      const ML = 14, MR = 14, CW = pageW - ML - MR;
-
-      const NAVY   = [26,  34,  56]  as [number, number, number];
-      const AMBER  = [245, 166, 35]  as [number, number, number];
-      const RED    = [192, 57,  43]  as [number, number, number];
-      const YELLOW = [230, 126, 34]  as [number, number, number];
-      const WHITE  = [255, 255, 255] as [number, number, number];
-      const LIGHT  = [244, 246, 249] as [number, number, number];
-      const BORDER = [218, 224, 232] as [number, number, number];
-      const TEXT1  = [44,  62,  80]  as [number, number, number];
-      const TEXT3  = [127, 140, 141] as [number, number, number];
-      const RED_BG = [255, 235, 232] as [number, number, number];
-      const YEL_BG = [255, 251, 235] as [number, number, number];
-
-      const produtosParaRelatorio = categoriaSelecionada
-        ? produtos.filter(p => p.categoria === categoriaSelecionada)
-        : produtos;
-
-      const itemsToReorder = produtosParaRelatorio
-        .filter(p => p.estoqueMinimo !== undefined && p.quantidade < p.estoqueMinimo)
-        .map(p => ({ ...p, qtdRepor: p.estoqueMinimo! - p.quantidade }));
-
-      if (itemsToReorder.length === 0) {
+      const result = gerarPdfEstoque(produtos, filtros);
+      if (!result.ok) {
         setModalInfo({
           show: true, title: 'Aviso',
-          message: `Nenhum item precisa de reposição${categoriaSelecionada ? ` na categoria "${categoriaSelecionada}"` : ''}.`,
+          message: result.mensagem ?? 'Nenhum produto encontrado para os filtros selecionados.',
           type: 'info',
         });
-        setLoading(false);
-        return;
       }
-
-      const itensZerados = itemsToReorder.filter(i => i.quantidade === 0);
-      const itensAtencao = itemsToReorder.filter(i => i.quantidade > 0);
-      const now = new Date();
-      const dataEmissao = now.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
-      const horaEmissao = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      const dataValidade = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
-        .toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
-
-      // Cabeçalho
-      doc.setFillColor(...NAVY);
-      doc.rect(0, 0, pageW, 28, 'F');
-      doc.setFillColor(...AMBER);
-      doc.roundedRect(ML, 5, 18, 18, 2, 2, 'F');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(14);
-      doc.setTextColor(...WHITE);
-      doc.text('P', ML + 9, 17.5, { align: 'center' });
-      doc.setFontSize(13);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...WHITE);
-      doc.text('Portal de Suprimentos', ML + 22, 13);
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(180, 195, 225);
-      doc.text(`Emitido em: ${dataEmissao} às ${horaEmissao}`, pageW - MR, 13, { align: 'right' });
-      doc.text(`Válido até: ${dataValidade}`, pageW - MR, 20, { align: 'right' });
-
-      let y = 38;
-      doc.setFontSize(18);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...NAVY);
-
-      // ── SANITIZAÇÃO APLICADA AO TÍTULO ──────────────────────────────────
-      const titulo = categoriaSelecionada
-        ? `Relatório de Reposição — ${sanitizePdfString(categoriaSelecionada)}`
-        : 'Relatório de Reposição de Estoque';
-      doc.text(titulo, ML, y);
-      y += 4;
-      doc.setFillColor(...AMBER);
-      doc.rect(ML, y, 40, 1.5, 'F');
-      y += 8;
-
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      const resumo =
-        `Este relatório identifica ${itemsToReorder.length} item(ns) abaixo do nível crítico de operação` +
-        (categoriaSelecionada ? ` na categoria "${sanitizePdfString(categoriaSelecionada)}"` : '') +
-        `. ${itensZerados.length > 0 ? `${itensZerados.length} item(ns) com estoque zerado requerem compra emergencial. ` : ''}` +
-        `Recomenda-se a emissão de ordem de compra até ${dataValidade} para evitar paralisação operacional.`;
-      const resumoLines = doc.splitTextToSize(resumo, CW - 12);
-      const resumoLineH = 5;
-      const boxH = 8 + 5 + resumoLines.length * resumoLineH + 5;
-
-      doc.setFillColor(...LIGHT);
-      doc.setDrawColor(...BORDER);
-      doc.roundedRect(ML, y, CW, boxH, 3, 3, 'FD');
-      doc.setFontSize(7.5);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...TEXT3);
-      doc.text('SUMÁRIO EXECUTIVO', ML + 5, y + 8);
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(...TEXT1);
-      doc.text(resumoLines, ML + 5, y + 14);
-      y += boxH + 6;
-
-      const kpiGap = 5;
-      const kpiW = (CW - kpiGap * 2) / 3;
-      const kpiH = 26;
-      const kpiData = [
-        { label: 'ITENS PARA REPOR',  value: String(itemsToReorder.length), color: NAVY   as [number, number, number] },
-        { label: 'ESTOQUE ZERADO',    value: String(itensZerados.length),   color: RED    as [number, number, number] },
-        { label: 'ABAIXO DO MÍNIMO',  value: String(itensAtencao.length),   color: YELLOW as [number, number, number] },
-      ];
-      kpiData.forEach((kpi, i) => {
-        const kx = ML + i * (kpiW + kpiGap);
-        doc.setFillColor(...kpi.color);
-        doc.roundedRect(kx, y, kpiW, kpiH, 3, 3, 'F');
-        doc.setFontSize(7.5);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...WHITE);
-        doc.text(kpi.label, kx + kpiW / 2, y + 8, { align: 'center' });
-        doc.setFontSize(20);
-        doc.setFont('helvetica', 'bold');
-        doc.text(kpi.value, kx + kpiW / 2, y + 20, { align: 'center' });
+    } catch (err) {
+      console.error('Erro ao gerar relatório:', err);
+      setModalInfo({
+        show: true, title: 'Erro',
+        message: 'Ocorreu um erro ao gerar o relatório. Tente novamente.',
+        type: 'error',
       });
-      y += kpiH + 10;
-
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...TEXT3);
-      doc.text('LEGENDA:', ML, y);
-      const legendas: Array<{ cor: [number, number, number]; texto: string }> = [
-        { cor: RED,    texto: 'Zerado — compra urgente' },
-        { cor: YELLOW, texto: 'Abaixo do mínimo — programar reposição' },
-      ];
-      let lx = ML + 22;
-      legendas.forEach(leg => {
-        doc.setFillColor(...leg.cor);
-        doc.roundedRect(lx, y - 4, 3, 3.5, 0.5, 0.5, 'F');
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor(...TEXT1);
-        doc.text(leg.texto, lx + 5, y);
-        lx += doc.getTextWidth(leg.texto) + 14;
-      });
-      y += 8;
-
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...NAVY);
-      doc.setFillColor(...AMBER);
-      doc.rect(ML, y, 3, 6, 'F');
-      doc.text('DETALHAMENTO POR ITEM', ML + 6, y + 5);
-      y += 10;
-
-      // ── SANITIZAÇÃO APLICADA ÀS LINHAS DA TABELA ────────────────────────
-      const tableBody = itemsToReorder.map(item => {
-        const isZero = item.quantidade === 0;
-        const pct = item.estoqueMinimo! > 0 ? Math.round((item.quantidade / item.estoqueMinimo!) * 100) : 0;
-        const status = isZero ? 'URGENTE' : 'ATENÇÃO';
-        return [
-          sanitizePdfString(item.sku),
-          sanitizePdfString(item.nome),
-          sanitizePdfString(item.categoria || '—'),
-          `${item.quantidade} ${item.unidade}`,
-          `${item.estoqueMinimo} ${item.unidade}`,
-          `${item.qtdRepor} ${item.unidade}`,
-          `${pct}%`,
-          status,
-        ];
-      });
-
-      const colProduto = CW - (22 + 32 + 26 + 26 + 32 + 16 + 36);
-      (doc as any).autoTable({
-        startY: y, margin: { left: ML, right: MR }, tableWidth: CW,
-        head: [['SKU', 'Produto', 'Categoria', 'Estoque\nAtual', 'Nível\nCrítico', 'Qtd.\nNecessária', '%', 'Status']],
-        body: tableBody,
-        headStyles: { fillColor: NAVY, textColor: WHITE, fontStyle: 'bold', fontSize: 8, cellPadding: { top: 5, bottom: 5, left: 5, right: 5 }, halign: 'center', minCellHeight: 12 },
-        bodyStyles: { fontSize: 8.5, textColor: TEXT1, cellPadding: { top: 6, bottom: 6, left: 5, right: 5 } },
-        columnStyles: {
-          0: { cellWidth: 22, fontStyle: 'bold', halign: 'center' },
-          1: { cellWidth: colProduto, overflow: 'linebreak', halign: 'left' },
-          2: { cellWidth: 32, halign: 'center', overflow: 'linebreak' },
-          3: { cellWidth: 26, halign: 'center' },
-          4: { cellWidth: 26, halign: 'center' },
-          5: { cellWidth: 32, halign: 'center', fontStyle: 'bold' },
-          6: { cellWidth: 16, halign: 'center' },
-          7: { cellWidth: 36, halign: 'center', fontStyle: 'bold', fontSize: 8 },
-        },
-        alternateRowStyles: { fillColor: LIGHT },
-        styles: { lineColor: BORDER, lineWidth: 0.2, valign: 'middle' },
-        didParseCell: (data: any) => {
-          if (data.section !== 'body') return;
-          const raw = data.row.raw as string[];
-          const isZero = raw[3]?.startsWith('0 ');
-          if (isZero) { data.cell.styles.fillColor = RED_BG; data.cell.styles.textColor = RED; }
-          else if (data.row.index % 2 === 0) { data.cell.styles.fillColor = WHITE; data.cell.styles.textColor = TEXT1; }
-          else { data.cell.styles.fillColor = YEL_BG; data.cell.styles.textColor = TEXT1; }
-          if (data.column.index === 7) { data.cell.styles.fontStyle = 'bold'; data.cell.styles.textColor = isZero ? RED : YELLOW; }
-        },
-      });
-
-      const finalY = (doc as any).lastAutoTable.finalY || pageH - 40;
-      const sigY = Math.min(finalY + 18, pageH - 35);
-      doc.setDrawColor(...BORDER);
-      doc.setLineWidth(0.4);
-      const sigLineW = CW * 0.38;
-      doc.line(ML, sigY, ML + sigLineW, sigY);
-      doc.line(pageW - MR - sigLineW, sigY, pageW - MR, sigY);
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(...TEXT3);
-      doc.text('Aprovação — Gestor de Suprimentos', ML + sigLineW / 2, sigY + 5, { align: 'center' });
-      doc.text('Aprovação — Diretoria', pageW - MR - sigLineW / 2, sigY + 5, { align: 'center' });
-
-      const totalPages = (doc as any).internal.getNumberOfPages();
-      for (let i = 1; i <= totalPages; i++) {
-        doc.setPage(i);
-        doc.setFillColor(...NAVY);
-        doc.rect(0, pageH - 14, pageW, 14, 'F');
-        doc.setFontSize(7.5);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(180, 195, 225);
-        doc.text('Portal de Suprimentos — Documento Confidencial — Uso Interno', ML, pageH - 6);
-        doc.setTextColor(...AMBER);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`Página ${i} de ${totalPages}`, pageW - MR, pageH - 6, { align: 'right' });
-      }
-
-      const slug = categoriaSelecionada ? categoriaSelecionada.toLowerCase().replace(/\s+/g, '-') : 'geral';
-      doc.save(`relatorio-reposicao-${slug}-${now.toISOString().slice(0, 10)}.pdf`);
-
-    } catch (error) {
-      console.error('Erro ao gerar relatório:', error);
-      setModalInfo({ show: true, title: 'Erro', message: 'Ocorreu um erro ao gerar o relatório. Tente novamente.', type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -464,19 +256,34 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
 
   return (
     <>
-      <button className="btn btn-ghost btn-sm d-flex align-items-center gap-2" onClick={handleGenerate} disabled={loading}>
-        {loading ? <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" /> : <IconDownload />}
+      <button
+        className="btn btn-ghost btn-sm d-flex align-items-center gap-2"
+        onClick={() => setShowModal(true)}
+        disabled={loading}
+      >
+        {loading
+          ? <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
+          : <IconDownload />}
         Gerar Relatório
       </button>
+
+      {showModal && (
+        <RelatorioModal
+          categorias={categorias}
+          onGerar={handleGerar}
+          onClose={() => setShowModal(false)}
+        />
+      )}
+
       {modalInfo.show && (
-        <ModalComponent title={modalInfo.title} onClose={closeModal}>
+        <ModalComponent title={modalInfo.title} onClose={closeInfo}>
           <div className="p-3 text-center">
             <div className="mb-3" style={{ color: modalInfo.type === 'error' ? 'var(--danger)' : 'var(--warning)' }}>
               {modalInfo.type === 'error' ? <IconAlertCircle /> : <IconInfoLg />}
             </div>
             <p style={{ color: 'var(--text-2)', fontSize: '14px' }}>{modalInfo.message}</p>
             <div className="mt-4">
-              <button className="btn btn-secondary px-4" onClick={closeModal}>Entendi</button>
+              <button className="btn btn-secondary px-4" onClick={closeInfo}>Entendi</button>
             </div>
           </div>
         </ModalComponent>
@@ -497,28 +304,19 @@ export function ProdutoForm({
   locais: string[];
   allProdutos?: Produto[];
 }) {
-  const [nomeOption, setNomeOption] = useState<any>(
-    produto?.nome ? { value: produto.nome, label: produto.nome } : null
-  );
-  const [descricao,    setDescricao]    = useState(produto?.descricao ?? '');
-  const [unidade,      setUnidade]      = useState(produto?.unidade ?? 'un');
-  const [quantidade,   setQuantidade]   = useState<number>(produto?.quantidade ?? 0);
-  const [estoqueMinimo, setEstoqueMinimo] = useState<number | undefined>(produto?.estoqueMinimo ?? undefined);
-  const [valorUnitario, setValorUnitario] = useState<number | undefined>(produto?.valorUnitario ?? undefined);
-  const [categoriaOption, setCategoriaOption] = useState<any>(
-    produto?.categoria ? { value: produto.categoria, label: produto.categoria } : null
-  );
-  const [localOption, setLocalOption] = useState<any>(
-    produto?.localArmazenamento ? { value: produto.localArmazenamento, label: produto.localArmazenamento } : null
-  );
-  const [fornecedorOption, setFornecedorOption] = useState<any>(
-    produto?.fornecedor ? { value: produto.fornecedor, label: produto.fornecedor } : null
-  );
+  const [nomeOption,       setNomeOption]       = useState<any>(produto?.nome               ? { value: produto.nome,               label: produto.nome               } : null);
+  const [descricao,        setDescricao]        = useState(produto?.descricao ?? '');
+  const [unidade,          setUnidade]          = useState(produto?.unidade ?? 'un');
+  const [quantidade,       setQuantidade]       = useState<number>(produto?.quantidade ?? 0);
+  const [estoqueMinimo,    setEstoqueMinimo]    = useState<number | undefined>(produto?.estoqueMinimo ?? undefined);
+  const [valorUnitario,    setValorUnitario]    = useState<number | undefined>(produto?.valorUnitario ?? undefined);
+  const [categoriaOption,  setCategoriaOption]  = useState<any>(produto?.categoria          ? { value: produto.categoria,          label: produto.categoria          } : null);
+  const [localOption,      setLocalOption]      = useState<any>(produto?.localArmazenamento ? { value: produto.localArmazenamento, label: produto.localArmazenamento } : null);
+  const [fornecedorOption, setFornecedorOption] = useState<any>(produto?.fornecedor         ? { value: produto.fornecedor,         label: produto.fornecedor         } : null);
 
   const [showManageModal, setShowManageModal] = useState(false);
-  const [manageField, setManageField] = useState<'categorias' | 'locais' | 'fornecedores' | null>(null);
+  const [manageField,     setManageField]     = useState<'categorias' | 'locais' | 'fornecedores' | null>(null);
 
-  // ── localStorage CORRIGIDO ────────────────────────────────────────────────
   const [hiddenOptions, setHiddenOptions] = useState(() =>
     safeLocalStorageGet('produtoHiddenOptions', {
       categorias:   [] as string[],
@@ -526,44 +324,46 @@ export function ProdutoForm({
       fornecedores: [] as string[],
     })
   );
+  useEffect(() => { safeLocalStorageSet('produtoHiddenOptions', hiddenOptions); }, [hiddenOptions]);
 
-  useEffect(() => {
-    safeLocalStorageSet('produtoHiddenOptions', hiddenOptions);
-  }, [hiddenOptions]);
-
-  const visibleCategorias = categorias.filter(c => !hiddenOptions.categorias?.includes(c));
-  const visibleLocais     = locais.filter(l => !hiddenOptions.locais?.includes(l));
+  const visibleCategorias  = categorias.filter((c) => !hiddenOptions.categorias?.includes(c));
+  const visibleLocais      = locais.filter((l)     => !hiddenOptions.locais?.includes(l));
 
   const fornecedoresList = useMemo(() => {
     const set = new Set<string>();
-    allProdutos.forEach(p => { if (p.fornecedor) set.add(p.fornecedor); });
-    return Array.from(set).filter(f => !hiddenOptions.fornecedores?.includes(f));
+    allProdutos.forEach((p) => { if (p.fornecedor) set.add(p.fornecedor); });
+    return Array.from(set).filter((f) => !hiddenOptions.fornecedores?.includes(f));
   }, [allProdutos, hiddenOptions]);
 
-  const nomesOptions       = useMemo(() => {
+  const nomesOptions        = useMemo(() => {
     const set = new Set<string>();
-    allProdutos.forEach(p => { if (p.nome) set.add(p.nome); });
-    return Array.from(set).map(n => ({ value: n, label: n }));
+    allProdutos.forEach((p) => { if (p.nome) set.add(p.nome); });
+    return Array.from(set).map((n) => ({ value: n, label: n }));
   }, [allProdutos]);
-  const categoriasOptions  = visibleCategorias.map(c => ({ value: c, label: c }));
-  const locaisOptions      = visibleLocais.map(l => ({ value: l, label: l }));
-  const fornecedoresOptions = fornecedoresList.map(f => ({ value: f, label: f }));
+
+  const categoriasOptions   = visibleCategorias.map((c) => ({ value: c, label: c }));
+  const locaisOptions       = visibleLocais.map((l)     => ({ value: l, label: l }));
+  const fornecedoresOptions = fornecedoresList.map((f)  => ({ value: f, label: f }));
 
   const handleRemoveOption = (item: string) => {
-    if (manageField) setHiddenOptions(prev => ({ ...prev, [manageField]: [...(prev[manageField] || []), item] }));
+    if (manageField)
+      setHiddenOptions((prev) => ({ ...prev, [manageField]: [...(prev[manageField] || []), item] }));
   };
   const handleClearAllOptions = () => {
     if (manageField) {
-      const current = manageField === 'categorias' ? visibleCategorias : manageField === 'locais' ? visibleLocais : fornecedoresList;
-      setHiddenOptions(prev => ({ ...prev, [manageField]: [...(prev[manageField] || []), ...current] }));
+      const current =
+        manageField === 'categorias' ? visibleCategorias
+        : manageField === 'locais'   ? visibleLocais
+        : fornecedoresList;
+      setHiddenOptions((prev) => ({ ...prev, [manageField]: [...(prev[manageField] || []), ...current] }));
     }
   };
 
   let valorTotalDisplay = '---';
-  const quantidadeParaCalculo = produto ? produto.quantidade : quantidade;
-  const valorUnitarioNumerico = valorUnitario != null && !isNaN(parseFloat(String(valorUnitario))) ? parseFloat(String(valorUnitario)) : null;
-  if (typeof quantidadeParaCalculo === 'number' && typeof valorUnitarioNumerico === 'number') {
-    valorTotalDisplay = (quantidadeParaCalculo * valorUnitarioNumerico).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const qtdCalc = produto ? produto.quantidade : quantidade;
+  const valNum  = valorUnitario != null && !isNaN(parseFloat(String(valorUnitario))) ? parseFloat(String(valorUnitario)) : null;
+  if (typeof qtdCalc === 'number' && typeof valNum === 'number') {
+    valorTotalDisplay = (qtdCalc * valNum).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
   const FieldLabel = ({ label, field }: { label: string; field: 'categorias' | 'locais' | 'fornecedores' }) => (
@@ -582,9 +382,11 @@ export function ProdutoForm({
     if (!nomeVal) return;
     const baseData = {
       nome: nomeVal, descricao: descricao.trim(),
-      categoria: categoriaOption?.value || undefined, unidade, estoqueMinimo,
-      localArmazenamento: localOption?.value || undefined,
-      fornecedor: fornecedorOption?.value || undefined, valorUnitario,
+      categoria:          categoriaOption?.value  || undefined,
+      unidade, estoqueMinimo,
+      localArmazenamento: localOption?.value      || undefined,
+      fornecedor:         fornecedorOption?.value || undefined,
+      valorUnitario,
     };
     onSave(!produto ? { ...baseData, quantidade } : baseData);
   }
@@ -601,61 +403,66 @@ export function ProdutoForm({
           )}
           <div className={produto ? 'col-md-8' : 'col-md-12'}>
             <label className="form-label">Nome *</label>
-            <CreatableSelect
-              isClearable options={nomesOptions} value={nomeOption}
+            <CreatableSelect isClearable options={nomesOptions} value={nomeOption}
               onChange={(opt: any) => setNomeOption(opt)}
               onInputChange={(inputValue: string, { action }: { action: string }) => {
                 if (action === 'input-change') setNomeOption({ value: inputValue, label: inputValue });
               }}
-              placeholder="Ex: Parafuso Sextavado"
-              isValidNewOption={() => false}
-              styles={selectStyles} menuPortalTarget={document.body}
-            />
+              placeholder="Ex: Parafuso Sextavado" isValidNewOption={() => false}
+              styles={selectStyles} menuPortalTarget={document.body} />
           </div>
-
           <div className="col-12">
             <label className="form-label">Descrição</label>
-            <textarea className="form-control" placeholder="Detalhes do produto (opcional)" value={descricao} onChange={e => setDescricao(e.target.value)} style={{ height: '72px', resize: 'none' }} />
+            <textarea className="form-control" placeholder="Detalhes do produto (opcional)"
+              value={descricao} onChange={(e) => setDescricao(e.target.value)}
+              style={{ height: '72px', resize: 'none' }} />
           </div>
-
           <div className="col-12 col-md-6">
             <FieldLabel label="Categoria" field="categorias" />
-            <CreatableSelect isClearable options={categoriasOptions} value={categoriaOption} onChange={(opt: any) => setCategoriaOption(opt)} placeholder="Ex: Ferragens" formatCreateLabel={(i: string) => `Usar "${i}"`} styles={selectStyles} menuPortalTarget={document.body} />
+            <CreatableSelect isClearable options={categoriasOptions} value={categoriaOption}
+              onChange={(opt: any) => setCategoriaOption(opt)}
+              placeholder="Ex: Ferragens" formatCreateLabel={(i: string) => `Usar "${i}"`}
+              styles={selectStyles} menuPortalTarget={document.body} />
           </div>
-
           <div className="col-12 col-md-6">
             <FieldLabel label="Local de Armazenamento" field="locais" />
-            <CreatableSelect isClearable options={locaisOptions} value={localOption} onChange={(opt: any) => setLocalOption(opt)} placeholder="Ex: Pátio 04" formatCreateLabel={(i: string) => `Usar "${i}"`} styles={selectStyles} menuPortalTarget={document.body} />
+            <CreatableSelect isClearable options={locaisOptions} value={localOption}
+              onChange={(opt: any) => setLocalOption(opt)}
+              placeholder="Ex: Pátio 04" formatCreateLabel={(i: string) => `Usar "${i}"`}
+              styles={selectStyles} menuPortalTarget={document.body} />
           </div>
-
           <div className="col-12 col-sm-4">
             <label className="form-label">Unidade de Medida</label>
-            <input className="form-control" placeholder="un, kg, m, L" value={unidade} onChange={e => setUnidade(e.target.value)} required />
+            <input className="form-control" placeholder="un, kg, m, L" value={unidade}
+              onChange={(e) => setUnidade(e.target.value)} required />
           </div>
           <div className="col-12 col-sm-4">
             <label className="form-label">Quantidade Inicial</label>
-            <input type="number" min={0} className="form-control" value={quantidade} onChange={e => setQuantidade(Number(e.target.value))} disabled={!!produto} />
+            <input type="number" min={0} className="form-control" value={quantidade}
+              onChange={(e) => setQuantidade(Number(e.target.value))} disabled={!!produto} />
           </div>
           <div className="col-12 col-sm-4">
             <label className="form-label">Estoque Mínimo</label>
-            <input type="number" min={0} className="form-control" value={estoqueMinimo ?? ''} onChange={e => setEstoqueMinimo(e.target.value === '' ? undefined : Number(e.target.value))} />
+            <input type="number" min={0} className="form-control" value={estoqueMinimo ?? ''}
+              onChange={(e) => setEstoqueMinimo(e.target.value === '' ? undefined : Number(e.target.value))} />
           </div>
-
           <div className="col-12 col-md-6">
             <label className="form-label">Valor Unitário (R$)</label>
-            <input type="number" step="0.01" min="0" className="form-control" placeholder="opcional" value={valorUnitario ?? ''} onChange={e => setValorUnitario(e.target.value === '' ? undefined : Number(e.target.value))} />
+            <input type="number" step="0.01" min="0" className="form-control" placeholder="opcional"
+              value={valorUnitario ?? ''} onChange={(e) => setValorUnitario(e.target.value === '' ? undefined : Number(e.target.value))} />
           </div>
           <div className="col-12 col-md-6">
             <label className="form-label">Valor Total em Estoque (R$)</label>
             <input type="text" className="form-control" readOnly disabled value={valorTotalDisplay} />
           </div>
-
           <div className="col-md-12">
             <FieldLabel label="Fornecedor" field="fornecedores" />
-            <CreatableSelect isClearable options={fornecedoresOptions} value={fornecedorOption} onChange={(opt: any) => setFornecedorOption(opt)} placeholder="Nome do fornecedor (opcional)" formatCreateLabel={(i: string) => `Usar "${i}"`} styles={selectStyles} menuPortalTarget={document.body} />
+            <CreatableSelect isClearable options={fornecedoresOptions} value={fornecedorOption}
+              onChange={(opt: any) => setFornecedorOption(opt)}
+              placeholder="Nome do fornecedor (opcional)" formatCreateLabel={(i: string) => `Usar "${i}"`}
+              styles={selectStyles} menuPortalTarget={document.body} />
           </div>
         </div>
-
         <div className="text-end mt-4 d-flex justify-content-end gap-2">
           <button type="button" className="btn btn-secondary" onClick={onCancel}><IconX /> Cancelar</button>
           <button type="submit" className="btn btn-primary"><IconCheck /> Salvar</button>
@@ -663,20 +470,19 @@ export function ProdutoForm({
       </form>
 
       <GerenciarHistoricoModal
-        show={showManageModal}
-        onClose={() => setShowManageModal(false)}
+        show={showManageModal} onClose={() => setShowManageModal(false)}
         title={manageField === 'categorias' ? 'Categorias' : manageField === 'locais' ? 'Locais de Armazenamento' : 'Fornecedores'}
         items={manageField === 'categorias' ? visibleCategorias : manageField === 'locais' ? visibleLocais : fornecedoresList}
-        onRemove={handleRemoveOption}
-        onClearAll={handleClearAllOptions}
-      />
+        onRemove={handleRemoveOption} onClearAll={handleClearAllOptions} />
     </>
   );
 }
 
 // ── BOTÃO NOVO PRODUTO ────────────────────────────────────────────────────────
 
-export function BotaoNovoProduto({ onCreate, categorias, locais, allProdutos = [] }: {
+export function BotaoNovoProduto({
+  onCreate, categorias, locais, allProdutos = [],
+}: {
   onCreate: (p: Omit<Produto, 'id' | 'criadoEm' | 'atualizadoEm' | 'sku'>) => void;
   categorias: string[];
   locais: string[];
@@ -690,7 +496,8 @@ export function BotaoNovoProduto({ onCreate, categorias, locais, allProdutos = [
       </button>
       {open && (
         <ModalComponent title="Novo Produto" onClose={() => setOpen(false)}>
-          <ProdutoForm onCancel={() => setOpen(false)} onSave={p => { onCreate(p); setOpen(false); }} categorias={categorias} locais={locais} allProdutos={allProdutos} />
+          <ProdutoForm onCancel={() => setOpen(false)} onSave={(p) => { onCreate(p); setOpen(false); }}
+            categorias={categorias} locais={locais} allProdutos={allProdutos} />
         </ModalComponent>
       )}
     </>
@@ -699,7 +506,9 @@ export function BotaoNovoProduto({ onCreate, categorias, locais, allProdutos = [
 
 // ── PRODUTO CARD (mobile) ─────────────────────────────────────────────────────
 
-export function ProdutoCard({ produto, onMovimentar, onEditar, onExcluir, onTogglePrioritario }: {
+export function ProdutoCard({
+  produto, onMovimentar, onEditar, onExcluir, onTogglePrioritario,
+}: {
   produto: Produto;
   onMovimentar: () => void;
   onEditar: () => void;
@@ -717,7 +526,9 @@ export function ProdutoCard({ produto, onMovimentar, onEditar, onExcluir, onTogg
               <IconFlag filled active />
             </button>
           )}
-          {produto.valorUnitario != null && produto.valorUnitario > 0 && <span title="Valor unitário registrado"><IconTag /></span>}
+          {produto.valorUnitario != null && produto.valorUnitario > 0 && (
+            <span title="Valor unitário registrado"><IconTag /></span>
+          )}
         </div>
         <h6 className="card-title card-title-clamp mb-2 fw-bold">{produto.nome}</h6>
         {produto.categoria && (
@@ -732,16 +543,16 @@ export function ProdutoCard({ produto, onMovimentar, onEditar, onExcluir, onTogg
         </div>
         <div className="mb-2"><StockLevelBar produto={produto} /></div>
         <div className="mt-auto d-flex gap-1">
-          <button className="btn btn-sm btn-movimentar flex-fill" onClick={onMovimentar} title="Movimentar"><IconMove /> Mover</button>
-          <button className="btn btn-sm btn-editar flex-fill" onClick={onEditar} title="Editar"><IconEdit /> Editar</button>
-          <button className="btn btn-sm btn-excluir" onClick={onExcluir} title="Excluir"><IconTrash /></button>
+          <button className="btn btn-sm btn-movimentar flex-fill" onClick={onMovimentar}><IconMove /> Mover</button>
+          <button className="btn btn-sm btn-editar  flex-fill" onClick={onEditar}><IconEdit /> Editar</button>
+          <button className="btn btn-sm btn-excluir"           onClick={onExcluir}><IconTrash /></button>
         </div>
       </div>
     </div>
   );
 }
 
-// ── MOVIMENTAÇÃO FORM (inline, usado no modal de produto) ─────────────────────
+// ── MOVIMENTAÇÃO FORM ─────────────────────────────────────────────────────────
 
 export function MovimentacaoForm({
   produto, onCancel, onSave,
@@ -750,9 +561,9 @@ export function MovimentacaoForm({
   onCancel: () => void;
   onSave: (m: Omit<Movimentacao, 'id' | 'criadoEm'>, custoEntrada?: number) => void;
 }) {
-  const [tipo, setTipo] = useState<TipoMov>('saida');
-  const [quantidade, setQuantidade] = useState<number>(1);
-  const [motivo, setMotivo] = useState<string>('');
+  const [tipo,         setTipo]         = useState<TipoMov>('saida');
+  const [quantidade,   setQuantidade]   = useState<number>(1);
+  const [motivo,       setMotivo]       = useState<string>('');
   const [custoEntrada, setCustoEntrada] = useState<number | undefined>(undefined);
 
   const tipoOptions = [
@@ -783,22 +594,30 @@ export function MovimentacaoForm({
       <div className="row g-3">
         <div className="col-md-4">
           <label className="form-label">Tipo</label>
-          <Select options={tipoOptions} value={tipoOptions.find(o => o.value === tipo) || null} onChange={(opt: any) => setTipo(opt?.value as TipoMov)} styles={selectStyles} menuPortalTarget={document.body} isSearchable={false} />
+          <Select options={tipoOptions} value={tipoOptions.find((o) => o.value === tipo) || null}
+            onChange={(opt: any) => setTipo(opt?.value as TipoMov)}
+            styles={selectStyles} menuPortalTarget={document.body} isSearchable={false} />
         </div>
         <div className="col-md-4">
-          <label className="form-label">{tipo === 'ajuste' || tipo === 'saldo_inicial' ? 'Nova Quantidade' : 'Quantidade'}</label>
-          <input type="number" min={1} className="form-control" value={quantidade} onChange={e => setQuantidade(Number(e.target.value))} required />
+          <label className="form-label">
+            {tipo === 'ajuste' || tipo === 'saldo_inicial' ? 'Nova Quantidade' : 'Quantidade'}
+          </label>
+          <input type="number" min={1} className="form-control" value={quantidade}
+            onChange={(e) => setQuantidade(Number(e.target.value))} required />
         </div>
         {tipo === 'entrada' && (
           <div className="col-md-4">
             <label className="form-label">Custo Unit. (Novo)</label>
-            <input type="number" step="0.01" min="0" className="form-control" placeholder="R$" value={custoEntrada ?? ''} onChange={e => setCustoEntrada(e.target.value === '' ? undefined : Number(e.target.value))} />
+            <input type="number" step="0.01" min="0" className="form-control" placeholder="R$"
+              value={custoEntrada ?? ''}
+              onChange={(e) => setCustoEntrada(e.target.value === '' ? undefined : Number(e.target.value))} />
             <small style={{ fontSize: '11px', color: 'var(--text-3)' }}>Atualiza média ponderada</small>
           </div>
         )}
         <div className="col-md-12">
           <label className="form-label">Motivo (opcional)</label>
-          <input className="form-control" value={motivo} onChange={e => setMotivo(e.target.value)} placeholder="Ex: Uso na obra, Requisição" />
+          <input className="form-control" value={motivo} onChange={(e) => setMotivo(e.target.value)}
+            placeholder="Ex: Uso na obra, Requisição" />
         </div>
       </div>
       <div className="text-end mt-4 d-flex justify-content-end gap-2">
@@ -830,9 +649,9 @@ export function ProdutosTable({
   const [movProdId, setMovProdId] = useState<UUID | null>(null);
   const [deleteId,  setDeleteId]  = useState<UUID | null>(null);
 
-  const produtoParaEditar  = useMemo(() => produtos.find(p => p.id === editingId),  [editingId,  produtos]);
-  const produtoParaMov     = useMemo(() => produtos.find(p => p.id === movProdId),  [movProdId,  produtos]);
-  const produtoParaDeletar = useMemo(() => produtos.find(p => p.id === deleteId),   [deleteId,   produtos]);
+  const produtoParaEditar  = useMemo(() => produtos.find((p) => p.id === editingId),  [editingId,  produtos]);
+  const produtoParaMov     = useMemo(() => produtos.find((p) => p.id === movProdId),  [movProdId,  produtos]);
+  const produtoParaDeletar = useMemo(() => produtos.find((p) => p.id === deleteId),   [deleteId,   produtos]);
 
   const SortIcon = () => {
     if (sortOrder === 'asc')  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="10" height="10"><path d="M12 5v14M5 12l7-7 7 7"/></svg>;
@@ -842,7 +661,6 @@ export function ProdutosTable({
 
   return (
     <>
-      {/* ── Desktop ── */}
       <div className="d-none d-lg-block">
         <div className="table-wrap">
           <table className="table">
@@ -850,24 +668,27 @@ export function ProdutosTable({
               <tr>
                 <th style={{ width: '4%' }} />
                 <th style={{ width: '11%' }}>SKU</th>
-                <th className="sortable" style={{ width: '26%', cursor: 'pointer', userSelect: 'none' }} onClick={onToggleSort} title="Ordenar por nome">
-                  Nome <span className="sort-icon" style={{ display: 'inline-flex', verticalAlign: 'middle', marginLeft: 4 }}><SortIcon /></span>
+                <th className="sortable" style={{ width: '26%', cursor: 'pointer', userSelect: 'none' }}
+                  onClick={onToggleSort} title="Ordenar por nome">
+                  Nome{' '}
+                  <span style={{ display: 'inline-flex', verticalAlign: 'middle', marginLeft: 4 }}><SortIcon /></span>
                 </th>
                 <th style={{ width: '11%' }}>Categoria</th>
-                <th style={{ width: '9%' }}>Qtd.</th>
-                <th style={{ width: '8%' }}>Est. Mín.</th>
+                <th style={{ width: '9%'  }}>Qtd.</th>
+                <th style={{ width: '8%'  }}>Est. Mín.</th>
                 <th style={{ width: '10%' }}>Nível</th>
                 <th style={{ width: '10%' }}>Local</th>
                 <th style={{ width: '11%', textAlign: 'right' }}>Ações</th>
               </tr>
             </thead>
             <tbody>
-              {produtos.map(p => {
+              {produtos.map((p) => {
                 const belowMin = p.estoqueMinimo != null && p.quantidade <= p.estoqueMinimo;
                 return (
                   <tr key={p.id} className={belowMin ? 'row-warning' : ''}>
                     <td style={{ textAlign: 'center' }}>
-                      <button className="btn-icon" onClick={() => onTogglePrioritario(p.id, !!p.prioritario)} title={p.prioritario ? 'Desmarcar prioritário' : 'Marcar prioritário'}>
+                      <button className="btn-icon" onClick={() => onTogglePrioritario(p.id, !!p.prioritario)}
+                        title={p.prioritario ? 'Desmarcar prioritário' : 'Marcar prioritário'}>
                         <IconFlag filled active={!!p.prioritario} />
                       </button>
                     </td>
@@ -884,7 +705,8 @@ export function ProdutosTable({
                     </td>
                     <td>
                       <div className="d-flex align-items-center gap-1">
-                        <span className="stock-dot" style={{ background: p.quantidade === 0 ? 'var(--danger)' : belowMin ? 'var(--warning)' : 'var(--success)' }} />
+                        <span className="stock-dot"
+                          style={{ background: p.quantidade === 0 ? 'var(--danger)' : belowMin ? 'var(--warning)' : 'var(--success)' }} />
                         <strong>{p.quantidade}</strong>
                         <small style={{ color: 'var(--text-3)' }}>{p.unidade}</small>
                       </div>
@@ -894,9 +716,9 @@ export function ProdutosTable({
                     <td style={{ color: 'var(--text-2)', fontSize: '13px' }}>{p.localArmazenamento ?? '—'}</td>
                     <td>
                       <div className="action-group d-flex justify-content-end gap-1">
-                        <button type="button" className="act-btn" onClick={() => setMovProdId(p.id)} title="Movimentar"><IconMove /></button>
-                        <button type="button" className="act-btn" onClick={() => setEditingId(p.id)} title="Editar"><IconEdit /></button>
-                        <button type="button" className="act-btn del" onClick={() => setDeleteId(p.id)} title="Excluir"><IconTrash /></button>
+                        <button type="button" className="act-btn"     onClick={() => setMovProdId(p.id)} title="Movimentar"><IconMove /></button>
+                        <button type="button" className="act-btn"     onClick={() => setEditingId(p.id)} title="Editar"><IconEdit /></button>
+                        <button type="button" className="act-btn del" onClick={() => setDeleteId(p.id)}  title="Excluir"><IconTrash /></button>
                       </div>
                     </td>
                   </tr>
@@ -915,18 +737,15 @@ export function ProdutosTable({
         </div>
       </div>
 
-      {/* ── Mobile cards ── */}
       <div className="d-lg-none">
         <div className="row g-3">
-          {produtos.map(p => (
+          {produtos.map((p) => (
             <div key={p.id} className="col-12 col-md-6">
-              <ProdutoCard
-                produto={p}
+              <ProdutoCard produto={p}
                 onMovimentar={() => setMovProdId(p.id)}
                 onEditar={() => setEditingId(p.id)}
                 onExcluir={() => setDeleteId(p.id)}
-                onTogglePrioritario={() => onTogglePrioritario(p.id, !!p.prioritario)}
-              />
+                onTogglePrioritario={() => onTogglePrioritario(p.id, !!p.prioritario)} />
             </div>
           ))}
           {produtos.length === 0 && (
@@ -938,15 +757,17 @@ export function ProdutosTable({
         </div>
       </div>
 
-      {/* ── Modals ── */}
       {produtoParaEditar && (
         <ModalComponent title={`Editar: ${produtoParaEditar.nome}`} onClose={() => setEditingId(null)}>
-          <ProdutoForm produto={produtoParaEditar} onCancel={() => setEditingId(null)} onSave={vals => { onEdit(editingId!, vals); setEditingId(null); }} categorias={categorias} locais={locais} allProdutos={allProdutos} />
+          <ProdutoForm produto={produtoParaEditar} onCancel={() => setEditingId(null)}
+            onSave={(vals) => { onEdit(editingId!, vals); setEditingId(null); }}
+            categorias={categorias} locais={locais} allProdutos={allProdutos} />
         </ModalComponent>
       )}
       {produtoParaMov && (
         <ModalComponent title={`Movimentar: ${produtoParaMov.nome}`} onClose={() => setMovProdId(null)}>
-          <MovimentacaoForm produto={produtoParaMov} onCancel={() => setMovProdId(null)} onSave={(m, custo) => { onAddMov(m, custo); setMovProdId(null); }} />
+          <MovimentacaoForm produto={produtoParaMov} onCancel={() => setMovProdId(null)}
+            onSave={(m, custo) => { onAddMov(m, custo); setMovProdId(null); }} />
         </ModalComponent>
       )}
       {produtoParaDeletar && (
