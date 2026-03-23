@@ -171,16 +171,12 @@ export default function App() {
 
   const debouncedQ = useDebounce(q, 500);
 
-  // ── KEEP-ALIVE CORRIGIDO ─────────────────────────────────────────────────
-  // Correção 1: usa PING_URL de constants.ts (URL única e centralizada)
-  // Correção 2: AbortController para evitar fetch após desmontagem
+  // ── KEEP-ALIVE ────────────────────────────────────────────────────────────
   useEffect(() => {
     const controller = new AbortController();
 
     const keepAliveInterval = setInterval(() => {
-      fetch(PING_URL, { signal: controller.signal }).catch(() => {
-        // Silencia erros — o servidor pode estar dormindo
-      });
+      fetch(PING_URL, { signal: controller.signal }).catch(() => {});
     }, 5 * 60 * 1000);
 
     return () => {
@@ -277,17 +273,12 @@ export default function App() {
     }
   }
 
-  // ── TOGGLE PRIORITÁRIO CORRIGIDO ─────────────────────────────────────────
-  // Correção: lê o estado atual do produto no momento do clique,
-  // evitando stale closure em cliques rápidos consecutivos.
   const togglePrioritario = useCallback(async (id: UUID) => {
-    // Captura o estado ATUAL antes do optimistic update
     const produto = allProdutos.find((p) => p.id === id);
     if (!produto) return;
 
     const novoEstado = !produto.prioritario;
 
-    // Optimistic update
     setAllProdutos((prev) =>
       prev.map((p) => (p.id === id ? { ...p, prioritario: novoEstado } : p)),
     );
@@ -301,7 +292,6 @@ export default function App() {
       if (!res.ok) throw new Error();
     } catch {
       toast.error('Não foi possível salvar a alteração de prioridade.');
-      // Rollback correto: usa o estado anterior capturado antes do update
       setAllProdutos((prev) =>
         prev.map((p) =>
           p.id === id ? { ...p, prioritario: produto.prioritario } : p,
@@ -340,8 +330,6 @@ export default function App() {
     }
   }
 
-  // ── ENTRADAS/SAÍDAS EM LOTE CORRIGIDO ───────────────────────────────────
-  // Correção: Promise.allSettled para paralelizar as chamadas
   const handleEntradaSaidaSubmit = async (dados: any) => {
     try {
       setLoading(true);
@@ -354,7 +342,6 @@ export default function App() {
           ? partes.join(' | ')
           : `Movimentação em lote (${dados.tipo})`;
 
-      // Todas as chamadas em paralelo
       const resultados = await Promise.allSettled(
         dados.itens.map((item: any) =>
           fetch(`${API_URL}/movimentacoes`, {
@@ -393,7 +380,6 @@ export default function App() {
         }
       }
 
-      // Re-fetch único após todas as operações
       const [mRes, pRes] = await Promise.all([
         fetch(`${API_URL}/movimentacoes`),
         fetch(`${API_URL}/produtos?_limit=10000`),
@@ -618,16 +604,6 @@ export default function App() {
       setSelectedEntregaIds((prev) =>
         prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
       ),
-    [],
-  );
-
-  // ── SELECIONAR TODAS AS ENTREGAS CORRIGIDO ───────────────────────────────
-  // Correção: useCallback evita recriar a função a cada render
-  const handleSelectAllEntregas = useCallback(
-    (checked: boolean) =>
-      setSelectedEntregaIds(checked ? filteredDeliveries.map((e) => e.id) : []),
-    // filteredDeliveries é calculado abaixo via useMemo — OK como dependência
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 
@@ -867,9 +843,13 @@ export default function App() {
     );
   }, [entregas, rotaDateFilter]);
 
-  // ── FILTRO DE PRODUTOS CORRIGIDO ─────────────────────────────────────────
-  // Correção: usa uma fonte de dados única (fonteDados) para evitar
-  // dupla dependência e recálculo desnecessário
+  // ── CORRIGIDO: handleSelectAllEntregas após filteredDeliveries ────────────
+  const handleSelectAllEntregas = useCallback(
+    (checked: boolean) =>
+      setSelectedEntregaIds(checked ? filteredDeliveries.map((e) => e.id) : []),
+    [filteredDeliveries],
+  );
+
   const fonteDados = loadingAll ? produtos : allProdutos;
 
   const filteredProdutos = useMemo(() => {
