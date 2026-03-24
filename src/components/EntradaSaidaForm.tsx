@@ -180,6 +180,31 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
     });
   }, [produtos, tipo, busca, categoriaFiltro]);
 
+  // ── FIXED: preserve selection when changing type ──────────────────────────
+  const handleTipoChange = (novoTipo: 'entrada' | 'saida' | 'ajuste') => {
+    setTipo(novoTipo);
+    setSelecionados(prev => {
+      const next: typeof prev = {};
+      for (const [produtoId, dados] of Object.entries(prev)) {
+        const p = produtos.find(p => p.id === produtoId);
+        if (!p) continue;
+        // For 'saida': skip products with zero stock
+        if (novoTipo === 'saida' && p.quantidade === 0) continue;
+        // For 'ajuste': reset quantity to current stock level as the default
+        // For 'saida': clamp quantity to available stock
+        // For 'entrada': keep current quantity as-is
+        const quantidade =
+          novoTipo === 'ajuste'
+            ? p.quantidade
+            : novoTipo === 'saida'
+              ? Math.min(dados.quantidade, p.quantidade)
+              : dados.quantidade;
+        next[produtoId] = { ...dados, quantidade };
+      }
+      return next;
+    });
+  };
+
   const handleToggleProduto = (p: Produto) => {
     setSelecionados(prev => {
       const novo = { ...prev };
@@ -256,7 +281,7 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
               type="date" className="form-control" value={dataCompetencia} max={hoje}
               onChange={e => {
                 setDataCompetencia(e.target.value);
-                if (e.target.value < hojeISO() && tipo === 'ajuste') setTipo('saida');
+                if (e.target.value < hojeISO() && tipo === 'ajuste') handleTipoChange('saida');
               }}
             />
           </div>
@@ -285,7 +310,7 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
                 key={id} type="button"
                 className="btn d-flex align-items-center justify-content-center gap-2 flex-grow-1"
                 style={{ ...style, height: '44px', fontSize: '13.5px', fontWeight: 700, borderRadius: '8px', border: '1.5px solid', transition: 'all 150ms' }}
-                onClick={() => { setTipo(id); setSelecionados({}); }}
+                onClick={() => handleTipoChange(id)}
                 disabled={id === 'ajuste' && isRetroativa}
                 title={id === 'ajuste' && isRetroativa ? 'Ajustes não são permitidos em datas passadas' : undefined}
               >
