@@ -359,14 +359,17 @@ export default function App() {
         }),
       });
 
-      const [mRes, pRes] = await Promise.all([
-        fetch(`${API_URL}/movimentacoes`),
-        fetch(`${API_URL}/produtos?_limit=10000`),
-      ]);
-      if (mRes.ok) setMovs(await mRes.json());
-      if (pRes.ok) setAllProdutos(await pRes.json());
-
       if (response.ok) {
+        setAllProdutos(prev => prev.map(p => {
+          const item = dados.itens.find((i: any) => i.produtoId === p.id);
+          if (!item) return p;
+          const delta = dados.tipo === 'saida' ? -item.quantidade
+            : dados.tipo === 'entrada' ? item.quantidade
+            : item.quantidade - p.quantidade;
+          return { ...p, quantidade: p.quantidade + delta };
+        }));
+        const mRes = await fetch(`${API_URL}/movimentacoes`);
+        if (mRes.ok) setMovs(await mRes.json());
         toast.success('Movimentações registradas com sucesso!');
         setView('estoque');
         scrollTop();
@@ -589,6 +592,8 @@ export default function App() {
     [],
   );
 
+  const selectedEntregaIdSet = useMemo(() => new Set(selectedEntregaIds), [selectedEntregaIds]);
+
   // ── PDF ENTREGAS ─────────────────────────────────────────────────────────
   const handleGenerateDeliveryReport = () => {
     if (selectedEntregaIds.length === 0) {
@@ -805,8 +810,9 @@ export default function App() {
 
   const handleReprogramDeliveries = async () => {
     if (!newDeliveryDate) { toast.error('Escolha uma nova data.'); return; }
+    const entregaMap = new Map(entregas.map(e => [e.id, e]));
     const valid = selectedEntregaIds.filter((id) => {
-      const e = entregas.find((e) => e.id === id);
+      const e = entregaMap.get(id);
       return e && !isDelivered(e.status);
     });
     if (valid.length === 0) {
@@ -815,18 +821,22 @@ export default function App() {
       return;
     }
     try {
-      await Promise.all(
-        valid.map((id) => {
-          const e = entregas.find((e) => e.id === id);
-          if (!e) return Promise.resolve();
-          const time = e.dataHoraSolicitacao.split('T')[1] || '08:00:00';
-          return fetch(`${API_URL}/entregas/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ dataHoraSolicitacao: `${newDeliveryDate}T${time}` }),
-          });
-        }),
-      );
+      const CHUNK_SIZE = 10;
+      for (let start = 0; start < valid.length; start += CHUNK_SIZE) {
+        const chunk = valid.slice(start, start + CHUNK_SIZE);
+        await Promise.all(
+          chunk.map((id) => {
+            const e = entregaMap.get(id);
+            if (!e) return Promise.resolve();
+            const time = e.dataHoraSolicitacao.split('T')[1] || '08:00:00';
+            return fetch(`${API_URL}/entregas/${id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ dataHoraSolicitacao: `${newDeliveryDate}T${time}` }),
+            });
+          }),
+        );
+      }
       toast.success(`${valid.length} entrega(s) reprogramada(s)!`);
       setShowReprogramModal(false);
       setNewDeliveryDate('');
@@ -1201,7 +1211,7 @@ export default function App() {
                       } else toast.error('Itens entregues não podem ser editados.');
                     }}
                     onStatusChange={updateEntregaStatus}
-                    selectedIds={selectedEntregaIds}
+                    selectedIdSet={selectedEntregaIdSet}
                     onSelectItem={handleSelectEntrega}
                     onSelectAll={handleSelectAllEntregas}
                   />

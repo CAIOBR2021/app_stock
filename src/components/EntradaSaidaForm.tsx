@@ -108,6 +108,34 @@ const IconInfo = () => (
   </svg>
 );
 
+// ── STATIC STYLES (avoid re-creation inside .map) ────────────────────────────
+
+const rowBaseStyle = {
+  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+  padding: '12px 16px', transition: 'background var(--transition)', flexWrap: 'wrap', gap: '10px',
+} as const;
+const labelStyle = { display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', flex: 1, minWidth: '180px' } as const;
+const nameStyle = { fontSize: '13.5px', fontWeight: 500, color: 'var(--text-1)' } as const;
+const metaStyle = { fontSize: '11.5px', color: 'var(--text-3)', marginTop: '2px' } as const;
+const stockStrong = { color: 'var(--text-2)' } as const;
+const selectionWrapStyle = { display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' } as const;
+const inputGroupStyle = { display: 'flex', alignItems: 'center', gap: 0, width: '160px' } as const;
+const currencyLabelStyle = {
+  background: 'var(--surface-2)', border: '1.5px solid var(--border)', borderRight: 'none',
+  borderRadius: '8px 0 0 8px', padding: '0 10px', height: '34px', display: 'flex',
+  alignItems: 'center', fontSize: '12px', color: 'var(--text-3)', fontWeight: 600,
+} as const;
+const valorInputStyle = {
+  height: '34px', border: '1.5px solid var(--border)', borderLeft: 'none',
+  borderRadius: '0 8px 8px 0', padding: '0 8px', fontSize: '13px', color: 'var(--text-1)',
+  background: '#fff', outline: 'none', fontFamily: 'DM Mono, monospace', width: '100%',
+} as const;
+const ajustePrefixStyle = {
+  background: '#EBF4FF', border: '1.5px solid #BFD7FF', borderRight: 'none',
+  borderRadius: '8px 0 0 8px', padding: '0 8px', height: '34px', display: 'flex',
+  alignItems: 'center', fontSize: '11px', color: '#1971C2', fontWeight: 700, whiteSpace: 'nowrap',
+} as const;
+
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 
 const hojeISO = () => {
@@ -364,45 +392,43 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
                   <div
                     key={p.id}
                     style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '12px 16px',
+                      ...rowBaseStyle,
                       borderBottom: idx < produtosDisponiveis.length - 1 ? '1px solid var(--border)' : 'none',
                       background: isSelected ? (tipo === 'ajuste' ? 'rgba(25,113,194,.04)' : 'rgba(245,166,35,.04)') : 'transparent',
-                      transition: 'background var(--transition)', flexWrap: 'wrap', gap: '10px',
                     }}
                   >
-                    <label htmlFor={`check-${p.id}`} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', flex: 1, minWidth: '180px' }}>
+                    <label htmlFor={`check-${p.id}`} style={labelStyle}>
                       <input
                         type="checkbox" id={`check-${p.id}`} checked={isSelected}
                         onChange={() => handleToggleProduto(p)}
                         style={{ marginTop: '3px', accentColor: tipo === 'ajuste' ? '#1971C2' : 'var(--primary)', width: '15px', height: '15px', flexShrink: 0 }}
                       />
                       <div>
-                        <div style={{ fontSize: '13.5px', fontWeight: 500, color: 'var(--text-1)' }}>{p.nome}</div>
-                        <div style={{ fontSize: '11.5px', color: 'var(--text-3)', marginTop: '2px' }}>
+                        <div style={nameStyle}>{p.nome}</div>
+                        <div style={metaStyle}>
                           <span className="sku">{p.sku}</span>
-                          {' · '}Estoque atual: <strong style={{ color: 'var(--text-2)' }}>{p.quantidade} {p.unidade}</strong>
+                          {' · '}Estoque atual: <strong style={stockStrong}>{p.quantidade} {p.unidade}</strong>
                         </div>
                       </div>
                     </label>
 
                     {isSelected && (
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                      <div style={selectionWrapStyle}>
                         {tipo === 'entrada' && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 0, width: '160px' }}>
-                            <span style={{ background: 'var(--surface-2)', border: '1.5px solid var(--border)', borderRight: 'none', borderRadius: '8px 0 0 8px', padding: '0 10px', height: '34px', display: 'flex', alignItems: 'center', fontSize: '12px', color: 'var(--text-3)', fontWeight: 600 }}>R$</span>
+                          <div style={inputGroupStyle}>
+                            <span style={currencyLabelStyle}>R$</span>
                             <input
                               type="number" step="0.01" min="0"
                               value={selecionado.valorUnitario === 0 ? '' : selecionado.valorUnitario}
                               onChange={e => handleChangeValor(p.id, Number(e.target.value))}
                               placeholder="Valor Unit."
-                              style={{ height: '34px', border: '1.5px solid var(--border)', borderLeft: 'none', borderRadius: '0 8px 8px 0', padding: '0 8px', fontSize: '13px', color: 'var(--text-1)', background: '#fff', outline: 'none', fontFamily: 'DM Mono, monospace', width: '100%' }}
+                              style={valorInputStyle}
                             />
                           </div>
                         )}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 0, width: '160px' }}>
+                        <div style={inputGroupStyle}>
                           {tipo === 'ajuste' && (
-                            <span style={{ background: '#EBF4FF', border: '1.5px solid #BFD7FF', borderRight: 'none', borderRadius: '8px 0 0 8px', padding: '0 8px', height: '34px', display: 'flex', alignItems: 'center', fontSize: '11px', color: '#1971C2', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                            <span style={ajustePrefixStyle}>
                               {quantidadeLabel}
                             </span>
                           )}

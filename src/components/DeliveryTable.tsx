@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react';
 import type { Entrega } from '../types';
 
 // ── SVG ICONS ─────────────────────────────────────────────────────────────────
@@ -25,14 +26,52 @@ const IconClock = () => (
   </svg>
 );
 
+// ── STATIC STYLES ────────────────────────────────────────────────────────────
+
+const checkboxStyle = { accentColor: 'var(--primary)', width: '15px', height: '15px', cursor: 'pointer' } as const;
+const dateStyle = { fontWeight: 500, fontSize: '13px', whiteSpace: 'nowrap' } as const;
+const timeStyle = { fontSize: '13px', color: 'var(--text-2)', whiteSpace: 'nowrap' } as const;
+const localNameStyle = { fontWeight: 500, fontSize: '13.5px' } as const;
+const localSubStyle = { fontSize: '11.5px', color: 'var(--text-3)', marginTop: '1px' } as const;
+const productNameStyle = { fontSize: '13.5px' } as const;
+const skuStyle = { fontSize: '11px', marginTop: '1px' } as const;
+const actionsWrapStyle = { display: 'flex', justifyContent: 'flex-end', gap: '4px' } as const;
+
+const deliveredRowStyle = { background: 'var(--surface-2)', opacity: .75 } as const;
+const normalRowStyle = { background: 'transparent', opacity: 1 } as const;
+
+const deliveredBadgeStyle = {
+  background: 'var(--surface-3)', color: 'var(--text-3)',
+  border: '1px solid var(--border)', fontFamily: 'DM Mono, monospace', fontSize: '11.5px',
+} as const;
+const normalBadgeStyle = {
+  background: 'var(--surface-2)', color: 'var(--text-1)',
+  border: '1px solid var(--border)', fontFamily: 'DM Mono, monospace', fontSize: '11.5px',
+} as const;
+
+const deliveredStatusStyle = {
+  display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px',
+  borderRadius: '999px', fontSize: '11px', fontWeight: 700, letterSpacing: '.3px',
+  cursor: 'pointer', userSelect: 'none',
+  background: 'var(--success-light)', color: 'var(--success)', border: '1px solid #A3E6B5',
+} as const;
+const pendingStatusStyle = {
+  display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px',
+  borderRadius: '999px', fontSize: '11px', fontWeight: 700, letterSpacing: '.3px',
+  cursor: 'pointer', userSelect: 'none',
+  background: 'var(--warning-light)', color: 'var(--primary-dark)', border: '1px solid #FAD898',
+} as const;
+
 // ── TYPES ─────────────────────────────────────────────────────────────────────
+
+const PAGE_SIZE = 30;
 
 interface DeliveryTableProps {
   deliveries: Entrega[];
   onDelete: (id: string) => void;
   onEdit: (entrega: Entrega) => void;
   onStatusChange: (id: string, status: string) => void;
-  selectedIds: string[];
+  selectedIdSet: Set<string>;
   onSelectItem: (id: string) => void;
   onSelectAll: (isChecked: boolean) => void;
 }
@@ -44,30 +83,39 @@ export function DeliveryTable({
   onDelete,
   onEdit,
   onStatusChange,
-  selectedIds,
+  selectedIdSet,
   onSelectItem,
   onSelectAll,
 }: DeliveryTableProps) {
+  const [page, setPage] = useState(0);
+
+  const totalPages = Math.ceil(deliveries.length / PAGE_SIZE);
+  const paginatedDeliveries = useMemo(
+    () => deliveries.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE),
+    [deliveries, page],
+  );
 
   const isDelivered = (status: string | undefined) =>
     status?.trim().toLowerCase() === 'entregue';
 
   const isAllSelected =
-    deliveries.length > 0 && deliveries.every(d => selectedIds.includes(d.id));
+    paginatedDeliveries.length > 0 && paginatedDeliveries.every(d => selectedIdSet.has(d.id));
+
+  const safePage = Math.min(page, Math.max(0, totalPages - 1));
+  if (safePage !== page) setPage(safePage);
 
   return (
     <div style={{ overflowX: 'auto' }}>
       <table className="table" style={{ marginBottom: 0 }}>
         <thead>
           <tr>
-            {/* Checkbox selecionar todos */}
             <th style={{ width: '40px', textAlign: 'center', padding: '12px 16px' }}>
               <input
                 type="checkbox"
                 checked={isAllSelected}
                 onChange={e => onSelectAll(e.target.checked)}
-                disabled={deliveries.length === 0}
-                style={{ accentColor: 'var(--primary)', width: '15px', height: '15px', cursor: 'pointer' }}
+                disabled={paginatedDeliveries.length === 0}
+                style={checkboxStyle}
               />
             </th>
             <th>Data</th>
@@ -81,103 +129,69 @@ export function DeliveryTable({
         </thead>
 
         <tbody>
-          {deliveries.length === 0 ? (
+          {paginatedDeliveries.length === 0 ? (
             <tr>
               <td colSpan={8} style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--text-3)', fontSize: '13.5px' }}>
                 Nenhuma entrega encontrada para os filtros atuais.
               </td>
             </tr>
           ) : (
-            deliveries.map(delivery => {
+            paginatedDeliveries.map(delivery => {
               const delivered = isDelivered(delivery.status);
 
               return (
-                <tr
-                  key={delivery.id}
-                  style={{ background: delivered ? 'var(--surface-2)' : 'transparent', opacity: delivered ? .75 : 1 }}
-                >
-                  {/* Checkbox */}
+                <tr key={delivery.id} style={delivered ? deliveredRowStyle : normalRowStyle}>
                   <td style={{ textAlign: 'center' }}>
                     <input
                       type="checkbox"
-                      checked={selectedIds.includes(delivery.id)}
+                      checked={selectedIdSet.has(delivery.id)}
                       onChange={() => onSelectItem(delivery.id)}
-                      style={{ accentColor: 'var(--primary)', width: '15px', height: '15px', cursor: 'pointer' }}
+                      style={checkboxStyle}
                     />
                   </td>
 
-                  {/* Data */}
-                  <td style={{ fontWeight: 500, fontSize: '13px', whiteSpace: 'nowrap' }}>
+                  <td style={dateStyle}>
                     {new Date(delivery.dataHoraSolicitacao).toLocaleDateString('pt-BR')}
                   </td>
 
-                  {/* Hora */}
-                  <td style={{ fontSize: '13px', color: 'var(--text-2)', whiteSpace: 'nowrap' }}>
+                  <td style={timeStyle}>
                     {new Date(delivery.dataHoraSolicitacao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                   </td>
 
-                  {/* Local */}
                   <td>
-                    <div style={{ fontWeight: 500, fontSize: '13.5px' }}>{delivery.localObra}</div>
-                    <div style={{ fontSize: '11.5px', color: 'var(--text-3)', marginTop: '1px' }}>
+                    <div style={localNameStyle}>{delivery.localObra}</div>
+                    <div style={localSubStyle}>
                       {delivery.localArmazenagem || (delivery as any).localArmazenamento || '—'}
                     </div>
                   </td>
 
-                  {/* Produto */}
                   <td>
-                    <div style={{ fontSize: '13.5px' }}>{delivery.itemNome || 'Produto não encontrado'}</div>
+                    <div style={productNameStyle}>{delivery.itemNome || 'Produto não encontrado'}</div>
                     {delivery.sku && (
-                      <div className="sku" style={{ fontSize: '11px', marginTop: '1px' }}>{delivery.sku}</div>
+                      <div className="sku" style={skuStyle}>{delivery.sku}</div>
                     )}
                   </td>
 
-                  {/* Quantidade */}
                   <td style={{ textAlign: 'center' }}>
-                    <span
-                      className="badge"
-                      style={{
-                        background: delivered ? 'var(--surface-3)' : 'var(--surface-2)',
-                        color: delivered ? 'var(--text-3)' : 'var(--text-1)',
-                        border: '1px solid var(--border)',
-                        fontFamily: 'DM Mono, monospace',
-                        fontSize: '11.5px',
-                      }}
-                    >
+                    <span className="badge" style={delivered ? deliveredBadgeStyle : normalBadgeStyle}>
                       {delivery.itemQuantidade} {delivery.itemUnidadeMedida}
                     </span>
                   </td>
 
-                  {/* Status — clicável */}
                   <td style={{ textAlign: 'center' }}>
                     <span
                       className="status-badge"
                       onClick={() => onStatusChange(delivery.id, delivered ? 'Pendente' : 'Entregue')}
                       title={delivered ? 'Clique para marcar como Pendente' : 'Clique para marcar como Entregue'}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        padding: '4px 10px',
-                        borderRadius: '999px',
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        letterSpacing: '.3px',
-                        cursor: 'pointer',
-                        userSelect: 'none',
-                        background: delivered ? 'var(--success-light)' : 'var(--warning-light)',
-                        color:      delivered ? 'var(--success)'       : 'var(--primary-dark)',
-                        border: `1px solid ${delivered ? '#A3E6B5' : '#FAD898'}`,
-                      }}
+                      style={delivered ? deliveredStatusStyle : pendingStatusStyle}
                     >
                       <IconClock />
                       {delivered ? 'ENTREGUE' : 'PENDENTE'}
                     </span>
                   </td>
 
-                  {/* Ações */}
                   <td>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '4px' }}>
+                    <div style={actionsWrapStyle}>
                       <button
                         className="act-btn"
                         onClick={() => !delivered && onEdit(delivery)}
@@ -202,6 +216,30 @@ export function DeliveryTable({
           )}
         </tbody>
       </table>
+
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', padding: '12px 0' }}>
+          <button
+            className="btn btn-sm"
+            disabled={page === 0}
+            onClick={() => setPage(p => p - 1)}
+            style={{ fontSize: '12px', padding: '4px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface-1)', color: 'var(--text-2)' }}
+          >
+            Anterior
+          </button>
+          <span style={{ fontSize: '12px', color: 'var(--text-3)', fontWeight: 500 }}>
+            {page + 1} / {totalPages}
+          </span>
+          <button
+            className="btn btn-sm"
+            disabled={page >= totalPages - 1}
+            onClick={() => setPage(p => p + 1)}
+            style={{ fontSize: '12px', padding: '4px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface-1)', color: 'var(--text-2)' }}
+          >
+            Próxima
+          </button>
+        </div>
+      )}
     </div>
   );
 }
