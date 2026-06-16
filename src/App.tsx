@@ -342,43 +342,22 @@ export default function App() {
           ? partes.join(' | ')
           : `Movimentação em lote (${dados.tipo})`;
 
-      const resultados = await Promise.allSettled(
-        dados.itens.map((item: any) =>
-          fetch(`${API_URL}/movimentacoes`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              produtoId: item.produtoId,
-              tipo: dados.tipo,
-              quantidade: item.quantidade,
-              motivo: motivoFinal,
-              nomeObra: dados.nomeObra || undefined,
-              ordemCompra: dados.ordemCompra || undefined,
-              custoUnitarioHistorico:
-                dados.tipo === 'entrada' ? item.valorUnitario : undefined,
-              custoEntrada:
-                dados.tipo === 'entrada' ? item.valorUnitario : undefined,
-              dataCompetencia: dados.dataCompetencia,
-            }),
-          }),
-        ),
-      );
-
-      const erros: string[] = [];
-      for (let i = 0; i < resultados.length; i++) {
-        const resultado = resultados[i];
-        const item = dados.itens[i];
-        const produto = allProdutos.find((p) => p.id === item.produtoId);
-
-        if (resultado.status === 'rejected') {
-          erros.push(`${produto?.nome || item.produtoId}: erro de conexão`);
-        } else if (!resultado.value.ok) {
-          const errData = await resultado.value
-            .json()
-            .catch(() => ({ error: 'Erro desconhecido' }));
-          erros.push(`${produto?.nome || item.produtoId}: ${errData.error}`);
-        }
-      }
+      const response = await fetch(`${API_URL}/movimentacoes/lote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          itens: dados.itens.map((item: any) => ({
+            produtoId: item.produtoId,
+            quantidade: item.quantidade,
+            valorUnitario: dados.tipo === 'entrada' ? item.valorUnitario : undefined,
+          })),
+          tipo: dados.tipo,
+          motivo: motivoFinal,
+          nomeObra: dados.nomeObra || undefined,
+          ordemCompra: dados.ordemCompra || undefined,
+          dataCompetencia: dados.dataCompetencia,
+        }),
+      });
 
       const [mRes, pRes] = await Promise.all([
         fetch(`${API_URL}/movimentacoes`),
@@ -387,14 +366,13 @@ export default function App() {
       if (mRes.ok) setMovs(await mRes.json());
       if (pRes.ok) setAllProdutos(await pRes.json());
 
-      if (erros.length === 0) {
+      if (response.ok) {
         toast.success('Movimentações registradas com sucesso!');
         setView('estoque');
         scrollTop();
-      } else if (erros.length < dados.itens.length) {
-        toast.warning(`Parcialmente registrado. Erros:\n${erros.join('\n')}`);
       } else {
-        toast.error(`Falha ao registrar:\n${erros.join('\n')}`);
+        const errData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
+        toast.error(`Falha ao registrar: ${errData.error}`);
       }
     } catch {
       toast.error('Erro ao registrar entradas/saídas.');
@@ -578,15 +556,19 @@ export default function App() {
   const confirmBulkStatusChange = async () => {
     try {
       setLoading(true);
-      await Promise.all(
-        selectedEntregaIds.map((id) =>
-          fetch(`${API_URL}/entregas/${id}/status`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: bulkTargetStatus }),
-          }),
-        ),
-      );
+      const CHUNK_SIZE = 10;
+      for (let start = 0; start < selectedEntregaIds.length; start += CHUNK_SIZE) {
+        const chunk = selectedEntregaIds.slice(start, start + CHUNK_SIZE);
+        await Promise.all(
+          chunk.map((id) =>
+            fetch(`${API_URL}/entregas/${id}/status`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: bulkTargetStatus }),
+            }),
+          ),
+        );
+      }
       const eRes = await fetch(`${API_URL}/entregas`);
       setEntregas((await eRes.json()).map(normalizeEntrega));
       setSelectedEntregaIds([]);

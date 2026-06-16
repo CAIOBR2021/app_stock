@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-Content -Path \"src\\\\App.tsx\" -TotalCount 5)",
+      "PowerShell(npx tsc --noEmit 2>&1)",
+      "PowerShell(Get-ChildItem \"D:\\\\DADOS\\\\Desktop\" | Where-Object { $_.Name -match \"estoque|stock|back\" } | Select-Object Name, Mode, FullName)",
+      "Bash(Get-ChildItem -Path \"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_BACK_END-main\" -Recurse -Force)",
+      "Bash(Select-Object FullName)",
+      "Bash(grep -E \"^d|\\\\.js$|\\\\.ts$|\\\\.json$\")",
+      "Bash(git -C \"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_BACK_END-main\" log --oneline)",
+      "Bash(git -C \"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_BACK_END-main\" log -5 --format=\"%H %s\")",
+      "Bash(xargs -I {} git -C \"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_BACK_END-main\" show --stat {})",
+      "Bash(git -C \"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_BACK_END-main\" show b81eda3 --stat)"
+    ]
+  }
+}
