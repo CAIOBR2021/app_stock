@@ -559,19 +559,11 @@ export default function App() {
   const confirmBulkStatusChange = async () => {
     try {
       setLoading(true);
-      const CHUNK_SIZE = 10;
-      for (let start = 0; start < selectedEntregaIds.length; start += CHUNK_SIZE) {
-        const chunk = selectedEntregaIds.slice(start, start + CHUNK_SIZE);
-        await Promise.all(
-          chunk.map((id) =>
-            fetch(`${API_URL}/entregas/${id}/status`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ status: bulkTargetStatus }),
-            }),
-          ),
-        );
-      }
+      await fetch(`${API_URL}/entregas/status/lote`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedEntregaIds, status: bulkTargetStatus }),
+      });
       const eRes = await fetch(`${API_URL}/entregas`);
       setEntregas((await eRes.json()).map(normalizeEntrega));
       setSelectedEntregaIds([]);
