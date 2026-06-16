@@ -90,7 +90,7 @@ body {
 }
 
 .sidebar-logo-area {
-  padding: 4px 2px 2px;
+  padding: 18px 20px 16px;
   border-bottom: 1px solid rgba(255,255,255,0.08);
   display: flex;
   align-items: center;
@@ -113,8 +113,8 @@ body {
 }
 
 .sidebar-logo {
-  max-height: 62px;
-  width: auto
+  height: 48px;
+  width: auto;
 }
 
 .sidebar-logo-name {

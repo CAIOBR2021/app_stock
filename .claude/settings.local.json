@@ -10,7 +10,9 @@
       "Bash(git -C \"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_BACK_END-main\" log --oneline)",
       "Bash(git -C \"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_BACK_END-main\" log -5 --format=\"%H %s\")",
       "Bash(xargs -I {} git -C \"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_BACK_END-main\" show --stat {})",
-      "Bash(git -C \"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_BACK_END-main\" show b81eda3 --stat)"
+      "Bash(git -C \"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_BACK_END-main\" show b81eda3 --stat)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(npx vite *)"
     ]
   }
 }

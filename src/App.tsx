@@ -970,7 +970,7 @@ export default function App() {
 
       {/* ── MOBILE HEADER ── */}
       <div className="mobile-header d-lg-none d-flex justify-content-between align-items-center px-3">
-        <img src={meuLogo} alt="Logo" style={{ height: '32px' }} />
+        <img src={meuLogo} alt="Logo" style={{ height: '36px' }} />
         <div
           onClick={() => setShowLowStockModal(true)}
           style={{ cursor: 'pointer', position: 'relative', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
