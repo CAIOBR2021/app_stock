@@ -4,6 +4,7 @@ import { DeliveryForm } from './components/DeliveryForm';
 import { DeliveryTable } from './components/DeliveryTable';
 import { EntradaSaidaForm } from './components/EntradaSaidaForm';
 import { NotaFiscalReader } from './components/NotaFiscalReader';
+import { PrevisaoConsumo } from './components/PrevisaoConsumo';
 import './styles.css';
 
 import type { Produto, Movimentacao, Entrega } from './types';
@@ -61,6 +62,12 @@ const IconScan = () => (
     <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
     <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
     <line x1="7" y1="12" x2="17" y2="12" />
+  </svg>
+);
+const IconTrendingUp = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+    <polyline points="17 6 23 6 23 12" />
   </svg>
 );
 const IconBell = ({ active }: { active?: boolean }) => (
@@ -160,7 +167,7 @@ export default function App() {
   const [loadingAll, setLoadingAll] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [view, setView] = useState<'estoque' | 'movimentacoes' | 'rotas' | 'entradas_saidas' | 'nota_fiscal'>('estoque');
+  const [view, setView] = useState<'estoque' | 'movimentacoes' | 'rotas' | 'entradas_saidas' | 'nota_fiscal' | 'previsao'>('estoque');
   const [showScroll, setShowScroll] = useState(false);
   const [q, setQ] = useState('');
   const [categoriaFilter, setCategoriaFilter] = useState('');
@@ -960,6 +967,7 @@ export default function App() {
               { id: 'rotas', label: 'Rotas & Entregas', Icon: IconTruck },
               { id: 'entradas_saidas', label: 'Entrada / Saída', Icon: IconArrowLeftRight },
               { id: 'nota_fiscal', label: 'Leitura de NF', Icon: IconScan },
+              { id: 'previsao', label: 'Previsão de Consumo', Icon: IconTrendingUp },
             ] as const
           ).map(({ id, label, Icon }) => (
             <button
@@ -1009,6 +1017,7 @@ export default function App() {
               {view === 'rotas' && 'Cronograma de Entregas'}
               {view === 'entradas_saidas' && 'Lançamento de Entradas e Saídas'}
               {view === 'nota_fiscal' && 'Leitura de Nota Fiscal'}
+              {view === 'previsao' && 'Previsão de Consumo e Reposição'}
             </h1>
             <div className="page-date-subtitle">
               {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
@@ -1243,6 +1252,13 @@ export default function App() {
             />
           </div>
         )}
+
+        {/* ── PREVISÃO DE CONSUMO ── */}
+        {view === 'previsao' && (
+          <div className="content-area animate-fade-in">
+            <PrevisaoConsumo produtos={allProdutos} movimentacoes={movs} />
+          </div>
+        )}
       </main>
 
       {/* ── BOTTOM NAV ── */}
@@ -1254,6 +1270,7 @@ export default function App() {
             { id: 'entradas_saidas', label: 'Fluxo', Icon: IconArrowLeftRight },
             { id: 'rotas', label: 'Rotas', Icon: IconTruck },
             { id: 'nota_fiscal', label: 'NF', Icon: IconScan },
+            { id: 'previsao', label: 'Previsão', Icon: IconTrendingUp },
           ] as const
         ).map(({ id, label, Icon }) => (
           <button key={id} className={`bottom-nav-item ${view === id ? 'active' : ''}`} onClick={() => { setView(id); scrollTop(); }}>
