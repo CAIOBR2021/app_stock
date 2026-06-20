@@ -13,7 +13,10 @@
       "Bash(git -C \"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_BACK_END-main\" show b81eda3 --stat)",
       "mcp__Claude_Preview__preview_start",
       "Bash(npx vite *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "mcp__Claude_in_Chrome__navigate",
+      "mcp__Claude_in_Chrome__computer"
     ]
   }
 }

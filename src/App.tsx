@@ -3,6 +3,7 @@ import meuLogo from './assets/logo.svg';
 import { DeliveryForm } from './components/DeliveryForm';
 import { DeliveryTable } from './components/DeliveryTable';
 import { EntradaSaidaForm } from './components/EntradaSaidaForm';
+import { NotaFiscalReader } from './components/NotaFiscalReader';
 import './styles.css';
 
 import type { Produto, Movimentacao, Entrega } from './types';
@@ -51,6 +52,15 @@ const IconArrowLeftRight = () => (
     <polyline points="7 16 3 12 7 8" />
     <line x1="3" y1="12" x2="21" y2="12" />
     <polyline points="17 8 21 12 17 16" />
+  </svg>
+);
+const IconScan = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+    <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+    <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+    <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+    <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+    <line x1="7" y1="12" x2="17" y2="12" />
   </svg>
 );
 const IconBell = ({ active }: { active?: boolean }) => (
@@ -150,7 +160,7 @@ export default function App() {
   const [loadingAll, setLoadingAll] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [view, setView] = useState<'estoque' | 'movimentacoes' | 'rotas' | 'entradas_saidas'>('estoque');
+  const [view, setView] = useState<'estoque' | 'movimentacoes' | 'rotas' | 'entradas_saidas' | 'nota_fiscal'>('estoque');
   const [showScroll, setShowScroll] = useState(false);
   const [q, setQ] = useState('');
   const [categoriaFilter, setCategoriaFilter] = useState('');
@@ -949,6 +959,7 @@ export default function App() {
               { id: 'movimentacoes', label: 'Movimentações', Icon: IconClipboard },
               { id: 'rotas', label: 'Rotas & Entregas', Icon: IconTruck },
               { id: 'entradas_saidas', label: 'Entrada / Saída', Icon: IconArrowLeftRight },
+              { id: 'nota_fiscal', label: 'Leitura de NF', Icon: IconScan },
             ] as const
           ).map(({ id, label, Icon }) => (
             <button
@@ -997,6 +1008,7 @@ export default function App() {
               {view === 'movimentacoes' && 'Histórico de Movimentações'}
               {view === 'rotas' && 'Cronograma de Entregas'}
               {view === 'entradas_saidas' && 'Lançamento de Entradas e Saídas'}
+              {view === 'nota_fiscal' && 'Leitura de Nota Fiscal'}
             </h1>
             <div className="page-date-subtitle">
               {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
@@ -1219,6 +1231,18 @@ export default function App() {
             <EntradaSaidaForm produtos={allProdutos} onSubmit={handleEntradaSaidaSubmit} />
           </div>
         )}
+
+        {/* ── LEITURA DE NF ── */}
+        {view === 'nota_fiscal' && (
+          <div className="content-area animate-fade-in">
+            <NotaFiscalReader
+              produtos={allProdutos}
+              onImportar={(dados) => {
+                handleEntradaSaidaSubmit(dados);
+              }}
+            />
+          </div>
+        )}
       </main>
 
       {/* ── BOTTOM NAV ── */}
@@ -1229,6 +1253,7 @@ export default function App() {
             { id: 'movimentacoes', label: 'Movs', Icon: IconClipboard },
             { id: 'entradas_saidas', label: 'Fluxo', Icon: IconArrowLeftRight },
             { id: 'rotas', label: 'Rotas', Icon: IconTruck },
+            { id: 'nota_fiscal', label: 'NF', Icon: IconScan },
           ] as const
         ).map(({ id, label, Icon }) => (
           <button key={id} className={`bottom-nav-item ${view === id ? 'active' : ''}`} onClick={() => { setView(id); scrollTop(); }}>
