@@ -1,5 +1,8 @@
 import { useState, useMemo } from 'react';
 import type { Produto, Movimentacao } from '../types';
+import { Paginacao } from './Shared';
+
+const ITEMS_PER_PAGE = 15;
 
 interface Props {
   produtos: Produto[];
@@ -32,9 +35,10 @@ function calcularUrgencia(diasParaAcabar: number | null, produto: Produto): Prev
 }
 
 export function PrevisaoConsumo({ produtos, movimentacoes }: Props) {
-  const [periodoAnalise, setPeriodoAnalise] = useState<number>(365);
+  const [periodoAnalise, setPeriodoAnalise] = useState<number>(90);
   const [filtroUrgencia, setFiltroUrgencia] = useState<string>('todos');
   const [busca, setBusca] = useState('');
+  const [page, setPage] = useState(1);
 
   const previsoes = useMemo(() => {
     const agora = new Date();
@@ -113,6 +117,11 @@ export function PrevisaoConsumo({ produtos, movimentacoes }: Props) {
     ok: previsoes.filter((p) => p.urgencia === 'ok' && p.totalSaidas > 0).length,
   }), [previsoes]);
 
+  const paginatedPrevisoes = useMemo(() => {
+    const start = (page - 1) * ITEMS_PER_PAGE;
+    return previsoesFiltradas.slice(start, start + ITEMS_PER_PAGE);
+  }, [previsoesFiltradas, page]);
+
   const alertasCompra = useMemo(
     () => previsoes.filter((p) => p.urgencia === 'critico' || p.urgencia === 'alerta'),
     [previsoes],
@@ -142,7 +151,7 @@ export function PrevisaoConsumo({ produtos, movimentacoes }: Props) {
                   transition: 'var(--transition)',
                   boxShadow: filtroUrgencia === key ? `0 0 0 2px ${cfg.color}` : 'none',
                 }}
-                onClick={() => setFiltroUrgencia(filtroUrgencia === key ? 'todos' : key)}
+                onClick={() => { setFiltroUrgencia(filtroUrgencia === key ? 'todos' : key); setPage(1); }}
               >
                 <div style={{ fontSize: '28px', fontWeight: 800, color: cfg.color }}>{count}</div>
                 <div style={{ fontSize: '13px', fontWeight: 700, color: cfg.color, marginTop: '2px' }}>{titulo}</div>
@@ -246,7 +255,7 @@ export function PrevisaoConsumo({ produtos, movimentacoes }: Props) {
                 className="form-control"
                 placeholder="Nome, SKU, categoria, fornecedor..."
                 value={busca}
-                onChange={(e) => setBusca(e.target.value)}
+                onChange={(e) => { setBusca(e.target.value); setPage(1); }}
               />
             </div>
           </div>
@@ -255,7 +264,7 @@ export function PrevisaoConsumo({ produtos, movimentacoes }: Props) {
             <select
               className="form-select"
               value={periodoAnalise}
-              onChange={(e) => setPeriodoAnalise(Number(e.target.value))}
+              onChange={(e) => { setPeriodoAnalise(Number(e.target.value)); setPage(1); }}
             >
               <option value={30}>Últimos 30 dias</option>
               <option value={60}>Últimos 60 dias</option>
@@ -269,7 +278,7 @@ export function PrevisaoConsumo({ produtos, movimentacoes }: Props) {
             <select
               className="form-select"
               value={filtroUrgencia}
-              onChange={(e) => setFiltroUrgencia(e.target.value)}
+              onChange={(e) => { setFiltroUrgencia(e.target.value); setPage(1); }}
             >
               <option value="todos">Todas</option>
               <option value="critico">Crítico</option>
@@ -297,7 +306,7 @@ export function PrevisaoConsumo({ produtos, movimentacoes }: Props) {
               </tr>
             </thead>
             <tbody>
-              {previsoesFiltradas.length === 0 ? (
+              {paginatedPrevisoes.length === 0 ? (
                 <tr>
                   <td colSpan={5} style={{ textAlign: 'center', padding: '40px 16px', color: 'var(--text-3)' }}>
                     {filtroUrgencia !== 'todos' || busca
@@ -306,7 +315,7 @@ export function PrevisaoConsumo({ produtos, movimentacoes }: Props) {
                   </td>
                 </tr>
               ) : (
-                previsoesFiltradas.map((p) => {
+                paginatedPrevisoes.map((p) => {
                   const cfg = URGENCIA_CONFIG[p.urgencia];
                   const barPct =
                     p.diasParaAcabar !== null
@@ -408,6 +417,15 @@ export function PrevisaoConsumo({ produtos, movimentacoes }: Props) {
               )}
             </tbody>
           </table>
+        </div>
+
+        <div className="mt-4 d-flex justify-content-center">
+          <Paginacao
+            totalItems={previsoesFiltradas.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+            currentPage={page}
+            onPageChange={setPage}
+          />
         </div>
       </div>
     </div>
