@@ -30,8 +30,23 @@ export function ChatWidget() {
   const inputRef = useRef<HTMLInputElement>(null);
   const nextId = useRef(1);
 
-  const [pos, setPos] = useState({ bottom: 24, right: 24 });
+  const ORIGIN = { bottom: 24, right: 24 };
+  const SNAP_RADIUS = 50;
+  const FAB_SIZE = 56;
+  const CHAT_W = 390;
+  const CHAT_H = 560;
+
+  const [pos, setPos] = useState({ ...ORIGIN });
   const dragRef = useRef<{ startX: number; startY: number; startRight: number; startBottom: number; dragged: boolean } | null>(null);
+
+  const clampPos = (r: number, b: number) => {
+    const w = open ? CHAT_W : FAB_SIZE;
+    const h = open ? CHAT_H : FAB_SIZE;
+    return {
+      right: Math.max(0, Math.min(window.innerWidth - w, r)),
+      bottom: Math.max(0, Math.min(window.innerHeight - h, b)),
+    };
+  };
 
   const onPointerDown = (e: React.PointerEvent) => {
     dragRef.current = { startX: e.clientX, startY: e.clientY, startRight: pos.right, startBottom: pos.bottom, dragged: false };
@@ -43,15 +58,16 @@ export function ChatWidget() {
     const dy = dragRef.current.startY - e.clientY;
     if (Math.abs(dx) > 3 || Math.abs(dy) > 3) dragRef.current.dragged = true;
     if (!dragRef.current.dragged) return;
-    const newRight = Math.max(0, Math.min(window.innerWidth - 60, dragRef.current.startRight + dx));
-    const newBottom = Math.max(0, Math.min(window.innerHeight - 60, dragRef.current.startBottom + dy));
-    setPos({ right: newRight, bottom: newBottom });
+    setPos(clampPos(dragRef.current.startRight + dx, dragRef.current.startBottom + dy));
   };
   const onPointerUp = (e: React.PointerEvent) => {
     const wasDrag = dragRef.current?.dragged;
     dragRef.current = null;
-    if (wasDrag) e.preventDefault();
-    else if (!open) setOpen(true);
+    if (wasDrag) {
+      e.preventDefault();
+      const dist = Math.sqrt((pos.right - ORIGIN.right) ** 2 + (pos.bottom - ORIGIN.bottom) ** 2);
+      if (dist <= SNAP_RADIUS) setPos({ ...ORIGIN });
+    } else if (!open) setOpen(true);
   };
 
   useEffect(() => {
