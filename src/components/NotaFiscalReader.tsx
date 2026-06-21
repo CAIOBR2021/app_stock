@@ -1,6 +1,6 @@
 import React, { useState, useRef, useMemo } from 'react';
 import type { Produto } from '../types';
-import { API_URL } from '../constants';
+import { API_URL, isUnidadeInteira } from '../constants';
 
 // ── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -824,7 +824,7 @@ export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps
                         Qtd.
                       </label>
                       <input
-                        type="number" min="0" step="any"
+                        type="number" min="0" step={isUnidadeInteira(item.unidade) ? 1 : 'any'}
                         value={item.quantidade}
                         onChange={e => handleChangeQtd(idx, Number(e.target.value))}
                         style={{

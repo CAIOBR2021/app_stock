@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import Select from 'react-select';
 import type { StylesConfig } from 'react-select';
 import type { Produto } from '../types';
+import { isUnidadeInteira, sanitizeQuantidade } from '../constants';
 
 // ── REACT-SELECT STYLES ───────────────────────────────────────────────────────
 
@@ -176,7 +177,9 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
 
   const handleChangeQuantidade = (id: string, qtd: number) => {
     if (qtd < 0) return;
-    setSelecionados(prev => ({ ...prev, [id]: { ...prev[id], quantidade: qtd } }));
+    const prod = produtos.find(p => p.id === id);
+    const val = prod ? sanitizeQuantidade(qtd, prod.unidade) : qtd;
+    setSelecionados(prev => ({ ...prev, [id]: { ...prev[id], quantidade: val } }));
   };
 
   const handleChangeValor = (id: string, valor: number) => {
@@ -554,6 +557,7 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
                           type="number"
                           min={tipo === 'saida' ? 1 : 0}
                           max={tipo === 'saida' ? p.quantidade : undefined}
+                          step={isUnidadeInteira(p.unidade) ? 1 : 0.01}
                           value={selecionado.quantidade}
                           onChange={e => handleChangeQuantidade(p.id, Number(e.target.value))}
                           style={{

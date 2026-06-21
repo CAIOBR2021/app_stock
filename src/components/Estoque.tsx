@@ -4,7 +4,7 @@ import Select from 'react-select';
 import CreatableSelect from 'react-select/creatable';
 import type { StylesConfig } from 'react-select';
 import type { Produto, Movimentacao, TipoMov, UUID } from '../types';
-import { API_URL } from '../constants';
+import { API_URL, isUnidadeInteira, sanitizeQuantidade } from '../constants';
 import {
   ModalComponent,
   PasswordEntryModal,
@@ -749,9 +749,10 @@ export function ProdutoForm({
             <input
               type="number"
               min={0}
+              step={isUnidadeInteira(unidade) ? 1 : 0.01}
               className="form-control"
               value={quantidade}
-              onChange={(e) => setQuantidade(Number(e.target.value))}
+              onChange={(e) => setQuantidade(sanitizeQuantidade(Number(e.target.value), unidade))}
               disabled={!!produto}
             />
           </div>
@@ -1138,9 +1139,10 @@ export function MovimentacaoForm({
           <input
             type="number"
             min={1}
+            step={isUnidadeInteira(produto.unidade) ? 1 : 0.01}
             className="form-control"
             value={quantidade}
-            onChange={(e) => setQuantidade(Number(e.target.value))}
+            onChange={(e) => setQuantidade(sanitizeQuantidade(Number(e.target.value), produto.unidade))}
             required
           />
         </div>
