@@ -125,11 +125,11 @@
 /* ── SCROLL TO TOP ───────────────────────────────────────── */
 .btn-scroll-top {
   position: fixed;
-  bottom: 90px;
-  right: 20px;
-  width: 45px;
-  height: 45px;
-  border-radius: 10px !important;
+  bottom: 92px;
+  right: 24px;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px !important;
   background: var(--primary) !important;
   border: none !important;
   color: #fff !important;

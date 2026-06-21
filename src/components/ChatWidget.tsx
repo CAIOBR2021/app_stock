@@ -78,20 +78,21 @@ export function ChatWidget() {
           aria-label="Abrir chat"
           style={{
             position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999,
-            width: '60px', height: '60px', borderRadius: '50%',
+            width: '56px', height: '56px', borderRadius: '16px',
             background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%)',
-            border: '2px solid rgba(255,255,255,.12)', cursor: 'pointer', color: '#fff',
+            border: 'none', cursor: 'pointer', color: '#fff',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 8px 32px rgba(30,27,75,.5), 0 0 0 4px rgba(67,56,202,.15)',
+            boxShadow: '0 6px 24px rgba(30,27,75,.45), 0 0 0 3px rgba(67,56,202,.12)',
             transition: 'transform 200ms, box-shadow 200ms',
-            overflow: 'hidden',
           }}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.boxShadow = '0 10px 40px rgba(30,27,75,.6), 0 0 0 6px rgba(67,56,202,.2)'; }}
-          onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(30,27,75,.5), 0 0 0 4px rgba(67,56,202,.15)'; }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.06)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(30,27,75,.55), 0 0 0 5px rgba(67,56,202,.15)'; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 6px 24px rgba(30,27,75,.45), 0 0 0 3px rgba(67,56,202,.12)'; }}
         >
-          <img src="/almoxarife-avatar.png" alt="O Almoxarife" style={{ width: '44px', height: '44px', objectFit: 'cover', borderRadius: '50%' }} />
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="26" height="26">
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+          </svg>
           <div style={{
-            position: 'absolute', top: '0', right: '0',
+            position: 'absolute', top: '-2px', right: '-2px',
             width: '14px', height: '14px', borderRadius: '50%',
             background: '#22C55E', border: '2.5px solid #1e1b4b',
           }} />
@@ -143,16 +144,21 @@ export function ChatWidget() {
             </button>
 
             {/* Profile section */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '20px 20px 18px', position: 'relative' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '18px 20px 16px', position: 'relative' }}>
               <div style={{
-                width: '48px', height: '48px', borderRadius: '14px',
-                background: 'rgba(255,255,255,.12)',
-                border: '1.5px solid rgba(255,255,255,.15)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                overflow: 'hidden', flexShrink: 0,
-                boxShadow: '0 4px 12px rgba(0,0,0,.2)',
+                width: '52px', height: '52px', borderRadius: '16px',
+                background: 'linear-gradient(135deg, rgba(255,255,255,.2), rgba(255,255,255,.05))',
+                padding: '2px',
+                flexShrink: 0,
+                boxShadow: '0 4px 16px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.15)',
               }}>
-                <img src="/almoxarife-avatar.png" alt="O Almoxarife" style={{ width: '44px', height: '44px', objectFit: 'cover', borderRadius: '10px' }} />
+                <div style={{
+                  width: '100%', height: '100%', borderRadius: '14px',
+                  overflow: 'hidden',
+                  background: '#1a1650',
+                }}>
+                  <img src="/almoxarife-avatar.png" alt="O Almoxarife" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                </div>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 700, fontSize: '16px', color: '#fff', letterSpacing: '-.3px', lineHeight: 1.2 }}>
@@ -196,12 +202,17 @@ export function ChatWidget() {
               }}>
                 {msg.role === 'assistant' && (
                   <div style={{
-                    width: '28px', height: '28px', borderRadius: '50%',
-                    overflow: 'hidden', flexShrink: 0,
-                    border: '1.5px solid #E5E7EB',
-                    boxShadow: '0 1px 3px rgba(0,0,0,.08)',
+                    width: '30px', height: '30px', borderRadius: '10px',
+                    padding: '1.5px', flexShrink: 0,
+                    background: 'linear-gradient(135deg, #4338ca, #6366f1)',
+                    boxShadow: '0 2px 6px rgba(67,56,202,.2)',
                   }}>
-                    <img src="/almoxarife-avatar.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{
+                      width: '100%', height: '100%', borderRadius: '8.5px',
+                      overflow: 'hidden', background: '#1e1b4b',
+                    }}>
+                      <img src="/almoxarife-avatar.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    </div>
                   </div>
                 )}
                 <div style={{ maxWidth: '78%', display: 'flex', flexDirection: 'column', alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
@@ -235,12 +246,17 @@ export function ChatWidget() {
             {loading && (
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
                 <div style={{
-                  width: '28px', height: '28px', borderRadius: '50%',
-                  overflow: 'hidden', flexShrink: 0,
-                  border: '1.5px solid #E5E7EB',
-                  boxShadow: '0 1px 3px rgba(0,0,0,.08)',
+                  width: '30px', height: '30px', borderRadius: '10px',
+                  padding: '1.5px', flexShrink: 0,
+                  background: 'linear-gradient(135deg, #4338ca, #6366f1)',
+                  boxShadow: '0 2px 6px rgba(67,56,202,.2)',
                 }}>
-                  <img src="/almoxarife-avatar.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <div style={{
+                    width: '100%', height: '100%', borderRadius: '8.5px',
+                    overflow: 'hidden', background: '#1e1b4b',
+                  }}>
+                    <img src="/almoxarife-avatar.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  </div>
                 </div>
                 <div style={{
                   padding: '12px 18px', borderRadius: '16px 16px 16px 4px',
