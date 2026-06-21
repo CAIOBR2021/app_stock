@@ -305,7 +305,7 @@ export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps
     onImportar({
       tipo: 'entrada',
       ordemCompra: ordemCompra || (numeroNF ? `NF-${numeroNF}` : ''),
-      nomeObra: nomeObra || fornecedor || '',
+      nomeObra: '',
       itens: itensParaImportar,
       dataCompetencia,
     });
@@ -521,10 +521,10 @@ export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps
                         <div className="spinner-border" style={{ color: '#667eea', width: '32px', height: '32px' }} role="status" />
                       </div>
                       <p style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-1)', margin: '0 0 6px' }}>
-                        Analisando com IA...
+                        Analisando...
                       </p>
                       <p style={{ fontSize: '13px', color: 'var(--text-3)', margin: 0, maxWidth: '280px' }}>
-                        O Gemini está extraindo os dados do seu documento. Isso pode levar alguns segundos.
+                        Extraindo os dados do seu documento. Isso pode levar alguns segundos.
                       </p>
                     </>
                   ) : (
