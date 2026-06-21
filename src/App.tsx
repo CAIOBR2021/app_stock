@@ -966,7 +966,7 @@ export default function App() {
               { id: 'movimentacoes', label: 'Movimentações', Icon: IconClipboard },
               { id: 'rotas', label: 'Rotas & Entregas', Icon: IconTruck },
               { id: 'entradas_saidas', label: 'Entrada / Saída', Icon: IconArrowLeftRight },
-              { id: 'nota_fiscal', label: 'Leitura de NF', Icon: IconScan },
+              { id: 'nota_fiscal', label: 'Leitura de Documento', Icon: IconScan },
               { id: 'previsao', label: 'Previsão de Consumo', Icon: IconTrendingUp },
             ] as const
           ).map(({ id, label, Icon }) => (
@@ -1016,7 +1016,7 @@ export default function App() {
               {view === 'movimentacoes' && 'Histórico de Movimentações'}
               {view === 'rotas' && 'Cronograma de Entregas'}
               {view === 'entradas_saidas' && 'Lançamento de Entradas e Saídas'}
-              {view === 'nota_fiscal' && 'Leitura de Nota Fiscal'}
+              {view === 'nota_fiscal' && 'Leitura de Documento'}
               {view === 'previsao' && 'Previsão de Consumo e Reposição'}
             </h1>
             <div className="page-date-subtitle">
