@@ -541,7 +541,7 @@ export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps
                         Pronto para analisar
                       </p>
                       <p style={{ fontSize: '13px', color: 'var(--text-3)', margin: '0 0 28px', maxWidth: '280px' }}>
-                        Irá extrair número do documento, fornecedor, itens, quantidades e valores unitários.
+                        Irá extrair número da ordem de compra, itens, quantidades e valores unitários.
                       </p>
                       <div style={{ display: 'flex', gap: '12px' }}>
                         <button className="btn btn-secondary" onClick={handleReset} style={{ height: '44px', padding: '0 20px', borderRadius: '10px' }}>
