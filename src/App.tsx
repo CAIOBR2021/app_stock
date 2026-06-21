@@ -977,6 +977,11 @@ export default function App() {
               onClick={() => { setView(id); scrollTop(); }}
             >
               <Icon /> {label}
+              {(id === 'nota_fiscal' || id === 'previsao') && (
+                <span style={{ fontSize: '8px', fontWeight: 700, background: 'rgba(245,166,35,.9)', color: '#fff', padding: '2px 6px', borderRadius: 999, marginLeft: 'auto', letterSpacing: '.3px', textTransform: 'uppercase', lineHeight: 1, whiteSpace: 'nowrap' }}>
+                  Em breve
+                </span>
+              )}
             </button>
           ))}
         </nav>
