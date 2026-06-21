@@ -30,6 +30,30 @@ export function ChatWidget() {
   const inputRef = useRef<HTMLInputElement>(null);
   const nextId = useRef(1);
 
+  const [pos, setPos] = useState({ bottom: 24, right: 24 });
+  const dragRef = useRef<{ startX: number; startY: number; startRight: number; startBottom: number; dragged: boolean } | null>(null);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    dragRef.current = { startX: e.clientX, startY: e.clientY, startRight: pos.right, startBottom: pos.bottom, dragged: false };
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!dragRef.current) return;
+    const dx = dragRef.current.startX - e.clientX;
+    const dy = dragRef.current.startY - e.clientY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) dragRef.current.dragged = true;
+    if (!dragRef.current.dragged) return;
+    const newRight = Math.max(0, Math.min(window.innerWidth - 60, dragRef.current.startRight + dx));
+    const newBottom = Math.max(0, Math.min(window.innerHeight - 60, dragRef.current.startBottom + dy));
+    setPos({ right: newRight, bottom: newBottom });
+  };
+  const onPointerUp = (e: React.PointerEvent) => {
+    const wasDrag = dragRef.current?.dragged;
+    dragRef.current = null;
+    if (wasDrag) e.preventDefault();
+    else if (!open) setOpen(true);
+  };
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -74,10 +98,13 @@ export function ChatWidget() {
       {/* ── FAB ── */}
       {!open && (
         <button
-          onClick={() => setOpen(true)}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
           aria-label="Abrir chat"
           style={{
-            position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999,
+            position: 'fixed', bottom: `${pos.bottom}px`, right: `${pos.right}px`, zIndex: 9999,
+            touchAction: 'none',
             width: '56px', height: '56px', borderRadius: '16px',
             background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%)',
             border: 'none', cursor: 'pointer', color: '#fff',
@@ -102,7 +129,7 @@ export function ChatWidget() {
       {/* ── Chat Window ── */}
       {open && (
         <div style={{
-          position: 'fixed', bottom: '24px', right: '24px', zIndex: 9998,
+          position: 'fixed', bottom: `${pos.bottom}px`, right: `${pos.right}px`, zIndex: 9998,
           width: '390px', maxWidth: 'calc(100vw - 32px)',
           height: '560px', maxHeight: 'calc(100vh - 48px)',
           borderRadius: '24px', overflow: 'hidden',
@@ -113,10 +140,15 @@ export function ChatWidget() {
         }}>
 
           {/* ── Header ── */}
-          <div style={{
+          <div
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={e => { const wasDrag = dragRef.current?.dragged; dragRef.current = null; if (wasDrag) e.preventDefault(); }}
+            style={{
             padding: '0', flexShrink: 0,
             background: 'linear-gradient(160deg, #0f0a2e 0%, #1e1b4b 40%, #312e81 100%)',
             position: 'relative', overflow: 'hidden',
+            cursor: 'grab', touchAction: 'none',
           }}>
             {/* Subtle pattern overlay */}
             <div style={{
