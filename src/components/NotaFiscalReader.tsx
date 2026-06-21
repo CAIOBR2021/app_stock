@@ -127,7 +127,7 @@ const IconImage = () => (
 function StepIndicator({ currentStep }: { currentStep: number }) {
   const steps = [
     { num: 1, label: 'Upload' },
-    { num: 2, label: 'Análise IA' },
+    { num: 2, label: 'Análise' },
     { num: 3, label: 'Revisão' },
   ];
 
@@ -351,7 +351,7 @@ export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps
                 Leitura Inteligente de Documento
               </h5>
               <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-3)' }}>
-                OCR + IA (Gemini) — Extrai e vincula produtos automaticamente
+                Extrai e vincula produtos automaticamente
               </p>
             </div>
           </div>
@@ -541,7 +541,7 @@ export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps
                         Pronto para analisar
                       </p>
                       <p style={{ fontSize: '13px', color: 'var(--text-3)', margin: '0 0 28px', maxWidth: '280px' }}>
-                        A IA irá extrair número do documento, fornecedor, itens, quantidades e valores unitários.
+                        Irá extrair número do documento, fornecedor, itens, quantidades e valores unitários.
                       </p>
                       <div style={{ display: 'flex', gap: '12px' }}>
                         <button className="btn btn-secondary" onClick={handleReset} style={{ height: '44px', padding: '0 20px', borderRadius: '10px' }}>
@@ -557,7 +557,7 @@ export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps
                             boxShadow: '0 4px 14px rgba(102,126,234,.3)',
                           }}
                         >
-                          <IconSparkle /> Analisar com IA
+                          <IconSparkle /> Analisar
                         </button>
                       </div>
                     </>
@@ -577,8 +577,6 @@ export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps
             {[
               { label: 'Documento', value: numeroNF, color: '#1971C2', bg: '#EBF4FF', border: '#BFD7FF' },
               { label: 'Ordem de Compra', value: ordemCompra, color: '#166534', bg: '#F0FDF4', border: '#BBF7D0' },
-              { label: 'Obra', value: nomeObra, color: '#9A5A00', bg: '#FEF3DC', border: '#FAD898' },
-              { label: 'Fornecedor', value: fornecedor, color: 'var(--text-2)', bg: 'var(--surface-2)', border: 'var(--border)' },
             ].filter(c => c.value).map((card, idx) => (
               <div className="col-6 col-lg-3" key={idx}>
                 <div style={{

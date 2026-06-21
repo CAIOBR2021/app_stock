@@ -384,14 +384,6 @@ export function ChatWidget() {
                 </svg>
               </button>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginTop: '8px' }}>
-              <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="#C8C8CE" strokeWidth="2">
-                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-              </svg>
-              <span style={{ fontSize: '10px', color: '#C8C8CE', fontWeight: 500 }}>
-                Gemini IA
-              </span>
-            </div>
           </div>
         </div>
       )}
