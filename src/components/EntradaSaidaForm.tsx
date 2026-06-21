@@ -1,30 +1,3 @@
-// Apenas o trecho que muda em relação ao original.
-// O restante do arquivo permanece igual.
-// Substitua os dois blocos de useState que usam localStorage:
-
-// ANTES (remover):
-// const [hiddenOptions, setHiddenOptions] = useState<Record<string, string[]>>(() => {
-//   const saved = localStorage.getItem('deliveryHiddenOptions');
-//   return saved ? JSON.parse(saved) : { origens: [], destinos: [], responsaveis: [] };
-// });
-
-// DEPOIS (adicionar no topo do arquivo):
-// import { safeLocalStorageGet, safeLocalStorageSet } from '../utils/storage';
-
-// E substituir o useState por:
-// const [hiddenOptions, setHiddenOptions] = useState(() =>
-//   safeLocalStorageGet('entradaSaidaHiddenOptions', { categorias: [] as string[] })
-// );
-
-// E substituir o useEffect de persistência por:
-// useEffect(() => {
-//   safeLocalStorageSet('entradaSaidaHiddenOptions', hiddenOptions);
-// }, [hiddenOptions]);
-
-// NOTA: EntradaSaidaForm.tsx não usa localStorage diretamente no código original.
-// O arquivo original não precisa de alteração de localStorage.
-// A única melhoria aplicável é a tipagem do `dados: any` no onSubmit.
-
 import React, { useState, useMemo } from 'react';
 import Select from 'react-select';
 import type { StylesConfig } from 'react-select';
@@ -35,12 +8,12 @@ import type { Produto } from '../types';
 const selectStyles: StylesConfig = {
   control: (base, state) => ({
     ...base,
-    backgroundColor: state.isDisabled ? 'var(--surface-2)' : '#fff',
-    borderColor: state.isFocused ? 'var(--primary)' : 'var(--border)',
-    borderWidth: '1.5px',
-    minHeight: '38px',
-    borderRadius: '8px',
-    boxShadow: state.isFocused ? '0 0 0 3px rgba(245,166,35,.12)' : 'none',
+    backgroundColor: 'var(--surface-2)',
+    borderColor: state.isFocused ? 'var(--primary)' : 'transparent',
+    borderWidth: '2px',
+    minHeight: '44px',
+    borderRadius: '12px',
+    boxShadow: 'none',
     fontFamily: 'DM Sans, sans-serif',
     fontSize: '13.5px',
     '&:hover': { borderColor: state.isFocused ? 'var(--primary)' : 'var(--border)' },
@@ -54,8 +27,9 @@ const selectStyles: StylesConfig = {
     fontSize: '13.5px',
     fontFamily: 'DM Sans, sans-serif',
     cursor: 'pointer',
+    padding: '10px 16px',
   }),
-  menu: base => ({ ...base, zIndex: 9999, borderRadius: '8px', border: '1px solid var(--border)', boxShadow: '0 4px 12px rgba(0,0,0,.08)' }),
+  menu: base => ({ ...base, zIndex: 9999, borderRadius: '12px', border: 'none', boxShadow: '0 12px 40px rgba(0,0,0,.12)' }),
   menuPortal: base => ({ ...base, zIndex: 9999 }),
   indicatorSeparator: () => ({ display: 'none' }),
 };
@@ -63,17 +37,17 @@ const selectStyles: StylesConfig = {
 // ── SVG ICONS ─────────────────────────────────────────────────────────────────
 
 const IconArrowIn = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
     <path d="M3 12h18M13 6l6 6-6 6"/><path d="M3 6v12"/>
   </svg>
 );
 const IconArrowOut = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
     <path d="M21 12H3M11 6L5 12l6 6"/><path d="M21 6v12"/>
   </svg>
 );
 const IconAdjust = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
     <line x1="4" y1="6" x2="20" y2="6"/>
     <line x1="4" y1="12" x2="20" y2="12"/>
     <line x1="4" y1="18" x2="20" y2="18"/>
@@ -88,16 +62,8 @@ const IconCheck = () => (
   </svg>
 );
 const IconSearch = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
     <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-  </svg>
-);
-const IconCalendar = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-    <line x1="16" y1="2" x2="16" y2="6"/>
-    <line x1="8" y1="2" x2="8" y2="6"/>
-    <line x1="3" y1="10" x2="21" y2="10"/>
   </svg>
 );
 const IconInfo = () => (
@@ -107,34 +73,6 @@ const IconInfo = () => (
     <line x1="12" y1="16" x2="12.01" y2="16"/>
   </svg>
 );
-
-// ── STATIC STYLES (avoid re-creation inside .map) ────────────────────────────
-
-const rowBaseStyle = {
-  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-  padding: '12px 16px', transition: 'background var(--transition)', flexWrap: 'wrap', gap: '10px',
-} as const;
-const labelStyle = { display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', flex: 1, minWidth: '180px' } as const;
-const nameStyle = { fontSize: '13.5px', fontWeight: 500, color: 'var(--text-1)' } as const;
-const metaStyle = { fontSize: '11.5px', color: 'var(--text-3)', marginTop: '2px' } as const;
-const stockStrong = { color: 'var(--text-2)' } as const;
-const selectionWrapStyle = { display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' } as const;
-const inputGroupStyle = { display: 'flex', alignItems: 'center', gap: 0, width: '160px' } as const;
-const currencyLabelStyle = {
-  background: 'var(--surface-2)', border: '1.5px solid var(--border)', borderRight: 'none',
-  borderRadius: '8px 0 0 8px', padding: '0 10px', height: '34px', display: 'flex',
-  alignItems: 'center', fontSize: '12px', color: 'var(--text-3)', fontWeight: 600,
-} as const;
-const valorInputStyle = {
-  height: '34px', border: '1.5px solid var(--border)', borderLeft: 'none',
-  borderRadius: '0 8px 8px 0', padding: '0 8px', fontSize: '13px', color: 'var(--text-1)',
-  background: '#fff', outline: 'none', fontFamily: 'DM Mono, monospace', width: '100%',
-} as const;
-const ajustePrefixStyle = {
-  background: '#EBF4FF', border: '1.5px solid #BFD7FF', borderRight: 'none',
-  borderRadius: '8px 0 0 8px', padding: '0 8px', height: '34px', display: 'flex',
-  alignItems: 'center', fontSize: '11px', color: '#1971C2', fontWeight: 700, whiteSpace: 'nowrap',
-} as const;
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 
@@ -157,7 +95,6 @@ interface ProdutoSelecionado {
   valorUnitario?: number;
 }
 
-// Tipagem explícita do payload (elimina `any` no onSubmit)
 export interface EntradaSaidaPayload {
   ordemCompra: string;
   nomeObra: string;
@@ -182,7 +119,7 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
   const [categoriaOption, setCategoriaOption] = useState<any>(null);
   const [dataCompetencia, setDataCompetencia] = useState(hojeISO());
 
-  const hoje        = hojeISO();
+  const hoje         = hojeISO();
   const isRetroativa = dataCompetencia < hoje;
 
   const categorias = useMemo(() => {
@@ -208,7 +145,6 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
     });
   }, [produtos, tipo, busca, categoriaFiltro]);
 
-  // ── FIXED: preserve selection when changing type ──────────────────────────
   const handleTipoChange = (novoTipo: 'entrada' | 'saida' | 'ajuste') => {
     setTipo(novoTipo);
     setSelecionados(prev => {
@@ -216,11 +152,7 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
       for (const [produtoId, dados] of Object.entries(prev)) {
         const p = produtos.find(p => p.id === produtoId);
         if (!p) continue;
-        // For 'saida': skip products with zero stock
         if (novoTipo === 'saida' && p.quantidade === 0) continue;
-        // For 'ajuste': reset quantity to current stock level as the default
-        // For 'saida': clamp quantity to available stock
-        // For 'entrada': keep current quantity as-is
         const quantidade =
           novoTipo === 'ajuste'
             ? p.quantidade
@@ -266,222 +198,463 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
 
   const totalSelecionados = Object.keys(selecionados).length;
 
-  const btnEntrada: React.CSSProperties = tipo === 'entrada'
-    ? { background: 'var(--success)', borderColor: 'var(--success)', color: '#fff', boxShadow: '0 4px 12px rgba(47,158,68,.3)' }
-    : { background: 'var(--surface)', borderColor: 'var(--success)', color: 'var(--success)' };
-
-  const btnSaida: React.CSSProperties = tipo === 'saida'
-    ? { background: 'var(--danger)', borderColor: 'var(--danger)', color: '#fff', boxShadow: '0 4px 12px rgba(229,62,62,.3)' }
-    : { background: 'var(--surface)', borderColor: 'var(--danger)', color: 'var(--danger)' };
-
-  const btnAjuste: React.CSSProperties = tipo === 'ajuste'
-    ? { background: '#1971C2', borderColor: '#1971C2', color: '#fff', boxShadow: '0 4px 12px rgba(25,113,194,.3)' }
-    : { background: 'var(--surface)', borderColor: '#1971C2', color: '#1971C2' };
-
   const tipoLabel       = tipo === 'entrada' ? 'Entrada' : tipo === 'saida' ? 'Saída' : 'Ajuste';
   const quantidadeLabel = tipo === 'ajuste' ? 'Nova Qtd.' : 'Qtd.';
 
+  const tipoConfig = {
+    entrada: { color: '#2F9E44', bg: '#F0FDF4', border: '#BBF7D0', activeBg: 'linear-gradient(135deg, #2F9E44, #38B249)', dot: '#2F9E44' },
+    saida:   { color: '#E53E3E', bg: '#FFF5F5', border: '#FED7D7', activeBg: 'linear-gradient(135deg, #E53E3E, #F56565)', dot: '#E53E3E' },
+    ajuste:  { color: '#1971C2', bg: '#EBF4FF', border: '#BFD7FF', activeBg: 'linear-gradient(135deg, #1971C2, #3B8DE0)', dot: '#1971C2' },
+  };
+
+  const currentConfig = tipoConfig[tipo];
+
+  const inputBaseStyle: React.CSSProperties = {
+    width: '100%',
+    height: '44px',
+    border: '2px solid transparent',
+    borderRadius: '12px',
+    padding: '0 14px',
+    fontSize: '13.5px',
+    color: 'var(--text-1)',
+    background: 'var(--surface-2)',
+    outline: 'none',
+    fontFamily: 'DM Sans, sans-serif',
+    transition: 'all 200ms ease',
+  };
+
   return (
-    <div className="card-modern">
-      <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit}>
+      <div style={{
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: '16px',
+        overflow: 'hidden',
+      }}>
 
-        {/* ── Cabeçalho ── */}
-        <div className="row g-3 mb-4">
-          <div className="col-md-4">
-            <label className="form-label">Ordem de Compra</label>
-            <input type="text" className="form-control" placeholder="Ex: OC-2026-001" value={ordemCompra} onChange={e => setOrdemCompra(e.target.value)} />
+        {/* ── Header with Type Selector ── */}
+        <div style={{
+          padding: '24px 28px 20px',
+          borderBottom: '1px solid var(--border)',
+        }}>
+          {/* Type Pill Selector */}
+          <div style={{
+            display: 'inline-flex',
+            background: 'var(--surface-2)',
+            borderRadius: '12px',
+            padding: '4px',
+            gap: '4px',
+            marginBottom: '24px',
+          }}>
+            {([
+              { id: 'entrada' as const, label: 'Entrada', icon: <IconArrowIn />, config: tipoConfig.entrada },
+              { id: 'saida'   as const, label: 'Saída',   icon: <IconArrowOut />, config: tipoConfig.saida },
+              { id: 'ajuste'  as const, label: 'Ajuste',  icon: <IconAdjust />,  config: tipoConfig.ajuste },
+            ]).map(({ id, label, icon, config }) => {
+              const isActive = tipo === id;
+              const isDisabled = id === 'ajuste' && isRetroativa;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => handleTipoChange(id)}
+                  disabled={isDisabled}
+                  title={isDisabled ? 'Ajustes não são permitidos em datas passadas' : undefined}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 20px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    borderRadius: '9px',
+                    border: 'none',
+                    background: isActive ? '#fff' : 'transparent',
+                    color: isActive ? config.color : 'var(--text-3)',
+                    cursor: isDisabled ? 'not-allowed' : 'pointer',
+                    opacity: isDisabled ? 0.4 : 1,
+                    transition: 'all 200ms ease',
+                    boxShadow: isActive ? '0 2px 8px rgba(0,0,0,.08)' : 'none',
+                    fontFamily: 'DM Sans, sans-serif',
+                  }}
+                >
+                  {icon} {label}
+                </button>
+              );
+            })}
           </div>
-          <div className="col-md-4">
-            <label className="form-label">Nome da Obra</label>
-            <input type="text" className="form-control" placeholder="Informe o local ou nome da obra..." value={nomeObra} onChange={e => setNomeObra(e.target.value)} />
-          </div>
-          <div className="col-md-4">
-            <label className="form-label d-flex align-items-center gap-2">
-              <IconCalendar />
-              Data de Competência
-              {isRetroativa && (
-                <span style={{ fontSize: 10, background: '#FEF3DC', color: '#9A5A00', padding: '2px 7px', borderRadius: 999, fontWeight: 700, letterSpacing: '.4px', textTransform: 'uppercase' }}>
-                  Retroativo
-                </span>
-              )}
-            </label>
-            <input
-              type="date" className="form-control" value={dataCompetencia} max={hoje}
-              onChange={e => {
-                setDataCompetencia(e.target.value);
-                if (e.target.value < hojeISO() && tipo === 'ajuste') handleTipoChange('saida');
-              }}
-            />
-          </div>
-        </div>
 
-        {isRetroativa && (
-          <div style={{ marginBottom: 16, padding: '10px 14px', background: '#FEF3DC', border: '1px solid #FAD898', borderRadius: 8, fontSize: 13, color: '#9A5A00', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-            <span style={{ flexShrink: 0, marginTop: 1 }}><IconInfo /></span>
-            <div>
-              <strong>Lançamento retroativo — {formatarDataExibicao(dataCompetencia)}</strong><br />
-              O saldo atual será ajustado normalmente.
-            </div>
-          </div>
-        )}
-
-        {/* ── Tipo ── */}
-        <div className="mb-4">
-          <label className="form-label d-block mb-3">Tipo de Movimentação</label>
-          <div className="d-flex gap-3">
-            {[
-              { id: 'entrada' as const, label: 'ENTRADA', icon: <IconArrowIn />, style: btnEntrada },
-              { id: 'saida'   as const, label: 'SAÍDA',   icon: <IconArrowOut />, style: btnSaida },
-              { id: 'ajuste'  as const, label: 'AJUSTE',  icon: <IconAdjust />,  style: { ...btnAjuste, opacity: isRetroativa ? 0.5 : 1 } },
-            ].map(({ id, label, icon, style }) => (
-              <button
-                key={id} type="button"
-                className="btn d-flex align-items-center justify-content-center gap-2 flex-grow-1"
-                style={{ ...style, height: '44px', fontSize: '13.5px', fontWeight: 700, borderRadius: '8px', border: '1.5px solid', transition: 'all 150ms' }}
-                onClick={() => handleTipoChange(id)}
-                disabled={id === 'ajuste' && isRetroativa}
-                title={id === 'ajuste' && isRetroativa ? 'Ajustes não são permitidos em datas passadas' : undefined}
-              >
-                {icon} {label}
-              </button>
-            ))}
-          </div>
           {tipo === 'ajuste' && (
-            <div style={{ marginTop: '12px', padding: '10px 14px', background: '#EBF4FF', border: '1px solid #BFD7FF', borderRadius: '8px', fontSize: '12.5px', color: '#1971C2', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15" style={{ flexShrink: 0 }}>
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="8" x2="12" y2="12"/>
-                <line x1="12" y1="16" x2="12.01" y2="16"/>
-              </svg>
+            <div style={{
+              marginBottom: '20px', padding: '12px 16px', background: '#EBF4FF',
+              border: '1px solid #BFD7FF', borderRadius: '12px', fontSize: '12.5px',
+              color: '#1971C2', display: 'flex', alignItems: 'center', gap: '8px',
+            }}>
+              <IconInfo />
               O ajuste define a <strong style={{ marginLeft: 3, marginRight: 3 }}>nova quantidade absoluta</strong> do estoque.
             </div>
           )}
-        </div>
 
-        {/* ── Busca ── */}
-        <div className="mb-3">
-          <label className="form-label">Selecionar Produtos</label>
-          <div className="row g-2 mb-3">
-            <div className="col-12 col-sm-7">
-              <div className="input-wrap">
-                <IconSearch />
-                <input type="text" className="form-control" placeholder="Nome, SKU, categoria..." value={busca} onChange={e => setBusca(e.target.value)} />
-              </div>
+          {/* Fields Row */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 180px', gap: '12px' }}>
+            <div>
+              <label style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-3)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '.5px' }}>
+                Ordem de Compra
+              </label>
+              <input
+                type="text"
+                placeholder="Ex: OC-2026-001"
+                value={ordemCompra}
+                onChange={e => setOrdemCompra(e.target.value)}
+                style={inputBaseStyle}
+                onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.background = '#fff'; }}
+                onBlur={e => { e.target.style.borderColor = 'transparent'; e.target.style.background = 'var(--surface-2)'; }}
+              />
             </div>
-            <div className="col-12 col-sm-5">
-              <Select
-                options={categoriasOptions}
-                value={categoriaOption || categoriasOptions[0]}
-                onChange={(opt: any) => setCategoriaOption(opt?.value ? opt : null)}
-                styles={selectStyles} menuPortalTarget={document.body}
-                isSearchable={false} placeholder="Todas as categorias"
+            <div>
+              <label style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-3)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '.5px' }}>
+                Nome da Obra
+              </label>
+              <input
+                type="text"
+                placeholder="Local ou nome da obra..."
+                value={nomeObra}
+                onChange={e => setNomeObra(e.target.value)}
+                style={inputBaseStyle}
+                onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.background = '#fff'; }}
+                onBlur={e => { e.target.style.borderColor = 'transparent'; e.target.style.background = 'var(--surface-2)'; }}
+              />
+            </div>
+            <div>
+              <label style={{
+                fontSize: '11.5px', fontWeight: 600, color: 'var(--text-3)', marginBottom: '6px',
+                display: 'flex', alignItems: 'center', gap: '6px', textTransform: 'uppercase', letterSpacing: '.5px',
+              }}>
+                Competência
+                {isRetroativa && (
+                  <span style={{
+                    fontSize: '9px', background: '#FEF3DC', color: '#9A5A00',
+                    padding: '2px 6px', borderRadius: 999, fontWeight: 700,
+                    textTransform: 'uppercase', letterSpacing: '.3px',
+                  }}>
+                    Retroativo
+                  </span>
+                )}
+              </label>
+              <input
+                type="date"
+                value={dataCompetencia}
+                max={hoje}
+                onChange={e => {
+                  setDataCompetencia(e.target.value);
+                  if (e.target.value < hojeISO() && tipo === 'ajuste') handleTipoChange('saida');
+                }}
+                style={inputBaseStyle}
+                onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.background = '#fff'; }}
+                onBlur={e => { e.target.style.borderColor = 'transparent'; e.target.style.background = 'var(--surface-2)'; }}
               />
             </div>
           </div>
 
-          <div style={{ border: '1.5px solid var(--border)', borderRadius: '8px', maxHeight: '380px', overflowY: 'auto' }}>
-            {produtosDisponiveis.length === 0 ? (
-              <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-3)', fontSize: '13.5px' }}>
-                Nenhum produto disponível para esta operação.
+          {isRetroativa && (
+            <div style={{
+              marginTop: '14px', padding: '12px 16px', background: '#FEF3DC',
+              border: '1px solid #FAD898', borderRadius: '12px', fontSize: '13px',
+              color: '#9A5A00', display: 'flex', alignItems: 'flex-start', gap: '10px',
+            }}>
+              <span style={{ flexShrink: 0, marginTop: 1 }}><IconInfo /></span>
+              <div>
+                <strong>Lançamento retroativo — {formatarDataExibicao(dataCompetencia)}</strong><br />
+                O saldo atual será ajustado normalmente.
               </div>
-            ) : (
-              produtosDisponiveis.map((p, idx) => {
-                const selecionado = selecionados[p.id];
-                const isSelected  = !!selecionado;
-                return (
-                  <div
-                    key={p.id}
-                    style={{
-                      ...rowBaseStyle,
-                      borderBottom: idx < produtosDisponiveis.length - 1 ? '1px solid var(--border)' : 'none',
-                      background: isSelected ? (tipo === 'ajuste' ? 'rgba(25,113,194,.04)' : 'rgba(245,166,35,.04)') : 'transparent',
-                    }}
-                  >
-                    <label htmlFor={`check-${p.id}`} style={labelStyle}>
-                      <input
-                        type="checkbox" id={`check-${p.id}`} checked={isSelected}
-                        onChange={() => handleToggleProduto(p)}
-                        style={{ marginTop: '3px', accentColor: tipo === 'ajuste' ? '#1971C2' : 'var(--primary)', width: '15px', height: '15px', flexShrink: 0 }}
-                      />
-                      <div>
-                        <div style={nameStyle}>{p.nome}</div>
-                        <div style={metaStyle}>
-                          <span className="sku">{p.sku}</span>
-                          {' · '}Estoque atual: <strong style={stockStrong}>{p.quantidade} {p.unidade}</strong>
-                        </div>
-                      </div>
-                    </label>
+            </div>
+          )}
+        </div>
 
-                    {isSelected && (
-                      <div style={selectionWrapStyle}>
-                        {tipo === 'entrada' && (
-                          <div style={inputGroupStyle}>
-                            <span style={currencyLabelStyle}>R$</span>
-                            <input
-                              type="number" step="0.01" min="0"
-                              value={selecionado.valorUnitario === 0 ? '' : selecionado.valorUnitario}
-                              onChange={e => handleChangeValor(p.id, Number(e.target.value))}
-                              placeholder="Valor Unit."
-                              style={valorInputStyle}
-                            />
-                          </div>
-                        )}
-                        <div style={inputGroupStyle}>
-                          {tipo === 'ajuste' && (
-                            <span style={ajustePrefixStyle}>
-                              {quantidadeLabel}
-                            </span>
-                          )}
-                          <input
-                            type="number"
-                            min={tipo === 'saida' ? 1 : 0}
-                            max={tipo === 'saida' ? p.quantidade : undefined}
-                            value={selecionado.quantidade}
-                            onChange={e => handleChangeQuantidade(p.id, Number(e.target.value))}
-                            style={{ height: '34px', border: '1.5px solid var(--border)', borderRight: 'none', borderLeft: tipo === 'ajuste' ? 'none' : '1.5px solid var(--border)', borderRadius: tipo === 'ajuste' ? '0' : '8px 0 0 8px', padding: '0 8px', fontSize: '13px', color: 'var(--text-1)', background: '#fff', outline: 'none', fontFamily: 'DM Mono, monospace', width: '100%', borderColor: tipo === 'ajuste' ? '#BFD7FF' : 'var(--border)' }}
-                          />
-                          <span style={{ background: tipo === 'ajuste' ? '#EBF4FF' : 'var(--surface-2)', border: `1.5px solid ${tipo === 'ajuste' ? '#BFD7FF' : 'var(--border)'}`, borderLeft: 'none', borderRadius: '0 8px 8px 0', padding: '0 10px', height: '34px', display: 'flex', alignItems: 'center', fontSize: '11.5px', color: tipo === 'ajuste' ? '#1971C2' : 'var(--text-3)', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                            {p.unidade}
-                          </span>
-                        </div>
-                        {tipo === 'ajuste' && (
-                          <div style={{ fontSize: '11.5px', fontWeight: 700, fontFamily: 'DM Mono, monospace', color: selecionado.quantidade > p.quantidade ? 'var(--success)' : selecionado.quantidade < p.quantidade ? 'var(--danger)' : 'var(--text-3)', minWidth: '52px', textAlign: 'right' }}>
-                            {selecionado.quantidade > p.quantidade && `+${selecionado.quantidade - p.quantidade}`}
-                            {selecionado.quantidade < p.quantidade && `${selecionado.quantidade - p.quantidade}`}
-                            {selecionado.quantidade === p.quantidade && '±0'}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })
+        {/* ── Product Selection ── */}
+        <div style={{ padding: '20px 28px 0' }}>
+          {/* Search Bar */}
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
+            <div style={{ flex: 1, position: 'relative' }}>
+              <span style={{
+                position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)',
+                color: 'var(--text-3)', display: 'flex', pointerEvents: 'none',
+              }}>
+                <IconSearch />
+              </span>
+              <input
+                type="text"
+                placeholder="Buscar produto por nome, SKU ou categoria..."
+                value={busca}
+                onChange={e => setBusca(e.target.value)}
+                style={{ ...inputBaseStyle, paddingLeft: '40px' }}
+                onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.background = '#fff'; }}
+                onBlur={e => { e.target.style.borderColor = 'transparent'; e.target.style.background = 'var(--surface-2)'; }}
+              />
+            </div>
+            <div style={{ width: '220px' }}>
+              <Select
+                options={categoriasOptions}
+                value={categoriaOption || categoriasOptions[0]}
+                onChange={(opt: any) => setCategoriaOption(opt?.value ? opt : null)}
+                styles={selectStyles}
+                menuPortalTarget={document.body}
+                isSearchable={false}
+                placeholder="Categoria"
+              />
+            </div>
+          </div>
+
+          {/* Product Count */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            marginBottom: '8px', padding: '0 4px',
+          }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-3)', fontWeight: 500 }}>
+              {produtosDisponiveis.length} produto{produtosDisponiveis.length !== 1 ? 's' : ''} disponíve{produtosDisponiveis.length !== 1 ? 'is' : 'l'}
+            </span>
+            {totalSelecionados > 0 && (
+              <span style={{
+                fontSize: '12px', fontWeight: 700, color: currentConfig.color,
+                display: 'flex', alignItems: 'center', gap: '6px',
+              }}>
+                <span style={{
+                  width: '8px', height: '8px', borderRadius: '50%',
+                  background: currentConfig.dot, display: 'inline-block',
+                }} />
+                {totalSelecionados} selecionado{totalSelecionados > 1 ? 's' : ''}
+              </span>
             )}
           </div>
         </div>
 
-        {/* ── Confirmar ── */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
+        {/* Product List */}
+        <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+          {produtosDisponiveis.length === 0 ? (
+            <div style={{
+              padding: '56px 16px', textAlign: 'center', color: 'var(--text-3)', fontSize: '14px',
+            }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" width="40" height="40" style={{ marginBottom: 16, opacity: 0.3 }}>
+                <path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                <line x1="12" y1="22.08" x2="12" y2="12"/>
+              </svg>
+              <div style={{ fontWeight: 500 }}>Nenhum produto encontrado</div>
+              <div style={{ fontSize: '12.5px', marginTop: '4px' }}>Tente ajustar os filtros de busca</div>
+            </div>
+          ) : (
+            produtosDisponiveis.map((p, idx) => {
+              const selecionado = selecionados[p.id];
+              const isSelected  = !!selecionado;
+              return (
+                <div
+                  key={p.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '14px 28px',
+                    transition: 'all 150ms',
+                    flexWrap: 'wrap',
+                    gap: '12px',
+                    borderTop: idx === 0 ? '1px solid var(--border)' : 'none',
+                    borderBottom: '1px solid var(--border)',
+                    background: isSelected ? currentConfig.bg : 'transparent',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => handleToggleProduto(p)}
+                >
+                  {/* Left: Product Info */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: '200px' }}>
+                    {/* Custom Checkbox */}
+                    <div style={{
+                      width: '20px', height: '20px', borderRadius: '6px', flexShrink: 0,
+                      border: isSelected ? 'none' : '2px solid var(--border)',
+                      background: isSelected ? currentConfig.dot : '#fff',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      transition: 'all 200ms cubic-bezier(.4,0,.2,1)',
+                      boxShadow: isSelected ? `0 2px 6px ${currentConfig.dot}40` : 'none',
+                    }}>
+                      {isSelected && (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" width="12" height="12">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                      )}
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-1)', lineHeight: 1.3 }}>
+                        {p.nome}
+                      </div>
+                      <div style={{
+                        fontSize: '12px', color: 'var(--text-3)', marginTop: '4px',
+                        display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap',
+                      }}>
+                        <code style={{
+                          fontFamily: 'DM Mono, monospace', fontSize: '10.5px',
+                          background: 'var(--surface-3)', padding: '2px 8px', borderRadius: '6px',
+                          color: 'var(--text-3)', fontWeight: 500, letterSpacing: '.3px',
+                        }}>
+                          {p.sku}
+                        </code>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{
+                            width: '6px', height: '6px', borderRadius: '50%',
+                            background: p.quantidade > 0 ? '#2F9E44' : '#E53E3E',
+                            display: 'inline-block',
+                          }} />
+                          <strong style={{ color: 'var(--text-2)', fontWeight: 600 }}>{p.quantidade}</strong> {p.unidade}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right: Inputs when selected */}
+                  {isSelected && (
+                    <div
+                      style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}
+                      onClick={e => e.stopPropagation()}
+                    >
+                      {tipo === 'entrada' && (
+                        <div style={{ display: 'flex', alignItems: 'center', width: '140px', background: '#fff', borderRadius: '10px', border: '1.5px solid var(--border)', overflow: 'hidden' }}>
+                          <span style={{
+                            padding: '0 10px', height: '36px', display: 'flex', alignItems: 'center',
+                            fontSize: '12px', color: 'var(--text-3)', fontWeight: 600,
+                            background: 'var(--surface-2)', borderRight: '1px solid var(--border)',
+                          }}>R$</span>
+                          <input
+                            type="number" step="0.01" min="0"
+                            value={selecionado.valorUnitario === 0 ? '' : selecionado.valorUnitario}
+                            onChange={e => handleChangeValor(p.id, Number(e.target.value))}
+                            placeholder="0,00"
+                            style={{
+                              height: '36px', border: 'none', padding: '0 8px', fontSize: '13px',
+                              color: 'var(--text-1)', background: 'transparent', outline: 'none',
+                              fontFamily: 'DM Mono, monospace', width: '100%',
+                            }}
+                          />
+                        </div>
+                      )}
+                      <div style={{
+                        display: 'flex', alignItems: 'center', width: '150px',
+                        background: '#fff', borderRadius: '10px',
+                        border: `1.5px solid ${tipo === 'ajuste' ? '#BFD7FF' : 'var(--border)'}`,
+                        overflow: 'hidden',
+                      }}>
+                        {tipo === 'ajuste' && (
+                          <span style={{
+                            padding: '0 8px', height: '36px', display: 'flex', alignItems: 'center',
+                            fontSize: '10.5px', color: '#1971C2', fontWeight: 700, whiteSpace: 'nowrap',
+                            background: '#EBF4FF', borderRight: '1px solid #BFD7FF',
+                          }}>
+                            {quantidadeLabel}
+                          </span>
+                        )}
+                        <input
+                          type="number"
+                          min={tipo === 'saida' ? 1 : 0}
+                          max={tipo === 'saida' ? p.quantidade : undefined}
+                          value={selecionado.quantidade}
+                          onChange={e => handleChangeQuantidade(p.id, Number(e.target.value))}
+                          style={{
+                            height: '36px', border: 'none', padding: '0 10px', fontSize: '13px',
+                            color: 'var(--text-1)', background: 'transparent', outline: 'none',
+                            fontFamily: 'DM Mono, monospace', width: '100%',
+                          }}
+                        />
+                        <span style={{
+                          padding: '0 10px', height: '36px', display: 'flex', alignItems: 'center',
+                          fontSize: '11px', fontWeight: 600, whiteSpace: 'nowrap',
+                          color: tipo === 'ajuste' ? '#1971C2' : 'var(--text-3)',
+                          background: tipo === 'ajuste' ? '#EBF4FF' : 'var(--surface-2)',
+                          borderLeft: `1px solid ${tipo === 'ajuste' ? '#BFD7FF' : 'var(--border)'}`,
+                        }}>
+                          {p.unidade}
+                        </span>
+                      </div>
+                      {tipo === 'ajuste' && (
+                        <div style={{
+                          fontSize: '12px', fontWeight: 700,
+                          fontFamily: 'DM Mono, monospace',
+                          color: selecionado.quantidade > p.quantidade ? 'var(--success)'
+                            : selecionado.quantidade < p.quantidade ? 'var(--danger)' : 'var(--text-3)',
+                          minWidth: '48px', textAlign: 'right',
+                        }}>
+                          {selecionado.quantidade > p.quantidade && `+${selecionado.quantidade - p.quantidade}`}
+                          {selecionado.quantidade < p.quantidade && `${selecionado.quantidade - p.quantidade}`}
+                          {selecionado.quantidade === p.quantidade && '±0'}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* ── Footer Action Bar ── */}
+        <div style={{
+          padding: '16px 28px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderTop: '1px solid var(--border)',
+          background: 'var(--surface-2)',
+        }}>
+          <div style={{ fontSize: '13px', color: 'var(--text-3)' }}>
+            {totalSelecionados > 0 ? (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{
+                  width: '24px', height: '24px', borderRadius: '8px',
+                  background: currentConfig.dot, color: '#fff',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '12px', fontWeight: 700,
+                }}>
+                  {totalSelecionados}
+                </span>
+                <span style={{ color: 'var(--text-2)', fontWeight: 500 }}>
+                  produto{totalSelecionados > 1 ? 's' : ''} para {tipoLabel.toLowerCase()}
+                </span>
+              </span>
+            ) : (
+              <span>Selecione produtos para continuar</span>
+            )}
+          </div>
           <button
-            type="submit" disabled={totalSelecionados === 0}
-            className="btn d-flex align-items-center gap-2"
-            style={{ height: '44px', padding: '0 32px', fontSize: '14px', fontWeight: 700, borderRadius: '999px', background: tipo === 'ajuste' ? '#1971C2' : tipo === 'saida' ? 'var(--danger)' : 'var(--success)', borderColor: tipo === 'ajuste' ? '#1971C2' : tipo === 'saida' ? 'var(--danger)' : 'var(--success)', color: '#fff', opacity: totalSelecionados === 0 ? 0.5 : 1, cursor: totalSelecionados === 0 ? 'not-allowed' : 'pointer' }}
+            type="submit"
+            disabled={totalSelecionados === 0}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              height: '44px',
+              padding: '0 24px',
+              fontSize: '14px',
+              fontWeight: 700,
+              borderRadius: '12px',
+              border: 'none',
+              background: totalSelecionados === 0 ? 'var(--surface-3)' : currentConfig.activeBg,
+              color: totalSelecionados === 0 ? 'var(--text-3)' : '#fff',
+              cursor: totalSelecionados === 0 ? 'not-allowed' : 'pointer',
+              transition: 'all 200ms ease',
+              boxShadow: totalSelecionados > 0 ? '0 4px 16px rgba(0,0,0,.15)' : 'none',
+              fontFamily: 'DM Sans, sans-serif',
+            }}
           >
             <IconCheck />
             Confirmar {tipoLabel}
             {isRetroativa && (
-              <span style={{ background: 'rgba(255,255,255,.2)', borderRadius: 999, padding: '1px 8px', fontSize: 11, fontWeight: 700, marginLeft: 2 }}>
+              <span style={{
+                background: 'rgba(255,255,255,.2)', borderRadius: 999,
+                padding: '2px 8px', fontSize: '11px', fontWeight: 700,
+              }}>
                 {formatarDataExibicao(dataCompetencia)}
-              </span>
-            )}
-            {totalSelecionados > 0 && (
-              <span style={{ background: 'rgba(255,255,255,.25)', borderRadius: '999px', padding: '1px 8px', fontSize: '12px', fontWeight: 700, marginLeft: '4px' }}>
-                {totalSelecionados}
               </span>
             )}
           </button>
         </div>
-      </form>
-    </div>
+      </div>
+    </form>
   );
 }
