@@ -364,7 +364,7 @@ export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps
       ordemCompra: ordemCompra || (numeroNF ? `NF-${numeroNF}` : ''),
       nomeObra: '',
       itens: itensParaImportar,
-      dataCompetencia,
+      dataCompetencia: hojeISO(),
     });
 
     setFile(null);
