@@ -360,44 +360,46 @@ export default function App() {
           ? partes.join(' | ')
           : `Movimentação em lote (${dados.tipo})`;
 
+      const payload = {
+        itens: dados.itens.map((item: any) => ({
+          produtoId: item.produtoId,
+          quantidade: item.quantidade,
+          valorUnitario: dados.tipo === 'entrada' ? item.valorUnitario : undefined,
+        })),
+        tipo: dados.tipo,
+        motivo: motivoFinal,
+        nomeObra: dados.nomeObra || undefined,
+        ordemCompra: dados.ordemCompra || undefined,
+        dataCompetencia: dados.dataCompetencia,
+      };
+      console.log('[LOTE] Enviando payload:', JSON.stringify(payload));
+
       const response = await fetch(`${API_URL}/movimentacoes/lote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          itens: dados.itens.map((item: any) => ({
-            produtoId: item.produtoId,
-            quantidade: item.quantidade,
-            valorUnitario: dados.tipo === 'entrada' ? item.valorUnitario : undefined,
-          })),
-          tipo: dados.tipo,
-          motivo: motivoFinal,
-          nomeObra: dados.nomeObra || undefined,
-          ordemCompra: dados.ordemCompra || undefined,
-          dataCompetencia: dados.dataCompetencia,
-        }),
+        body: JSON.stringify(payload),
       });
 
+      const responseData = await response.json().catch(() => ({ error: 'Erro ao ler resposta' }));
+      console.log('[LOTE] Status:', response.status, 'Response:', JSON.stringify(responseData));
+
       if (response.ok) {
-        setAllProdutos(prev => prev.map(p => {
-          const item = dados.itens.find((i: any) => i.produtoId === p.id);
-          if (!item) return p;
-          const delta = dados.tipo === 'saida' ? -item.quantidade
-            : dados.tipo === 'entrada' ? item.quantidade
-            : item.quantidade - p.quantidade;
-          return { ...p, quantidade: p.quantidade + delta };
-        }));
         const [mRes, pRes] = await Promise.all([
           fetch(`${API_URL}/movimentacoes`),
           fetch(`${API_URL}/produtos`),
         ]);
-        if (mRes.ok) setMovs(await mRes.json());
+        console.log('[LOTE] Refetch movs status:', mRes.status, 'produtos status:', pRes.status);
+        if (mRes.ok) {
+          const movsData = await mRes.json();
+          console.log('[LOTE] Movimentações carregadas:', movsData.length);
+          setMovs(movsData);
+        }
         if (pRes.ok) setAllProdutos(await pRes.json());
         toast.success('Movimentações registradas com sucesso!');
         setView('estoque');
         scrollTop();
       } else {
-        const errData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
-        toast.error(`Falha ao registrar: ${errData.error}`);
+        toast.error(`Falha ao registrar: ${responseData.error}`);
       }
     } catch {
       toast.error('Erro ao registrar entradas/saídas.');
