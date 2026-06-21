@@ -386,8 +386,12 @@ export default function App() {
             : item.quantidade - p.quantidade;
           return { ...p, quantidade: p.quantidade + delta };
         }));
-        const mRes = await fetch(`${API_URL}/movimentacoes`);
+        const [mRes, pRes] = await Promise.all([
+          fetch(`${API_URL}/movimentacoes`),
+          fetch(`${API_URL}/produtos`),
+        ]);
         if (mRes.ok) setMovs(await mRes.json());
+        if (pRes.ok) setAllProdutos(await pRes.json());
         toast.success('Movimentações registradas com sucesso!');
         setView('estoque');
         scrollTop();

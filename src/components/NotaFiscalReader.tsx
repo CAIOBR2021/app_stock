@@ -70,7 +70,9 @@ function aplicarConversao(item: ItemExtraido, produto: Produto): ItemExtraido {
     ...item,
     quantidadeOriginal: item.quantidade,
     unidadeOriginal: item.unidade,
-    quantidade: Math.round(qtdConvertida * 100) / 100,
+    quantidade: isUnidadeInteira(produto.unidade)
+      ? Math.round(qtdConvertida)
+      : Math.round(qtdConvertida * 100) / 100,
     unidade: produto.unidade,
     fatorConversao: conversao.fator,
     conversaoAplicada: true,
@@ -339,7 +341,7 @@ export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps
   const handleChangeQtd = (index: number, qtd: number) => {
     if (qtd < 0) return;
     setItensExtraidos(prev =>
-      prev.map((item, i) => i === index ? { ...item, quantidade: qtd } : item),
+      prev.map((item, i) => i === index ? { ...item, quantidade: isUnidadeInteira(item.unidade) ? Math.round(qtd) : qtd } : item),
     );
   };
 
