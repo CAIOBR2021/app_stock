@@ -71,14 +71,6 @@ export function ChatWidget() {
 
   return (
     <>
-      {/* SVG sharpen filter */}
-      <svg style={{ position: 'absolute', width: 0, height: 0 }}>
-        <defs>
-          <filter id="sharpen">
-            <feConvolveMatrix order="3" kernelMatrix="0 -0.5 0 -0.5 3 -0.5 0 -0.5 0" preserveAlpha="true" />
-          </filter>
-        </defs>
-      </svg>
       {/* ── FAB ── */}
       {!open && (
         <button
@@ -165,7 +157,7 @@ export function ChatWidget() {
                   overflow: 'hidden',
                   background: '#1a1650',
                 }}>
-                  <img src="/almoxarife-avatar.png" alt="O Almoxarife" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', imageRendering: '-webkit-optimize-contrast' as any, filter: 'contrast(1.08) saturate(1.12) url(#sharpen)' }} />
+                  <img src="/almoxarife-avatar.png" alt="O Almoxarife" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                 </div>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
