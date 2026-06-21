@@ -5,6 +5,7 @@ import { DeliveryTable } from './components/DeliveryTable';
 import { EntradaSaidaForm } from './components/EntradaSaidaForm';
 import { NotaFiscalReader } from './components/NotaFiscalReader';
 import { PrevisaoConsumo } from './components/PrevisaoConsumo';
+import { ChatWidget } from './components/ChatWidget';
 import './styles.css';
 
 import type { Produto, Movimentacao, Entrega } from './types';
@@ -1374,6 +1375,7 @@ export default function App() {
         </ModalComponent>
       )}
 
+      <ChatWidget />
       <ToastContainer
         position="top-right"
         autoClose={3000}
