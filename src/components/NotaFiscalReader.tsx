@@ -636,7 +636,7 @@ export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps
             </div>
           </div>
 
-          {/* Items Table */}
+          {/* Items List */}
           <div className="card-modern" style={{ padding: 0, overflow: 'hidden' }}>
             <div style={{
               padding: '12px 20px',
@@ -649,148 +649,154 @@ export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps
               <IconImage /> Itens Extraídos
             </div>
 
-            <div className="table-wrap">
-              <table className="table-modern" style={{ marginBottom: 0, tableLayout: 'fixed', width: '100%' }}>
-                <colgroup>
-                  <col style={{ width: '30%' }} />
-                  <col style={{ width: '30%' }} />
-                  <col style={{ width: '12%' }} />
-                  <col style={{ width: '18%' }} />
-                  <col style={{ width: '10%' }} />
-                </colgroup>
-                <thead>
-                  <tr>
-                    <th style={{ paddingLeft: '20px' }}>Item do Documento</th>
-                    <th>Vincular ao Produto</th>
-                    <th style={{ textAlign: 'center' }}>Qtd.</th>
-                    <th style={{ textAlign: 'center' }}>Valor Unit.</th>
-                    <th style={{ textAlign: 'center' }} />
-                  </tr>
-                </thead>
-                <tbody>
-                  {itensExtraidos.map((item, idx) => (
-                    <tr key={idx} style={{
-                      background: item.produtoIdMatch ? 'rgba(47,158,68,.03)' : 'rgba(229,62,62,.03)',
-                    }}>
-                      <td style={{ paddingLeft: '20px', overflow: 'hidden' }}>
-                        <div style={{ fontWeight: 600, fontSize: '13.5px', color: 'var(--text-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.nome}</div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-3)', marginTop: '2px' }}>
-                          {item.quantidade} {item.unidade} · R$ {item.valorUnitario.toFixed(2)}
-                        </div>
-                      </td>
-                      <td style={{ overflow: 'hidden' }}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {itensExtraidos.map((item, idx) => (
+                <div key={idx} style={{
+                  padding: '16px 20px',
+                  borderBottom: idx < itensExtraidos.length - 1 ? '1px solid var(--border)' : 'none',
+                  background: item.produtoIdMatch ? 'rgba(47,158,68,.02)' : 'transparent',
+                  transition: 'background 200ms',
+                }}>
+                  {/* Linha 1: Nome do item + botão remover */}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '12px' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                      }}>
                         <div style={{
-                          display: 'flex', alignItems: 'center', gap: '8px',
+                          width: '7px', height: '7px', borderRadius: '50%', flexShrink: 0,
+                          background: item.produtoIdMatch ? 'var(--success)' : 'var(--danger)',
+                          boxShadow: item.produtoIdMatch ? '0 0 6px rgba(47,158,68,.4)' : '0 0 6px rgba(229,62,62,.3)',
+                        }} />
+                        <span style={{
+                          fontWeight: 600, fontSize: '13.5px', color: 'var(--text-1)',
                         }}>
-                          <div style={{
-                            width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0,
-                            background: item.produtoIdMatch ? 'var(--success)' : 'var(--danger)',
-                            boxShadow: item.produtoIdMatch ? '0 0 6px rgba(47,158,68,.4)' : '0 0 6px rgba(229,62,62,.3)',
-                          }} />
-                          <select
-                            style={{
-                              width: '100%', minWidth: 0,
-                              fontSize: '12.5px', height: '36px',
-                              padding: '0 28px 0 10px',
-                              border: `1.5px solid ${item.produtoIdMatch ? 'var(--success)' : 'var(--border)'}`,
-                              borderRadius: '8px',
-                              background: item.produtoIdMatch
-                                ? 'rgba(47,158,68,.04)'
-                                : 'var(--surface-1, #fff)',
-                              color: item.produtoIdMatch ? 'var(--text-1)' : 'var(--text-3)',
-                              fontWeight: item.produtoIdMatch ? 600 : 400,
-                              cursor: 'pointer',
-                              appearance: 'none',
-                              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
-                              backgroundRepeat: 'no-repeat',
-                              backgroundPosition: 'right 8px center',
-                              transition: 'border-color 200ms, background 200ms',
-                              outline: 'none',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                            }}
-                            value={item.produtoIdMatch || ''}
-                            onChange={e => handleVincular(idx, e.target.value)}
-                            onFocus={e => { e.target.style.borderColor = '#667eea'; e.target.style.boxShadow = '0 0 0 3px rgba(102,126,234,.12)'; }}
-                            onBlur={e => { e.target.style.borderColor = item.produtoIdMatch ? 'var(--success)' : 'var(--border)'; e.target.style.boxShadow = 'none'; }}
-                          >
-                            <option value="">Selecionar produto...</option>
-                            {produtos.map(p => (
-                              <option key={p.id} value={p.id}>
-                                {p.nome} ({p.sku})
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </td>
-                      <td>
+                          {item.nome}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '11.5px', color: 'var(--text-3)', marginTop: '4px', paddingLeft: '15px' }}>
+                        {item.quantidade} {item.unidade} · R$ {item.valorUnitario.toFixed(2)}
+                      </div>
+                    </div>
+                    {item.produtoIdMatch ? (
+                      <span style={{
+                        color: 'var(--success)',
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        width: '28px', height: '28px', borderRadius: '50%',
+                        background: 'var(--success-light)', flexShrink: 0,
+                      }} title="Vinculado">
+                        <IconLink />
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => handleRemoveItem(idx)}
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          color: 'var(--text-3)', padding: '4px', flexShrink: 0,
+                          width: '28px', height: '28px', borderRadius: '50%',
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          transition: 'all 150ms',
+                        }}
+                        title="Remover item"
+                        onMouseEnter={e => { (e.target as HTMLElement).style.background = 'var(--danger-light)'; (e.target as HTMLElement).style.color = 'var(--danger)'; }}
+                        onMouseLeave={e => { (e.target as HTMLElement).style.background = 'none'; (e.target as HTMLElement).style.color = 'var(--text-3)'; }}
+                      >
+                        <IconTrash />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Linha 2: Select + Qtd + Valor */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                    {/* Select produto */}
+                    <div style={{ flex: '1 1 280px', minWidth: '200px' }}>
+                      <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: '4px', display: 'block' }}>
+                        Vincular ao Produto
+                      </label>
+                      <select
+                        style={{
+                          width: '100%',
+                          fontSize: '12.5px', height: '36px',
+                          padding: '0 28px 0 10px',
+                          border: `1.5px solid ${item.produtoIdMatch ? 'var(--success)' : 'var(--border)'}`,
+                          borderRadius: '8px',
+                          background: item.produtoIdMatch
+                            ? 'rgba(47,158,68,.04)'
+                            : 'var(--surface-1, #fff)',
+                          color: item.produtoIdMatch ? 'var(--text-1)' : 'var(--text-3)',
+                          fontWeight: item.produtoIdMatch ? 600 : 400,
+                          cursor: 'pointer',
+                          appearance: 'none',
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
+                          backgroundRepeat: 'no-repeat',
+                          backgroundPosition: 'right 8px center',
+                          transition: 'border-color 200ms, background 200ms',
+                          outline: 'none',
+                        }}
+                        value={item.produtoIdMatch || ''}
+                        onChange={e => handleVincular(idx, e.target.value)}
+                        onFocus={e => { e.target.style.borderColor = '#667eea'; e.target.style.boxShadow = '0 0 0 3px rgba(102,126,234,.12)'; }}
+                        onBlur={e => { e.target.style.borderColor = item.produtoIdMatch ? 'var(--success)' : 'var(--border)'; e.target.style.boxShadow = 'none'; }}
+                      >
+                        <option value="">Selecionar produto...</option>
+                        {produtos.map(p => (
+                          <option key={p.id} value={p.id}>
+                            {p.nome} ({p.sku})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Quantidade */}
+                    <div style={{ flex: '0 0 100px' }}>
+                      <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: '4px', display: 'block' }}>
+                        Qtd.
+                      </label>
+                      <input
+                        type="number" min="0" step="any"
+                        value={item.quantidade}
+                        onChange={e => handleChangeQtd(idx, Number(e.target.value))}
+                        style={{
+                          width: '100%', height: '36px',
+                          border: '1.5px solid var(--border)', borderRadius: '8px',
+                          padding: '0 8px', fontSize: '13px', textAlign: 'center',
+                          fontFamily: '"DM Mono", monospace',
+                          outline: 'none',
+                        }}
+                      />
+                    </div>
+
+                    {/* Valor Unitário */}
+                    <div style={{ flex: '0 0 130px' }}>
+                      <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: '4px', display: 'block' }}>
+                        Valor Unit.
+                      </label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+                        <span style={{
+                          background: 'var(--surface-2)', border: '1.5px solid var(--border)',
+                          borderRight: 'none', borderRadius: '8px 0 0 8px',
+                          padding: '0 8px', height: '36px', display: 'flex', alignItems: 'center',
+                          fontSize: '11px', color: 'var(--text-3)', fontWeight: 600,
+                        }}>
+                          R$
+                        </span>
                         <input
-                          type="number" min="0" step="any"
-                          value={item.quantidade}
-                          onChange={e => handleChangeQtd(idx, Number(e.target.value))}
+                          type="number" min="0" step="0.01"
+                          value={item.valorUnitario === 0 ? '' : item.valorUnitario}
+                          onChange={e => handleChangeValor(idx, Number(e.target.value))}
                           style={{
-                            width: '100%', height: '34px',
-                            border: '1.5px solid var(--border)', borderRadius: '8px',
-                            padding: '0 8px', fontSize: '13px', textAlign: 'center',
-                            fontFamily: '"DM Mono", monospace',
+                            width: '100%', height: '36px',
+                            border: '1.5px solid var(--border)', borderLeft: 'none',
+                            borderRadius: '0 8px 8px 0', padding: '0 8px',
+                            fontSize: '13px', fontFamily: '"DM Mono", monospace',
+                            outline: 'none',
                           }}
                         />
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
-                          <span style={{
-                            background: 'var(--surface-2)', border: '1.5px solid var(--border)',
-                            borderRight: 'none', borderRadius: '8px 0 0 8px',
-                            padding: '0 8px', height: '34px', display: 'flex', alignItems: 'center',
-                            fontSize: '11px', color: 'var(--text-3)', fontWeight: 600,
-                          }}>
-                            R$
-                          </span>
-                          <input
-                            type="number" min="0" step="0.01"
-                            value={item.valorUnitario === 0 ? '' : item.valorUnitario}
-                            onChange={e => handleChangeValor(idx, Number(e.target.value))}
-                            style={{
-                              width: '100%', height: '34px',
-                              border: '1.5px solid var(--border)', borderLeft: 'none',
-                              borderRadius: '0 8px 8px 0', padding: '0 8px',
-                              fontSize: '13px', fontFamily: '"DM Mono", monospace',
-                            }}
-                          />
-                        </div>
-                      </td>
-                      <td style={{ textAlign: 'center' }}>
-                        {item.produtoIdMatch ? (
-                          <span style={{
-                            color: 'var(--success)',
-                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                            width: '28px', height: '28px', borderRadius: '50%',
-                            background: 'var(--success-light)',
-                          }} title="Vinculado">
-                            <IconLink />
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => handleRemoveItem(idx)}
-                            style={{
-                              background: 'none', border: 'none', cursor: 'pointer',
-                              color: 'var(--text-3)', padding: '4px',
-                              width: '28px', height: '28px', borderRadius: '50%',
-                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                              transition: 'all 150ms',
-                            }}
-                            title="Remover item"
-                            onMouseEnter={e => { (e.target as HTMLElement).style.background = 'var(--danger-light)'; (e.target as HTMLElement).style.color = 'var(--danger)'; }}
-                            onMouseLeave={e => { (e.target as HTMLElement).style.background = 'none'; (e.target as HTMLElement).style.color = 'var(--text-3)'; }}
-                          >
-                            <IconTrash />
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
