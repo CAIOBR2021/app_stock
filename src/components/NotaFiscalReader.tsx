@@ -672,19 +672,48 @@ export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps
                         </div>
                       </td>
                       <td>
-                        <select
-                          className="form-select"
-                          style={{ fontSize: '12px', height: '34px', padding: '0 8px', maxWidth: '260px' }}
-                          value={item.produtoIdMatch || ''}
-                          onChange={e => handleVincular(idx, e.target.value)}
-                        >
-                          <option value="">— Selecione o produto —</option>
-                          {produtos.map(p => (
-                            <option key={p.id} value={p.id}>
-                              {p.nome} ({p.sku})
-                            </option>
-                          ))}
-                        </select>
+                        <div style={{
+                          display: 'flex', alignItems: 'center', gap: '8px',
+                          maxWidth: '320px',
+                        }}>
+                          <div style={{
+                            width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0,
+                            background: item.produtoIdMatch ? 'var(--success)' : 'var(--danger)',
+                            boxShadow: item.produtoIdMatch ? '0 0 6px rgba(47,158,68,.4)' : '0 0 6px rgba(229,62,62,.3)',
+                          }} />
+                          <select
+                            style={{
+                              flex: 1,
+                              fontSize: '12.5px', height: '36px',
+                              padding: '0 28px 0 10px',
+                              border: `1.5px solid ${item.produtoIdMatch ? 'var(--success)' : 'var(--border)'}`,
+                              borderRadius: '8px',
+                              background: item.produtoIdMatch
+                                ? 'rgba(47,158,68,.04)'
+                                : 'var(--surface-1, #fff)',
+                              color: item.produtoIdMatch ? 'var(--text-1)' : 'var(--text-3)',
+                              fontWeight: item.produtoIdMatch ? 600 : 400,
+                              cursor: 'pointer',
+                              appearance: 'none',
+                              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
+                              backgroundRepeat: 'no-repeat',
+                              backgroundPosition: 'right 8px center',
+                              transition: 'border-color 200ms, background 200ms',
+                              outline: 'none',
+                            }}
+                            value={item.produtoIdMatch || ''}
+                            onChange={e => handleVincular(idx, e.target.value)}
+                            onFocus={e => { e.target.style.borderColor = '#667eea'; e.target.style.boxShadow = '0 0 0 3px rgba(102,126,234,.12)'; }}
+                            onBlur={e => { e.target.style.borderColor = item.produtoIdMatch ? 'var(--success)' : 'var(--border)'; e.target.style.boxShadow = 'none'; }}
+                          >
+                            <option value="">Selecionar produto...</option>
+                            {produtos.map(p => (
+                              <option key={p.id} value={p.id}>
+                                {p.nome} ({p.sku})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </td>
                       <td>
                         <input
