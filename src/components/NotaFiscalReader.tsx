@@ -650,14 +650,21 @@ export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps
             </div>
 
             <div className="table-wrap">
-              <table className="table-modern" style={{ marginBottom: 0 }}>
+              <table className="table-modern" style={{ marginBottom: 0, tableLayout: 'fixed', width: '100%' }}>
+                <colgroup>
+                  <col style={{ width: '30%' }} />
+                  <col style={{ width: '30%' }} />
+                  <col style={{ width: '12%' }} />
+                  <col style={{ width: '18%' }} />
+                  <col style={{ width: '10%' }} />
+                </colgroup>
                 <thead>
                   <tr>
                     <th style={{ paddingLeft: '20px' }}>Item do Documento</th>
                     <th>Vincular ao Produto</th>
-                    <th style={{ textAlign: 'center', width: '90px' }}>Qtd.</th>
-                    <th style={{ textAlign: 'center', width: '120px' }}>Valor Unit.</th>
-                    <th style={{ textAlign: 'center', width: '50px' }} />
+                    <th style={{ textAlign: 'center' }}>Qtd.</th>
+                    <th style={{ textAlign: 'center' }}>Valor Unit.</th>
+                    <th style={{ textAlign: 'center' }} />
                   </tr>
                 </thead>
                 <tbody>
@@ -665,16 +672,15 @@ export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps
                     <tr key={idx} style={{
                       background: item.produtoIdMatch ? 'rgba(47,158,68,.03)' : 'rgba(229,62,62,.03)',
                     }}>
-                      <td style={{ paddingLeft: '20px' }}>
-                        <div style={{ fontWeight: 600, fontSize: '13.5px', color: 'var(--text-1)' }}>{item.nome}</div>
+                      <td style={{ paddingLeft: '20px', overflow: 'hidden' }}>
+                        <div style={{ fontWeight: 600, fontSize: '13.5px', color: 'var(--text-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.nome}</div>
                         <div style={{ fontSize: '11px', color: 'var(--text-3)', marginTop: '2px' }}>
                           {item.quantidade} {item.unidade} · R$ {item.valorUnitario.toFixed(2)}
                         </div>
                       </td>
-                      <td>
+                      <td style={{ overflow: 'hidden' }}>
                         <div style={{
                           display: 'flex', alignItems: 'center', gap: '8px',
-                          maxWidth: '320px',
                         }}>
                           <div style={{
                             width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0,
@@ -683,7 +689,7 @@ export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps
                           }} />
                           <select
                             style={{
-                              flex: 1,
+                              width: '100%', minWidth: 0,
                               fontSize: '12.5px', height: '36px',
                               padding: '0 28px 0 10px',
                               border: `1.5px solid ${item.produtoIdMatch ? 'var(--success)' : 'var(--border)'}`,
@@ -700,6 +706,8 @@ export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps
                               backgroundPosition: 'right 8px center',
                               transition: 'border-color 200ms, background 200ms',
                               outline: 'none',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
                             }}
                             value={item.produtoIdMatch || ''}
                             onChange={e => handleVincular(idx, e.target.value)}
