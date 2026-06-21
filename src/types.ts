@@ -1,5 +1,10 @@
 export type UUID = string;
 
+export interface FatorConversao {
+  unidade: string;
+  fator: number;
+}
+
 export interface Produto {
   id: UUID;
   sku: string;
@@ -15,6 +20,7 @@ export interface Produto {
   atualizadoEm?: string;
   prioritario?: boolean;
   valorUnitario?: number;
+  conversoes?: FatorConversao[];
 }
 
 export type TipoMov = 'entrada' | 'saida' | 'ajuste' | 'saldo_inicial';

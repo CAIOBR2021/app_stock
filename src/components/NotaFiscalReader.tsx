@@ -11,6 +11,11 @@ interface ItemExtraido {
   valorUnitario: number;
   produtoIdMatch?: string;
   confianca: number;
+  // Conversão de unidade
+  quantidadeOriginal?: number;
+  unidadeOriginal?: string;
+  fatorConversao?: number;
+  conversaoAplicada?: boolean;
 }
 
 interface NotaFiscalReaderProps {
@@ -34,6 +39,43 @@ const hojeISO = () => {
 
 const normalize = (s: string) =>
   s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+
+const normalizeUnidade = (u: string): string => {
+  const s = u.toLowerCase().trim().replace(/\./g, '');
+  const map: Record<string, string> = {
+    'm²': 'm²', 'm2': 'm²', 'metros quadrados': 'm²', 'mts2': 'm²', 'metro quadrado': 'm²',
+    'm': 'm', 'mt': 'm', 'mts': 'm', 'metro': 'm', 'metros': 'm',
+    'un': 'un', 'und': 'un', 'unid': 'un', 'unidade': 'un', 'unidades': 'un', 'pç': 'un', 'pc': 'un', 'pcs': 'un', 'peça': 'un', 'pecas': 'un',
+    'cx': 'cx', 'caixa': 'cx', 'caixas': 'cx',
+    'kg': 'kg', 'kilo': 'kg', 'kilos': 'kg', 'quilos': 'kg', 'quilo': 'kg',
+    'l': 'L', 'lt': 'L', 'lts': 'L', 'litro': 'L', 'litros': 'L',
+    'saco': 'saco', 'sacos': 'saco', 'sc': 'saco',
+    'rl': 'rolo', 'rolo': 'rolo', 'rolos': 'rolo',
+    'par': 'par', 'pares': 'par',
+  };
+  return map[s] || s;
+};
+
+function aplicarConversao(item: ItemExtraido, produto: Produto): ItemExtraido {
+  const unidadeDoc = normalizeUnidade(item.unidade);
+  const unidadeProd = normalizeUnidade(produto.unidade);
+
+  if (unidadeDoc === unidadeProd) return item;
+
+  const conversao = produto.conversoes?.find(c => normalizeUnidade(c.unidade) === unidadeDoc);
+  if (!conversao || conversao.fator <= 0) return item;
+
+  const qtdConvertida = item.quantidade / conversao.fator;
+  return {
+    ...item,
+    quantidadeOriginal: item.quantidade,
+    unidadeOriginal: item.unidade,
+    quantidade: Math.round(qtdConvertida * 100) / 100,
+    unidade: produto.unidade,
+    fatorConversao: conversao.fator,
+    conversaoAplicada: true,
+  };
+}
 
 function findBestMatch(nome: string, produtos: Produto[]): Produto | null {
   const n = normalize(nome);
@@ -253,7 +295,7 @@ export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps
 
       const extraidos: ItemExtraido[] = (data.itens || []).map((item: any) => {
         const match = findBestMatch(item.nome, produtos);
-        return {
+        let parsed: ItemExtraido = {
           nome: item.nome,
           quantidade: Number(item.quantidade) || 0,
           unidade: item.unidade || 'UN',
@@ -261,6 +303,8 @@ export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps
           produtoIdMatch: match?.id || undefined,
           confianca: match ? 1 : 0,
         };
+        if (match) parsed = aplicarConversao(parsed, match);
+        return parsed;
       });
 
       setItensExtraidos(extraidos);
@@ -273,7 +317,18 @@ export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps
 
   const handleVincular = (index: number, produtoId: string) => {
     setItensExtraidos(prev =>
-      prev.map((item, i) => i === index ? { ...item, produtoIdMatch: produtoId || undefined, confianca: produtoId ? 1 : 0 } : item),
+      prev.map((item, i) => {
+        if (i !== index) return item;
+        const base: ItemExtraido = item.conversaoAplicada
+          ? { ...item, quantidade: item.quantidadeOriginal!, unidade: item.unidadeOriginal!, conversaoAplicada: false, quantidadeOriginal: undefined, unidadeOriginal: undefined, fatorConversao: undefined }
+          : item;
+        const updated = { ...base, produtoIdMatch: produtoId || undefined, confianca: produtoId ? 1 : 0 };
+        if (produtoId) {
+          const prod = produtos.find(p => p.id === produtoId);
+          if (prod) return aplicarConversao(updated, prod);
+        }
+        return updated;
+      }),
     );
   };
 
@@ -675,6 +730,24 @@ export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps
                       <div style={{ fontSize: '11.5px', color: 'var(--text-3)', marginTop: '4px', paddingLeft: '15px' }}>
                         {item.quantidade} {item.unidade} · R$ {item.valorUnitario.toFixed(2)}
                       </div>
+                      {item.conversaoAplicada && (
+                        <div style={{
+                          marginTop: '6px', paddingLeft: '15px', display: 'flex', alignItems: 'center', gap: '6px',
+                        }}>
+                          <span style={{
+                            fontSize: '10.5px', fontWeight: 600, color: '#1971C2',
+                            background: '#EBF4FF', border: '1px solid #BFD7FF',
+                            padding: '2px 8px', borderRadius: '6px',
+                            display: 'inline-flex', alignItems: 'center', gap: '4px',
+                          }}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="11" height="11"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+                            Convertido: {item.quantidadeOriginal} {item.unidadeOriginal} → {item.quantidade} {item.unidade}
+                          </span>
+                          <span style={{ fontSize: '10px', color: 'var(--text-3)' }}>
+                            (1 {item.unidade} = {item.fatorConversao} {item.unidadeOriginal})
+                          </span>
+                        </div>
+                      )}
                     </div>
                     {item.produtoIdMatch ? (
                       <span style={{

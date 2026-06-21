@@ -530,6 +530,9 @@ export function ProdutoForm({
       ? { value: produto.fornecedor, label: produto.fornecedor }
       : null,
   );
+  const [conversoes, setConversoes] = useState<{ unidade: string; fator: number }[]>(
+    produto?.conversoes ?? [],
+  );
 
   const [showManageModal, setShowManageModal] = useState(false);
   const [manageField, setManageField] = useState<
@@ -645,6 +648,7 @@ export function ProdutoForm({
     e.preventDefault();
     const nomeVal = nomeOption?.value?.trim() || '';
     if (!nomeVal) return;
+    const validConversoes = conversoes.filter(c => c.unidade.trim() && c.fator > 0);
     const baseData = {
       nome: nomeVal,
       descricao: descricao.trim(),
@@ -654,6 +658,7 @@ export function ProdutoForm({
       localArmazenamento: localOption?.value || undefined,
       fornecedor: fornecedorOption?.value || undefined,
       valorUnitario,
+      conversoes: validConversoes.length > 0 ? validConversoes : undefined,
     };
     onSave(!produto ? { ...baseData, quantidade } : baseData);
   }
@@ -790,6 +795,73 @@ export function ProdutoForm({
               value={valorTotalDisplay}
             />
           </div>
+          {/* ── Conversões de Unidade ── */}
+          <div className="col-12">
+            <div style={{ border: '1.5px dashed var(--border)', borderRadius: '10px', padding: '16px', background: 'var(--surface-2)' }}>
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <label className="form-label mb-0" style={{ fontSize: '13px', fontWeight: 600 }}>
+                  Conversões de Unidade
+                  <span style={{ fontSize: '11px', color: 'var(--text-3)', fontWeight: 400, marginLeft: '8px' }}>
+                    (opcional)
+                  </span>
+                </label>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  style={{ fontSize: '12px', padding: '2px 10px', background: 'var(--primary-light)', color: 'var(--primary-dark)', border: '1px solid var(--primary)', borderRadius: '8px', fontWeight: 600 }}
+                  onClick={() => setConversoes(prev => [...prev, { unidade: '', fator: 0 }])}
+                >
+                  + Adicionar
+                </button>
+              </div>
+              {conversoes.length === 0 ? (
+                <div style={{ fontSize: '12px', color: 'var(--text-3)', padding: '8px 0' }}>
+                  Nenhuma conversão cadastrada. Ex: 1 {unidade || 'un'} = X m²
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {conversoes.map((conv, idx) => (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#fff', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                      <span style={{ fontSize: '12.5px', color: 'var(--text-2)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                        1 {unidade || 'un'} =
+                      </span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        placeholder="0.00"
+                        value={conv.fator || ''}
+                        onChange={e => {
+                          const val = Number(e.target.value);
+                          setConversoes(prev => prev.map((c, i) => i === idx ? { ...c, fator: val } : c));
+                        }}
+                        style={{ width: '90px', height: '32px', border: '1.5px solid var(--border)', borderRadius: '6px', padding: '0 8px', fontSize: '13px', fontFamily: 'DM Mono, monospace', outline: 'none' }}
+                      />
+                      <input
+                        type="text"
+                        placeholder="m², kg, L..."
+                        value={conv.unidade}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setConversoes(prev => prev.map((c, i) => i === idx ? { ...c, unidade: val } : c));
+                        }}
+                        style={{ width: '100px', height: '32px', border: '1.5px solid var(--border)', borderRadius: '6px', padding: '0 8px', fontSize: '13px', outline: 'none' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setConversoes(prev => prev.filter((_, i) => i !== idx))}
+                        style={{ width: '28px', height: '28px', borderRadius: '6px', border: 'none', background: '#FFF5F5', color: '#E53E3E', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 700, flexShrink: 0 }}
+                        title="Remover conversão"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="col-md-12">
             <FieldLabel label="Fornecedor" field="fornecedores" />
             <CreatableSelect
