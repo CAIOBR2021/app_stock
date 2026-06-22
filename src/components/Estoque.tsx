@@ -1,5 +1,5 @@
 // src/components/Estoque.tsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Select from 'react-select';
 import CreatableSelect from 'react-select/creatable';
 import type { StylesConfig } from 'react-select';
@@ -14,6 +14,7 @@ import { StockLevelBar } from './MetricCards';
 import { safeLocalStorageGet, safeLocalStorageSet } from '../utils/storage';
 import { RelatorioModal, type RelatorioFiltros } from './RelatorioModal';
 import { gerarPdfEstoque } from '../utils/Gerarpdfestoque';
+import { classificarMaterial } from '../utils/classificarMaterial';
 
 // ── REACT-SELECT STYLES ───────────────────────────────────────────────────────
 
@@ -534,6 +535,43 @@ export function ProdutoForm({
     produto?.conversoes ?? [],
   );
 
+  const [classificando, setClassificando] = useState(false);
+  const jaClassificouRef = useRef(!!produto);
+  const categoriaRef = useRef(categoriaOption);
+  const unidadeRef = useRef(unidade);
+  const descricaoRef = useRef(descricao);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => { categoriaRef.current = categoriaOption; }, [categoriaOption]);
+  useEffect(() => { unidadeRef.current = unidade; }, [unidade]);
+  useEffect(() => { descricaoRef.current = descricao; }, [descricao]);
+
+  const autoClassificar = useCallback(async (texto: string) => {
+    if (!texto.trim() || texto.trim().length < 5 || produto || jaClassificouRef.current) return;
+    setClassificando(true);
+    try {
+      const result = await classificarMaterial(texto);
+      if (result) {
+        if (result.categoria && !categoriaRef.current?.value) setCategoriaOption({ value: result.categoria, label: result.categoria });
+        if (result.unidade && unidadeRef.current === 'un') setUnidade(result.unidade);
+        if (result.descricao && !descricaoRef.current?.trim()) setDescricao(result.descricao);
+        jaClassificouRef.current = true;
+      }
+    } finally {
+      setClassificando(false);
+    }
+  }, [produto]);
+
+  const handleNomeInputChange = (inputValue: string, { action }: { action: string }) => {
+    if (action !== 'input-change') return;
+    setNomeOption({ value: inputValue, label: inputValue });
+    jaClassificouRef.current = false;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (inputValue.trim().length >= 5 && !produto) {
+      debounceRef.current = setTimeout(() => autoClassificar(inputValue), 1500);
+    }
+  };
+
   const [showManageModal, setShowManageModal] = useState(false);
   const [manageField, setManageField] = useState<
     'categorias' | 'locais' | 'fornecedores' | null
@@ -684,19 +722,31 @@ export function ProdutoForm({
               isClearable
               options={nomesOptions}
               value={nomeOption}
-              onChange={(opt: any) => setNomeOption(opt)}
-              onInputChange={(
-                inputValue: string,
-                { action }: { action: string },
-              ) => {
-                if (action === 'input-change')
-                  setNomeOption({ value: inputValue, label: inputValue });
+              onChange={(opt: any) => {
+                setNomeOption(opt);
+                if (opt && opt.value && !produto) {
+                  jaClassificouRef.current = false;
+                  if (debounceRef.current) clearTimeout(debounceRef.current);
+                  debounceRef.current = setTimeout(() => autoClassificar(opt.value), 800);
+                }
               }}
-              placeholder="Ex: Parafuso Sextavado"
+              onInputChange={handleNomeInputChange}
+              placeholder="Ex: Parafuso sextavado 10mm aço galvanizado"
               isValidNewOption={() => false}
               styles={selectStyles}
               menuPortalTarget={document.body}
             />
+            {classificando && (
+              <div className="d-flex align-items-center gap-1 mt-1">
+                <span className="spinner-border spinner-border-sm" style={{ width: 12, height: 12, borderWidth: 2, color: 'var(--primary)' }} />
+                <small style={{ color: 'var(--text-3)', fontSize: 11 }}>IA classificando automaticamente...</small>
+              </div>
+            )}
+            {!produto && !classificando && (
+              <small style={{ color: 'var(--text-3)', fontSize: 11 }}>
+                A IA preenche categoria, unidade e descrição automaticamente
+              </small>
+            )}
           </div>
           <div className="col-12">
             <label className="form-label">Descrição</label>
