@@ -536,6 +536,7 @@ export function ProdutoForm({
   );
 
   const [classificando, setClassificando] = useState(false);
+  const classificandoRef = useRef(false);
   const jaClassificouRef = useRef(!!produto);
   const categoriaRef = useRef(categoriaOption);
   const unidadeRef = useRef(unidade);
@@ -547,7 +548,8 @@ export function ProdutoForm({
   useEffect(() => { descricaoRef.current = descricao; }, [descricao]);
 
   const autoClassificar = useCallback(async (texto: string) => {
-    if (!texto.trim() || texto.trim().length < 5 || produto || jaClassificouRef.current) return;
+    if (!texto.trim() || texto.trim().length < 5 || produto || jaClassificouRef.current || classificandoRef.current) return;
+    classificandoRef.current = true;
     setClassificando(true);
     try {
       const result = await classificarMaterial(texto);
@@ -558,6 +560,7 @@ export function ProdutoForm({
         jaClassificouRef.current = true;
       }
     } finally {
+      classificandoRef.current = false;
       setClassificando(false);
     }
   }, [produto]);
