@@ -742,13 +742,8 @@ export function ProdutoForm({
             {classificando && (
               <div className="d-flex align-items-center gap-1 mt-1">
                 <span className="spinner-border spinner-border-sm" style={{ width: 12, height: 12, borderWidth: 2, color: 'var(--primary)' }} />
-                <small style={{ color: 'var(--text-3)', fontSize: 11 }}>IA classificando automaticamente...</small>
+                <small style={{ color: 'var(--text-3)', fontSize: 11 }}>Classificando automaticamente...</small>
               </div>
-            )}
-            {!produto && !classificando && (
-              <small style={{ color: 'var(--text-3)', fontSize: 11 }}>
-                A IA preenche categoria, unidade e descrição automaticamente
-              </small>
             )}
           </div>
           <div className="col-12">

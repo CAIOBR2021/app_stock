@@ -22,7 +22,8 @@
       "Bash(python -c \"from PIL import Image; img = Image.open\\(r'D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_FRONT_END_VERCEL-main\\\\public\\\\almoxarife-avatar.png'\\); print\\(f'Size: {img.size}, Mode: {img.mode}'\\)\")",
       "Bash(python -c ' *)",
       "Bash(python -c \"from PIL import Image; img=Image.open\\(r'D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_FRONT_END_VERCEL-main\\\\public\\\\almoxarife-avatar-original.png'\\); print\\(f'Original: {img.size}'\\)\")",
-      "Bash(pip install *)"
+      "Bash(pip install *)",
+      "Bash(curl -s -X POST \"https://small-lanae-caiobezerra-b22ba187.koyeb.app/api/classificar\" -H \"Content-Type: application/json\" -d '{\"nome\":\"Disco de serra clipper\"}')"
     ]
   }
 }
