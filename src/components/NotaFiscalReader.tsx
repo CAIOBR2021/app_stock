@@ -81,6 +81,7 @@ function aplicarConversao(item: ItemExtraido, produto: Produto): ItemExtraido {
 
 function findBestMatch(nome: string, produtos: Produto[]): Produto | null {
   const n = normalize(nome);
+  const nTokens = n.split(/\s+/).filter(t => t.length > 1);
   let best: Produto | null = null;
   let bestScore = 0;
 
@@ -88,9 +89,17 @@ function findBestMatch(nome: string, produtos: Produto[]): Produto | null {
     const pn = normalize(p.nome);
     if (pn === n) return p;
 
-    const tokens = n.split(/\s+/);
-    const hits = tokens.filter(t => pn.includes(t)).length;
-    const score = hits / Math.max(tokens.length, 1);
+    const pTokens = pn.split(/\s+/).filter(t => t.length > 1);
+
+    // Score bidirecional: quantos tokens da NF aparecem no produto E vice-versa
+    const hitsNF = nTokens.filter(t => pn.includes(t)).length;
+    const hitsProd = pTokens.filter(t => n.includes(t)).length;
+
+    const scoreNF = hitsNF / Math.max(nTokens.length, 1);
+    const scoreProd = hitsProd / Math.max(pTokens.length, 1);
+
+    // Usa o maior dos dois scores — resolve nomes longos na NF vs curtos no banco
+    const score = Math.max(scoreNF, scoreProd);
 
     if (score > bestScore && score >= 0.5) {
       bestScore = score;
