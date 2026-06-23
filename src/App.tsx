@@ -335,15 +335,16 @@ export default function App() {
         }),
       });
       if (!res.ok) {
-        throw new Error();
+        const d = await res.json().catch(() => null);
+        throw new Error(res.status < 500 && d?.error ? d.error : '');
       }
       const { movimentacao, produto } = await res.json();
       setMovs((prev) => [movimentacao, ...prev]);
       setAllProdutos((prev) =>
         prev.map((p) => (p.id === produto.id ? produto : p)),
       );
-    } catch {
-      toast.error('Não conseguimos registrar a movimentação. Tente novamente em instantes.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Não conseguimos registrar a movimentação. Tente novamente em instantes.');
     }
   }
 
@@ -393,7 +394,8 @@ export default function App() {
         setView('estoque');
         scrollTop();
       } else {
-        toast.error('Não conseguimos registrar as movimentações. Tente novamente em instantes.');
+        const d = responseData;
+        toast.error(response.status < 500 && d?.error ? d.error : 'Não conseguimos registrar as movimentações. Tente novamente em instantes.');
       }
     } catch {
       toast.error('Não conseguimos registrar as movimentações. Tente novamente em instantes.');
@@ -412,7 +414,10 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patch),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const d = await res.json().catch(() => null);
+        throw new Error(res.status < 500 && d?.error ? d.error : '');
+      }
       const { movimentacaoAtualizada, produtoAtualizado } = await res.json();
       setMovs((prev) => prev.map((m) => (m.id === id ? movimentacaoAtualizada : m)));
       setAllProdutos((prev) =>
@@ -420,15 +425,18 @@ export default function App() {
       );
       const eRes = await fetch(`${API_URL}/entregas`);
       setEntregas((await eRes.json()).map(normalizeEntrega));
-    } catch {
-      toast.error('Não conseguimos salvar a alteração da movimentação. Tente novamente em instantes.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Não conseguimos salvar a alteração da movimentação. Tente novamente em instantes.');
     }
   }
 
   async function deleteMov(id: UUID) {
     try {
       const res = await fetch(`${API_URL}/movimentacoes/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const d = await res.json().catch(() => null);
+        throw new Error(res.status < 500 && d?.error ? d.error : '');
+      }
       const { produtoAtualizado } = await res.json();
       setMovs((prev) => prev.filter((m) => m.id !== id));
       setAllProdutos((prev) =>
@@ -436,8 +444,8 @@ export default function App() {
       );
       const eRes = await fetch(`${API_URL}/entregas`);
       setEntregas((await eRes.json()).map(normalizeEntrega));
-    } catch {
-      toast.error('Não conseguimos remover a movimentação. Tente novamente em instantes.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Não conseguimos remover a movimentação. Tente novamente em instantes.');
     }
   }
 
@@ -451,7 +459,10 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const d = await res.json().catch(() => null);
+        throw new Error(res.status < 500 && d?.error ? d.error : '');
+      }
       const [eRes, pRes, mRes] = await Promise.all([
         fetch(`${API_URL}/entregas`),
         fetch(`${API_URL}/produtos?_limit=10000`),
@@ -462,8 +473,8 @@ export default function App() {
       setMovs(await mRes.json());
       setEditingEntrega(null);
       toast.success('Entrega atualizada com sucesso!');
-    } catch {
-      toast.error('Não conseguimos atualizar a entrega. Tente novamente em instantes.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Não conseguimos atualizar a entrega. Tente novamente em instantes.');
     } finally {
       setLoading(false);
     }
@@ -476,7 +487,10 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const d = await res.json().catch(() => null);
+        throw new Error(res.status < 500 && d?.error ? d.error : '');
+      }
       const [eRes, pRes, mRes] = await Promise.all([
         fetch(`${API_URL}/entregas`),
         fetch(`${API_URL}/produtos?_limit=10000`),
@@ -486,8 +500,8 @@ export default function App() {
       setAllProdutos(await pRes.json());
       setMovs(await mRes.json());
       toast.success('Agendamento criado com sucesso!');
-    } catch {
-      toast.error('Não conseguimos criar o agendamento. Tente novamente em instantes.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Não conseguimos criar o agendamento. Tente novamente em instantes.');
     }
   }
 
@@ -530,7 +544,10 @@ export default function App() {
   async function confirmDeleteEntrega(id: string) {
     try {
       const res = await fetch(`${API_URL}/entregas/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const d = await res.json().catch(() => null);
+        throw new Error(res.status < 500 && d?.error ? d.error : '');
+      }
       const [eRes, pRes, mRes] = await Promise.all([
         fetch(`${API_URL}/entregas`),
         fetch(`${API_URL}/produtos?_limit=10000`),
@@ -541,8 +558,8 @@ export default function App() {
       setMovs(await mRes.json());
       setEntregaToDeleteId(null);
       toast.success('Entrega excluída com sucesso.');
-    } catch {
-      toast.error('Não conseguimos remover a entrega. Tente novamente em instantes.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Não conseguimos remover a entrega. Tente novamente em instantes.');
     }
   }
 
