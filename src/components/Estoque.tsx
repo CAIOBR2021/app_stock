@@ -317,14 +317,14 @@ export function ValorTotalEstoque({ allProdutos }: { allProdutos: Produto[] }) {
       });
       if (!response.ok) {
         if (response.status === 401) throw new Error('Senha incorreta.');
-        throw new Error('Falha ao buscar o valor total.');
+        throw new Error();
       }
       const data = await response.json();
       setValorTotal(data.valorTotal);
       setIsVisible(true);
       setShowPasswordModal(false);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message === 'Senha incorreta.' ? err.message : 'Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
     } finally {
       setLoading(false);
     }
@@ -411,12 +411,11 @@ export function Relatorios({ produtos }: { produtos: Produto[] }) {
           type: 'info',
         });
       }
-    } catch (err) {
-      console.error('Erro ao gerar relatório:', err);
+    } catch {
       setModalInfo({
         show: true,
         title: 'Erro',
-        message: 'Ocorreu um erro ao gerar o relatório. Tente novamente.',
+        message: 'Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.',
         type: 'error',
       });
     } finally {

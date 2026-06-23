@@ -59,7 +59,7 @@ const C = {
 function resolveJsPDF(): typeof import('jspdf').jsPDF {
   const w = window as any;
   const ctor = w?.jspdf?.jsPDF ?? w?.jspdf?.default ?? w?.jsPDF;
-  if (!ctor) throw new Error('jsPDF não encontrado. Verifique se o script está carregado no index.html.');
+  if (!ctor) throw new Error();
   return ctor;
 }
 
@@ -142,7 +142,7 @@ export function gerarPdfEstoque(
     const JsPDF = resolveJsPDF();
     doc = new JsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
   } catch (err: any) {
-    return { ok: false, mensagem: err.message };
+    return { ok: false, mensagem: 'Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.' };
   }
 
   const pageW: number = doc.internal.pageSize.getWidth();

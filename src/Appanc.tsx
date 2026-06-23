@@ -47,25 +47,24 @@ export default function App() {
         // CORREÇÃO: Removido o parâmetro 'e' não utilizado nos blocos .catch
         const [produtosRes, movsRes] = await Promise.all([
           fetch(`${API_URL}/produtos`).catch(() => {
-            throw new Error('Falha ao buscar produtos.');
+            throw new Error();
           }),
           fetch(`${API_URL}/movimentacoes`).catch(() => {
-            throw new Error('Falha ao buscar movimentações.');
+            throw new Error();
           }),
         ]);
 
         if (!produtosRes.ok || !movsRes.ok) {
-          throw new Error('Resposta de rede não foi bem-sucedida.');
+          throw new Error();
         }
 
         const produtosData = await produtosRes.json();
         const movsData = await movsRes.json();
         setProdutos(produtosData);
         setMovs(movsData);
-      } catch (err: any) {
-        console.error('Falha ao buscar dados:', err);
+      } catch {
         setError(
-          'Não foi possível conectar ao servidor. Verifique se o backend está rodando e tente recarregar a página.',
+          'Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.',
         );
       } finally {
         setLoading(false);
@@ -85,11 +84,10 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(p),
       });
-      if (!response.ok) throw new Error('Falha ao criar produto');
+      if (!response.ok) throw new Error();
       const novoProduto = await response.json();
       setProdutos((prev) => [novoProduto, ...prev]);
-    } catch (err) {
-      console.error(err);
+    } catch {
     }
   }
 
@@ -103,7 +101,7 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patch),
       });
-      if (!response.ok) throw new Error('Falha ao atualizar produto');
+      if (!response.ok) throw new Error();
 
       setProdutos((prev) =>
         prev.map((x) =>
@@ -112,8 +110,7 @@ export default function App() {
             : x,
         ),
       );
-    } catch (err) {
-      console.error(err);
+    } catch {
     }
   }
 
@@ -122,11 +119,10 @@ export default function App() {
       const response = await fetch(`${API_URL}/produtos/${id}`, {
         method: 'DELETE',
       });
-      if (!response.ok) throw new Error('Falha ao excluir produto');
+      if (!response.ok) throw new Error();
       setProdutos((prev) => prev.filter((p) => p.id !== id));
       setMovs((prev) => prev.filter((m) => m.produtoId !== id));
-    } catch (err) {
-      console.error(err);
+    } catch {
     }
   }
 
@@ -137,7 +133,7 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(m),
       });
-      if (!response.ok) throw new Error('Falha ao criar movimentação');
+      if (!response.ok) throw new Error();
       const novaMov = await response.json();
 
       setMovs((prev) => [novaMov, ...prev]);
@@ -145,8 +141,7 @@ export default function App() {
       const produtosRes = await fetch(`${API_URL}/produtos`);
       const produtosData = await produtosRes.json();
       setProdutos(produtosData);
-    } catch (err) {
-      console.error(err);
+    } catch {
     }
   }
 

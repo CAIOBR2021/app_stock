@@ -287,7 +287,7 @@ export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || `Erro no servidor (${response.status})`);
+      if (!response.ok) throw new Error();
 
       if (data.numeroNF) setNumeroNF(data.numeroNF);
       if (data.ordemCompra) setOrdemCompra(data.ordemCompra);
@@ -311,7 +311,7 @@ export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps
 
       setItensExtraidos(extraidos);
     } catch (err: any) {
-      setError(err.message || 'Erro ao processar documento.');
+      setError('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
     } finally {
       setLoading(false);
     }

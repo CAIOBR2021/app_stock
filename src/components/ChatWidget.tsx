@@ -92,10 +92,10 @@ export function ChatWidget() {
         body: JSON.stringify({ pergunta: text.trim() }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Erro ao processar.');
+      if (!res.ok) throw new Error();
       setMessages(prev => [...prev, { id: nextId.current++, role: 'assistant', text: data.resposta, timestamp: new Date() }]);
     } catch (err: any) {
-      setMessages(prev => [...prev, { id: nextId.current++, role: 'assistant', text: `Desculpe, ocorreu um erro: ${err.message}`, timestamp: new Date() }]);
+      setMessages(prev => [...prev, { id: nextId.current++, role: 'assistant', text: 'Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.', timestamp: new Date() }]);
     } finally {
       setLoading(false);
     }

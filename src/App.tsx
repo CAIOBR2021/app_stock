@@ -212,7 +212,7 @@ export default function App() {
         const firstPageRes = await fetch(
           `${API_URL}/produtos?_page=1&_limit=${ITEMS_PER_PAGE}`,
         );
-        if (!firstPageRes.ok) throw new Error('Falha ao buscar dados iniciais.');
+        if (!firstPageRes.ok) throw new Error();
         setProdutos(await firstPageRes.json());
         setLoading(false);
 
@@ -222,12 +222,12 @@ export default function App() {
           fetch(`${API_URL}/entregas`),
         ]);
         if (!allProdsRes.ok || !movsRes.ok || !entregasRes.ok)
-          throw new Error('Falha ao buscar dados completos.');
+          throw new Error();
         setAllProdutos(await allProdsRes.json());
         setMovs(await movsRes.json());
         setEntregas((await entregasRes.json()).map(normalizeEntrega));
       } catch (err: any) {
-        setError('Não foi possível conectar ao servidor. Verifique o backend.');
+        setError('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
       } finally {
         setLoadingAll(false);
       }
@@ -259,7 +259,7 @@ export default function App() {
         if (mRes.ok) setMovs(await mRes.json());
       }
     } catch {
-      toast.error('Não foi possível criar o produto.');
+      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
     }
   }
 
@@ -277,7 +277,7 @@ export default function App() {
       const updated = await res.json();
       setAllProdutos((prev) => prev.map((x) => (x.id === id ? updated : x)));
     } catch {
-      toast.error('Não foi possível atualizar o produto.');
+      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
     }
   }
 
@@ -287,7 +287,7 @@ export default function App() {
       setAllProdutos((prev) => prev.filter((p) => p.id !== id));
       setMovs((prev) => prev.filter((m) => m.produtoId !== id));
     } catch {
-      toast.error('Não foi possível excluir o produto.');
+      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
     }
   }
 
@@ -309,7 +309,7 @@ export default function App() {
       });
       if (!res.ok) throw new Error();
     } catch {
-      toast.error('Não foi possível salvar a alteração de prioridade.');
+      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
       setAllProdutos((prev) =>
         prev.map((p) =>
           p.id === id ? { ...p, prioritario: produto.prioritario } : p,
@@ -335,8 +335,7 @@ export default function App() {
         }),
       });
       if (!res.ok) {
-        const errData = await res.json().catch(() => ({ error: 'Erro desconhecido' }));
-        throw new Error(errData.error || 'Falha ao criar movimentação');
+        throw new Error();
       }
       const { movimentacao, produto } = await res.json();
       setMovs((prev) => [movimentacao, ...prev]);
@@ -344,7 +343,7 @@ export default function App() {
         prev.map((p) => (p.id === produto.id ? produto : p)),
       );
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
     }
   }
 
@@ -372,26 +371,21 @@ export default function App() {
         ordemCompra: dados.ordemCompra || undefined,
         dataCompetencia: dados.dataCompetencia,
       };
-      console.log('[LOTE] Enviando payload:', JSON.stringify(payload));
-
       const response = await fetch(`${API_URL}/movimentacoes/lote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
-      const responseData = await response.json().catch(() => ({ error: 'Erro ao ler resposta' }));
-      console.log('[LOTE] Status:', response.status, 'Response:', JSON.stringify(responseData));
+      const responseData = await response.json().catch(() => ({}));
 
       if (response.ok) {
         const [mRes, pRes] = await Promise.all([
           fetch(`${API_URL}/movimentacoes`),
           fetch(`${API_URL}/produtos`),
         ]);
-        console.log('[LOTE] Refetch movs status:', mRes.status, 'produtos status:', pRes.status);
         if (mRes.ok) {
           const movsData = await mRes.json();
-          console.log('[LOTE] Movimentações carregadas:', movsData.length);
           setMovs(movsData);
         }
         if (pRes.ok) setAllProdutos(await pRes.json());
@@ -399,10 +393,10 @@ export default function App() {
         setView('estoque');
         scrollTop();
       } else {
-        toast.error(`Falha ao registrar: ${responseData.error}`);
+        toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
       }
     } catch {
-      toast.error('Erro ao registrar entradas/saídas.');
+      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
     } finally {
       setLoading(false);
     }
@@ -427,7 +421,7 @@ export default function App() {
       const eRes = await fetch(`${API_URL}/entregas`);
       setEntregas((await eRes.json()).map(normalizeEntrega));
     } catch {
-      toast.error('Não foi possível atualizar a movimentação.');
+      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
     }
   }
 
@@ -443,7 +437,7 @@ export default function App() {
       const eRes = await fetch(`${API_URL}/entregas`);
       setEntregas((await eRes.json()).map(normalizeEntrega));
     } catch {
-      toast.error('Não foi possível excluir a movimentação.');
+      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
     }
   }
 
@@ -457,10 +451,7 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-      if (!res.ok) {
-        const e = await res.json();
-        throw new Error(e.error || 'Falha ao atualizar');
-      }
+      if (!res.ok) throw new Error();
       const [eRes, pRes, mRes] = await Promise.all([
         fetch(`${API_URL}/entregas`),
         fetch(`${API_URL}/produtos?_limit=10000`),
@@ -472,7 +463,7 @@ export default function App() {
       setEditingEntrega(null);
       toast.success('Entrega atualizada com sucesso!');
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
     } finally {
       setLoading(false);
     }
@@ -485,7 +476,7 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error((await res.json()).error);
+      if (!res.ok) throw new Error();
       const [eRes, pRes, mRes] = await Promise.all([
         fetch(`${API_URL}/entregas`),
         fetch(`${API_URL}/produtos?_limit=10000`),
@@ -496,7 +487,7 @@ export default function App() {
       setMovs(await mRes.json());
       toast.success('Agendamento criado com sucesso!');
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
     }
   }
 
@@ -539,10 +530,7 @@ export default function App() {
   async function confirmDeleteEntrega(id: string) {
     try {
       const res = await fetch(`${API_URL}/entregas/${id}`, { method: 'DELETE' });
-      if (!res.ok) {
-        const d = await res.json();
-        throw new Error(d.error || 'Erro ao excluir');
-      }
+      if (!res.ok) throw new Error();
       const [eRes, pRes, mRes] = await Promise.all([
         fetch(`${API_URL}/entregas`),
         fetch(`${API_URL}/produtos?_limit=10000`),
@@ -554,7 +542,7 @@ export default function App() {
       setEntregaToDeleteId(null);
       toast.success('Entrega excluída com sucesso.');
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
     }
   }
 
@@ -570,7 +558,7 @@ export default function App() {
       );
       toast.success(`Status atualizado para ${status}.`);
     } catch {
-      toast.error('Erro ao atualizar status.');
+      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
     }
   }
 
@@ -594,7 +582,7 @@ export default function App() {
       setShowBulkConfirmModal(false);
       toast.success(`Entregas marcadas como ${bulkTargetStatus}.`);
     } catch {
-      toast.error('Erro ao atualizar status em massa.');
+      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
     } finally {
       setLoading(false);
     }
@@ -859,7 +847,7 @@ export default function App() {
       const eRes = await fetch(`${API_URL}/entregas`);
       setEntregas((await eRes.json()).map(normalizeEntrega));
     } catch {
-      toast.error('Erro ao reprogramar.');
+      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
     }
   };
 
