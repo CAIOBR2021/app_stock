@@ -311,7 +311,7 @@ export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps
 
       setItensExtraidos(extraidos);
     } catch (err: any) {
-      setError('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
+      setError('Não conseguimos processar o documento. Tente novamente em instantes.');
     } finally {
       setLoading(false);
     }

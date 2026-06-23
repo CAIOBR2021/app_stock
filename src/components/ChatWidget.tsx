@@ -95,7 +95,7 @@ export function ChatWidget() {
       if (!res.ok) throw new Error();
       setMessages(prev => [...prev, { id: nextId.current++, role: 'assistant', text: data.resposta, timestamp: new Date() }]);
     } catch (err: any) {
-      setMessages(prev => [...prev, { id: nextId.current++, role: 'assistant', text: 'Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.', timestamp: new Date() }]);
+      setMessages(prev => [...prev, { id: nextId.current++, role: 'assistant', text: 'Não consegui processar sua mensagem agora. Tente novamente ou pergunte sobre produtos, estoque e movimentações.', timestamp: new Date() }]);
     } finally {
       setLoading(false);
     }

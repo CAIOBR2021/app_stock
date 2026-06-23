@@ -131,7 +131,7 @@ export function ValorTotalEstoque({ allProdutos }: { allProdutos: Produto[] }) {
       setValorTotal((await res.json()).valorTotal);
       setIsVisible(true);
       setShowPasswordModal(false);
-    } catch (err: any) { setError(err.message === 'Senha incorreta.' ? err.message : 'Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.'); }
+    } catch (err: any) { setError(err.message === 'Senha incorreta.' ? err.message : 'Não conseguimos exibir o valor total. Tente novamente em instantes.'); }
     finally { setLoading(false); }
   };
 
@@ -565,7 +565,7 @@ export function Relatorios({ produtos, categoriaSelecionada }: { produtos: Produ
         alternateRowStyles: { fillColor: [247, 248, 250] },
       });
       doc.save(`reposicao-${Date.now()}.pdf`);
-    } catch { alert('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.'); }
+    } catch { alert('Não conseguimos gerar o relatório. Tente novamente em instantes.'); }
     finally { setLoading(false); }
   };
 

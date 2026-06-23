@@ -226,8 +226,8 @@ export default function App() {
         setAllProdutos(await allProdsRes.json());
         setMovs(await movsRes.json());
         setEntregas((await entregasRes.json()).map(normalizeEntrega));
-      } catch (err: any) {
-        setError('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
+      } catch {
+        setError('Tivemos um problema ao carregar seus dados. Tente atualizar a página.');
       } finally {
         setLoadingAll(false);
       }
@@ -259,7 +259,7 @@ export default function App() {
         if (mRes.ok) setMovs(await mRes.json());
       }
     } catch {
-      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
+      toast.error('Não conseguimos cadastrar o produto. Tente novamente em instantes.');
     }
   }
 
@@ -277,7 +277,7 @@ export default function App() {
       const updated = await res.json();
       setAllProdutos((prev) => prev.map((x) => (x.id === id ? updated : x)));
     } catch {
-      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
+      toast.error('Não conseguimos salvar as alterações do produto. Tente novamente em instantes.');
     }
   }
 
@@ -287,7 +287,7 @@ export default function App() {
       setAllProdutos((prev) => prev.filter((p) => p.id !== id));
       setMovs((prev) => prev.filter((m) => m.produtoId !== id));
     } catch {
-      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
+      toast.error('Não conseguimos remover o produto. Tente novamente em instantes.');
     }
   }
 
@@ -309,7 +309,7 @@ export default function App() {
       });
       if (!res.ok) throw new Error();
     } catch {
-      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
+      toast.error('Não conseguimos salvar a alteração. Tente novamente em instantes.');
       setAllProdutos((prev) =>
         prev.map((p) =>
           p.id === id ? { ...p, prioritario: produto.prioritario } : p,
@@ -342,8 +342,8 @@ export default function App() {
       setAllProdutos((prev) =>
         prev.map((p) => (p.id === produto.id ? produto : p)),
       );
-    } catch (err: any) {
-      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
+    } catch {
+      toast.error('Não conseguimos registrar a movimentação. Tente novamente em instantes.');
     }
   }
 
@@ -393,10 +393,10 @@ export default function App() {
         setView('estoque');
         scrollTop();
       } else {
-        toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
+        toast.error('Não conseguimos registrar as movimentações. Tente novamente em instantes.');
       }
     } catch {
-      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
+      toast.error('Não conseguimos registrar as movimentações. Tente novamente em instantes.');
     } finally {
       setLoading(false);
     }
@@ -421,7 +421,7 @@ export default function App() {
       const eRes = await fetch(`${API_URL}/entregas`);
       setEntregas((await eRes.json()).map(normalizeEntrega));
     } catch {
-      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
+      toast.error('Não conseguimos salvar a alteração da movimentação. Tente novamente em instantes.');
     }
   }
 
@@ -437,7 +437,7 @@ export default function App() {
       const eRes = await fetch(`${API_URL}/entregas`);
       setEntregas((await eRes.json()).map(normalizeEntrega));
     } catch {
-      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
+      toast.error('Não conseguimos remover a movimentação. Tente novamente em instantes.');
     }
   }
 
@@ -462,8 +462,8 @@ export default function App() {
       setMovs(await mRes.json());
       setEditingEntrega(null);
       toast.success('Entrega atualizada com sucesso!');
-    } catch (err: any) {
-      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
+    } catch {
+      toast.error('Não conseguimos atualizar a entrega. Tente novamente em instantes.');
     } finally {
       setLoading(false);
     }
@@ -486,8 +486,8 @@ export default function App() {
       setAllProdutos(await pRes.json());
       setMovs(await mRes.json());
       toast.success('Agendamento criado com sucesso!');
-    } catch (err: any) {
-      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
+    } catch {
+      toast.error('Não conseguimos criar o agendamento. Tente novamente em instantes.');
     }
   }
 
@@ -541,8 +541,8 @@ export default function App() {
       setMovs(await mRes.json());
       setEntregaToDeleteId(null);
       toast.success('Entrega excluída com sucesso.');
-    } catch (err: any) {
-      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
+    } catch {
+      toast.error('Não conseguimos remover a entrega. Tente novamente em instantes.');
     }
   }
 
@@ -558,7 +558,7 @@ export default function App() {
       );
       toast.success(`Status atualizado para ${status}.`);
     } catch {
-      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
+      toast.error('Não conseguimos atualizar o status. Tente novamente em instantes.');
     }
   }
 
@@ -582,7 +582,7 @@ export default function App() {
       setShowBulkConfirmModal(false);
       toast.success(`Entregas marcadas como ${bulkTargetStatus}.`);
     } catch {
-      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
+      toast.error('Não conseguimos atualizar as entregas. Tente novamente em instantes.');
     } finally {
       setLoading(false);
     }
@@ -847,7 +847,7 @@ export default function App() {
       const eRes = await fetch(`${API_URL}/entregas`);
       setEntregas((await eRes.json()).map(normalizeEntrega));
     } catch {
-      toast.error('Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
+      toast.error('Não conseguimos reprogramar as entregas. Tente novamente em instantes.');
     }
   };
 

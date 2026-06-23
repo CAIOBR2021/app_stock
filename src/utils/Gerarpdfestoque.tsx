@@ -142,7 +142,7 @@ export function gerarPdfEstoque(
     const JsPDF = resolveJsPDF();
     doc = new JsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
   } catch (err: any) {
-    return { ok: false, mensagem: 'Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.' };
+    return { ok: false, mensagem: 'Não conseguimos gerar o relatório. Tente novamente em instantes.' };
   }
 
   const pageW: number = doc.internal.pageSize.getWidth();

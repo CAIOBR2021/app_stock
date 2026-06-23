@@ -64,7 +64,7 @@ export default function App() {
         setMovs(movsData);
       } catch {
         setError(
-          'Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.',
+          'Tivemos um problema ao carregar seus dados. Tente atualizar a página.',
         );
       } finally {
         setLoading(false);

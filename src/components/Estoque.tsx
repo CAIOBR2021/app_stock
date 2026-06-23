@@ -324,7 +324,7 @@ export function ValorTotalEstoque({ allProdutos }: { allProdutos: Produto[] }) {
       setIsVisible(true);
       setShowPasswordModal(false);
     } catch (err: any) {
-      setError(err.message === 'Senha incorreta.' ? err.message : 'Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.');
+      setError(err.message === 'Senha incorreta.' ? err.message : 'Não conseguimos exibir o valor total. Tente novamente em instantes.');
     } finally {
       setLoading(false);
     }
@@ -415,7 +415,7 @@ export function Relatorios({ produtos }: { produtos: Produto[] }) {
       setModalInfo({
         show: true,
         title: 'Erro',
-        message: 'Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.',
+        message: 'Não conseguimos gerar o relatório. Tente novamente em instantes.',
         type: 'error',
       });
     } finally {
