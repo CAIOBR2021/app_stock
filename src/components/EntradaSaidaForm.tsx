@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import Select from 'react-select';
 import type { StylesConfig } from 'react-select';
 import type { Produto } from '../types';
@@ -119,6 +119,17 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
   const [busca,           setBusca]           = useState('');
   const [categoriaOption, setCategoriaOption] = useState<any>(null);
   const [dataCompetencia, setDataCompetencia] = useState(hojeISO());
+  const pendingFocusRef = useRef<string | null>(null);
+
+  const quantidadeInputRef = useCallback((node: HTMLInputElement | null) => {
+    if (node && pendingFocusRef.current && node.dataset.produtoId === pendingFocusRef.current) {
+      pendingFocusRef.current = null;
+      requestAnimationFrame(() => {
+        node.focus();
+        node.select();
+      });
+    }
+  }, []);
 
   const hoje         = hojeISO();
   const isRetroativa = dataCompetencia < hoje;
@@ -169,8 +180,13 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
   const handleToggleProduto = (p: Produto) => {
     setSelecionados(prev => {
       const novo = { ...prev };
-      if (novo[p.id]) { delete novo[p.id]; }
-      else { novo[p.id] = { quantidade: tipo === 'ajuste' ? p.quantidade : 1, valorUnitario: p.valorUnitario || 0 }; }
+      if (novo[p.id]) {
+        delete novo[p.id];
+        pendingFocusRef.current = null;
+      } else {
+        novo[p.id] = { quantidade: tipo === 'ajuste' ? p.quantidade : 1, valorUnitario: p.valorUnitario || 0 };
+        pendingFocusRef.current = p.id;
+      }
       return novo;
     });
   };
@@ -426,6 +442,21 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
                   background: currentConfig.dot, display: 'inline-block',
                 }} />
                 {totalSelecionados} selecionado{totalSelecionados > 1 ? 's' : ''}
+                <button
+                  type="button"
+                  onClick={() => setSelecionados({})}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    fontSize: '12px', fontWeight: 500, color: 'var(--text-3)',
+                    textDecoration: 'underline', padding: '0 0 0 4px',
+                    fontFamily: 'DM Sans, sans-serif',
+                    transition: 'color 150ms ease',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.color = currentConfig.color)}
+                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-3)')}
+                >
+                  Limpar seleção
+                </button>
               </span>
             )}
           </div>
@@ -554,12 +585,15 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
                           </span>
                         )}
                         <input
+                          ref={quantidadeInputRef}
+                          data-produto-id={p.id}
                           type="number"
                           min={tipo === 'saida' ? 1 : 0}
                           max={tipo === 'saida' ? p.quantidade : undefined}
                           step={isUnidadeInteira(p.unidade) ? 1 : 0.01}
                           value={selecionado.quantidade}
                           onChange={e => handleChangeQuantidade(p.id, Number(e.target.value))}
+                          onFocus={e => e.target.select()}
                           style={{
                             height: '36px', border: 'none', padding: '0 10px', fontSize: '13px',
                             color: 'var(--text-1)', background: 'transparent', outline: 'none',
