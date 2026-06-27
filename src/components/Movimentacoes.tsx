@@ -572,6 +572,7 @@ export function ConsultaMovimentacoes({
               <th>Quantidade</th>
               <th className="d-none d-md-table-cell">Obra / OC</th>
               <th className="d-none d-md-table-cell">Motivo</th>
+              <th className="d-none d-lg-table-cell">Operador</th>
               <th style={{ textAlign: 'right' }}>Ações</th>
             </tr>
           </thead>
@@ -611,6 +612,9 @@ export function ConsultaMovimentacoes({
                 <td className="d-none d-md-table-cell" style={{ color: 'var(--text-2)', fontSize: '13px' }}>
                   {m.motivo ?? <span style={{ color: 'var(--text-3)' }}>—</span>}
                 </td>
+                <td className="d-none d-lg-table-cell" style={{ color: 'var(--text-2)', fontSize: '13px' }}>
+                  {m.operadorNome ?? <span style={{ color: 'var(--text-3)' }}>—</span>}
+                </td>
                 <td>
                   <div className="d-flex justify-content-end gap-1">
                     <button
@@ -636,7 +640,7 @@ export function ConsultaMovimentacoes({
             ))}
             {filteredMovs.length === 0 && (
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: '48px 16px', color: 'var(--text-3)', fontSize: '13.5px' }}>
+                <td colSpan={8} style={{ textAlign: 'center', padding: '48px 16px', color: 'var(--text-3)', fontSize: '13.5px' }}>
                   Nenhuma movimentação encontrada para os filtros selecionados.
                 </td>
               </tr>
