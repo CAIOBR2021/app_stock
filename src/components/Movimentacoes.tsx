@@ -266,27 +266,32 @@ export function MovsList({ movs, produtos }: { movs: Movimentacao[]; produtos: P
             <span style={{ color: 'var(--text-2)', fontSize: '13.5px' }}>
               {' '}— {getProdutoNome(m.produtoId)}
             </span>
-            {(m.motivo || m.operadorNome) && (
-              <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px', marginTop: '2px' }}>
-                {m.motivo && (
-                  <small style={{ color: 'var(--text-3)', fontSize: '12px' }}>{m.motivo}</small>
-                )}
-                {m.motivo && m.operadorNome && (
-                  <span style={{ color: 'var(--border)', fontSize: '11px', lineHeight: 1 }}>•</span>
-                )}
-                {m.operadorNome && (
-                  <small style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', color: 'var(--text-3)', fontSize: '11.5px' }}>
-                    <IconUser /> {m.operadorNome}
-                  </small>
-                )}
-              </div>
+            {m.motivo && (
+              <small style={{ display: 'block', color: 'var(--text-3)', fontSize: '12px', marginTop: '2px' }}>
+                {m.motivo}
+              </small>
             )}
           </div>
-          <small style={{ color: 'var(--text-3)', fontSize: '12px', whiteSpace: 'nowrap', flexShrink: 0 }}>
-            {m.dataCompetencia
-              ? new Date(String(m.dataCompetencia).split('T')[0] + 'T12:00:00').toLocaleDateString('pt-BR')
-              : new Date(m.criadoEm).toLocaleDateString('pt-BR')}
-          </small>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px', flexShrink: 0 }}>
+            <small style={{ color: 'var(--text-3)', fontSize: '12px', whiteSpace: 'nowrap' }}>
+              {m.dataCompetencia
+                ? new Date(String(m.dataCompetencia).split('T')[0] + 'T12:00:00').toLocaleDateString('pt-BR')
+                : new Date(m.criadoEm).toLocaleDateString('pt-BR')}
+            </small>
+            {m.operadorNome && (
+              <small
+                title={m.operadorNome}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '3px',
+                  color: 'var(--text-3)', fontSize: '11.5px', whiteSpace: 'nowrap',
+                  maxWidth: '160px',
+                }}
+              >
+                <IconUser />
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.operadorNome}</span>
+              </small>
+            )}
+          </div>
         </li>
       ))}
     </ul>
