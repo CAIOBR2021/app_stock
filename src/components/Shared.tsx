@@ -331,7 +331,7 @@ export function IdentificacaoModal({
       setVerificando(true);
       setSenhaErro('');
       try {
-        const res = await fetch(`${API_URL}/api/auth/verify-password`, {
+        const res = await fetch(`${API_URL}/auth/verify-password`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ password: senha }),
