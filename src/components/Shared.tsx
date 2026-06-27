@@ -255,7 +255,7 @@ const darkSelectStyles = {
   }),
   valueContainer: (base: any) => ({ ...base, padding: '0 14px' }),
   placeholder: (base: any) => ({ ...base, color: 'rgba(255,255,255,.38)', fontSize: '15px' }),
-  singleValue: (_: any) => ({ color: '#fff', fontSize: '15px', fontFamily: 'DM Sans, sans-serif' }),
+  singleValue: (base: any) => ({ ...base, color: '#fff', fontSize: '15px', fontFamily: 'DM Sans, sans-serif' }),
   input: (_: any) => ({ color: '#fff', margin: 0, padding: 0 }),
   indicatorSeparator: () => ({ display: 'none' }),
   dropdownIndicator: (_: any) => ({ color: 'rgba(255,255,255,.45)', padding: '0 12px', display: 'flex' }),
@@ -312,7 +312,7 @@ export function IdentificacaoModal({
   const [senha, setSenha] = useState('');
   const [senhaErro, setSenhaErro] = useState('');
   const [verificando, setVerificando] = useState(false);
-  const [senhaVerificada, setSenhaVerificada] = useState(initialPerfil === 'almoxarifado');
+  const [senhaVerificada, setSenhaVerificada] = useState(false);
   const [senhaFocused, setSenhaFocused] = useState(false);
 
   const precisaSenha = perfil === 'almoxarifado' && !senhaVerificada;
@@ -356,8 +356,8 @@ export function IdentificacaoModal({
     <div
       onClick={() => { if (onClose) onClose(); }} // clicar fora só fecha se não for obrigatório
       style={{
-        position: 'fixed', inset: 0, background: 'rgba(0,0,0,.78)',
-        backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        background: 'rgba(0,0,0,.85)',
         zIndex: 10000, display: 'flex', alignItems: 'center',
         justifyContent: 'center', padding: '16px',
       }}
@@ -470,7 +470,7 @@ export function IdentificacaoModal({
               setPerfil(novoPerf);
               setSenha('');
               setSenhaErro('');
-              setSenhaVerificada(novoPerf === 'almoxarifado' && initialPerfil === 'almoxarifado');
+              setSenhaVerificada(false);
             }}
             placeholder="Selecione o seu perfil"
             styles={darkSelectStyles}
