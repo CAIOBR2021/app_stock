@@ -1089,21 +1089,23 @@ export default function App() {
               title={nomeUsuario ? `${nomeUsuario} — alterar identificação` : 'Identificar-me'}
               style={{
                 display: 'flex', alignItems: 'center', gap: '8px',
-                background: 'transparent', border: 'none', padding: '4px',
-                cursor: 'pointer',
+                background: 'var(--surface-2)', border: '1px solid var(--border)',
+                borderRadius: '999px', padding: '4px 12px 4px 4px',
+                cursor: 'pointer', transition: 'border-color .15s',
               }}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--primary)')}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
             >
               <span style={{
                 width: '28px', height: '28px', borderRadius: '50%',
-                background: 'transparent', border: '1.5px solid var(--border)',
-                color: 'var(--primary)',
+                background: 'var(--primary-light)', color: 'var(--primary)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontWeight: 700, fontSize: '12px', flexShrink: 0,
               }}>
                 {(nomeUsuario.trim().charAt(0) || '?').toUpperCase()}
               </span>
               <span style={{
-                fontSize: '13px', fontWeight: 500, color: 'var(--text-2)',
+                fontSize: '13px', fontWeight: 600, color: 'var(--text-1)',
                 maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>
                 {nomeUsuario || 'Identificar-me'}
