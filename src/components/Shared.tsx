@@ -246,7 +246,7 @@ const darkSelectStyles = {
     transition: 'border-color .2s ease, box-shadow .2s ease',
   }),
   valueContainer: (base: any) => ({ ...base, padding: '0 14px' }),
-  placeholder: (_: any) => ({ color: 'rgba(255,255,255,.38)', fontSize: '15px' }),
+  placeholder: (base: any) => ({ ...base, color: 'rgba(255,255,255,.38)', fontSize: '15px' }),
   singleValue: (_: any) => ({ color: '#fff', fontSize: '15px', fontFamily: 'DM Sans, sans-serif' }),
   input: (_: any) => ({ color: '#fff', margin: 0, padding: 0 }),
   indicatorSeparator: () => ({ display: 'none' }),
@@ -316,8 +316,8 @@ export function IdentificacaoModal({
     <div
       onClick={() => { if (onClose) onClose(); }} // clicar fora só fecha se não for obrigatório
       style={{
-        position: 'fixed', inset: 0, background: 'rgba(15,17,23,.5)',
-        backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,.78)',
+        backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
         zIndex: 10000, display: 'flex', alignItems: 'center',
         justifyContent: 'center', padding: '16px',
       }}
