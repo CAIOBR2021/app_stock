@@ -226,41 +226,60 @@ const PERFIL_OPTIONS = [
   { value: 'seguranca', label: 'Segurança do Trabalho' },
 ];
 
+const DARK_BG = '#1A1A2E';
+const DARK_BORDER = 'rgba(255,255,255,.14)';
+
 const darkSelectStyles = {
-  control: (base: any, state: any) => ({
-    ...base,
+  control: (_: any, state: any) => ({
     backgroundColor: 'rgba(255,255,255,.06)',
-    borderColor: state.isFocused ? 'var(--primary)' : 'rgba(255,255,255,.14)',
+    borderColor: state.isFocused ? '#F5A623' : DARK_BORDER,
     borderWidth: '1.5px',
-    minHeight: '50px',
+    borderStyle: 'solid',
     borderRadius: '12px',
+    minHeight: '50px',
+    display: 'flex',
+    alignItems: 'center',
     boxShadow: state.isFocused ? '0 0 0 3px rgba(245,166,35,.15)' : 'none',
     fontFamily: 'DM Sans, sans-serif',
     fontSize: '15px',
-    '&:hover': { borderColor: state.isFocused ? 'var(--primary)' : 'rgba(255,255,255,.25)' },
-  }),
-  placeholder: (base: any) => ({ ...base, color: 'rgba(255,255,255,.4)' }),
-  singleValue: (base: any) => ({ ...base, color: '#fff' }),
-  input: (base: any) => ({ ...base, color: '#fff' }),
-  option: (base: any, state: any) => ({
-    ...base,
-    backgroundColor: state.isSelected ? 'var(--primary)' : state.isFocused ? 'rgba(255,255,255,.08)' : '#1A1A2E',
-    color: state.isSelected ? '#1A1A2E' : '#fff',
-    fontSize: '14px',
-    fontFamily: 'DM Sans, sans-serif',
     cursor: 'pointer',
+    transition: 'border-color .2s ease, box-shadow .2s ease',
   }),
-  menu: (base: any) => ({
-    ...base,
-    zIndex: 99999,
-    borderRadius: '10px',
-    background: '#1A1A2E',
+  valueContainer: (base: any) => ({ ...base, padding: '0 14px' }),
+  placeholder: (_: any) => ({ color: 'rgba(255,255,255,.38)', fontSize: '15px' }),
+  singleValue: (_: any) => ({ color: '#fff', fontSize: '15px', fontFamily: 'DM Sans, sans-serif' }),
+  input: (_: any) => ({ color: '#fff', margin: 0, padding: 0 }),
+  indicatorSeparator: () => ({ display: 'none' }),
+  dropdownIndicator: (_: any) => ({ color: 'rgba(255,255,255,.45)', padding: '0 12px', display: 'flex' }),
+  menu: (_: any) => ({
+    backgroundColor: DARK_BG,
+    borderRadius: '12px',
     border: '1px solid rgba(255,255,255,.12)',
-    boxShadow: '0 8px 24px rgba(0,0,0,.5)',
+    boxShadow: '0 12px 32px rgba(0,0,0,.6)',
+    overflow: 'hidden',
+    marginTop: '6px',
+  }),
+  menuList: (_: any) => ({
+    backgroundColor: DARK_BG,
+    padding: '4px',
+    borderRadius: '12px',
   }),
   menuPortal: (base: any) => ({ ...base, zIndex: 99999 }),
-  indicatorSeparator: () => ({ display: 'none' }),
-  dropdownIndicator: (base: any) => ({ ...base, color: 'rgba(255,255,255,.4)' }),
+  option: (_: any, state: any) => ({
+    backgroundColor: state.isSelected
+      ? '#F5A623'
+      : state.isFocused
+        ? 'rgba(245,166,35,.12)'
+        : 'transparent',
+    color: state.isSelected ? DARK_BG : '#fff',
+    fontSize: '14px',
+    fontFamily: 'DM Sans, sans-serif',
+    fontWeight: state.isSelected ? 700 : 400,
+    borderRadius: '8px',
+    padding: '10px 14px',
+    cursor: 'pointer',
+    transition: 'background-color .15s ease',
+  }),
 };
 
 /**
