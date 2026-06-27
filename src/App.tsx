@@ -183,16 +183,26 @@ export default function App() {
   const [nomeUsuario, setNomeUsuario] = useState<string>(
     () => safeLocalStorageGet<string>('nomeOperador', '')
   );
+  const [perfilUsuario, setPerfilUsuario] = useState<string>(
+    () => safeLocalStorageGet<string>('perfilOperador', '')
+  );
   const [showIdentModal, setShowIdentModal] = useState<boolean>(
-    () => !safeLocalStorageGet<string>('nomeOperador', '')
+    () => !safeLocalStorageGet<string>('nomeOperador', '') || !safeLocalStorageGet<string>('perfilOperador', '')
   );
   const [showEditarNome, setShowEditarNome] = useState(false);
-  const salvarNomeOperador = useCallback((nome: string) => {
+  const salvarNomeOperador = useCallback((nome: string, perfil: string) => {
     setNomeUsuario(nome);
+    setPerfilUsuario(perfil);
     safeLocalStorageSet('nomeOperador', nome);
+    safeLocalStorageSet('perfilOperador', perfil);
     setShowIdentModal(false);
     setShowEditarNome(false);
   }, []);
+
+  const canEditarProduto = useCallback((produto: { categoria?: string | null }) => {
+    if (perfilUsuario === 'seguranca') return produto.categoria === 'EPI';
+    return true; // almoxarifado ou sem perfil → acesso total
+  }, [perfilUsuario]);
 
   const [selectedEntregaIds, setSelectedEntregaIds] = useState<string[]>([]);
   const [showReprogramModal, setShowReprogramModal] = useState(false);
@@ -1191,6 +1201,7 @@ export default function App() {
                 sortOrder={sortOrder}
                 onToggleSort={handleToggleSort}
                 allProdutos={allProdutos}
+                canEdit={canEditarProduto}
               />
             )}
 
@@ -1456,12 +1467,17 @@ export default function App() {
       )}
 
       {showIdentModal && (
-        <IdentificacaoModal onConfirm={salvarNomeOperador} />
+        <IdentificacaoModal
+          initialValue={nomeUsuario}
+          initialPerfil={perfilUsuario}
+          onConfirm={salvarNomeOperador}
+        />
       )}
 
       {showEditarNome && (
         <IdentificacaoModal
           initialValue={nomeUsuario}
+          initialPerfil={perfilUsuario}
           onConfirm={salvarNomeOperador}
           onClose={() => setShowEditarNome(false)}
         />

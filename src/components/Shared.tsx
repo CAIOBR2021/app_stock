@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
+import Select from 'react-select';
 
 // ── SVG ICONS ─────────────────────────────────────────────────────────────────
 
@@ -220,6 +221,48 @@ const IconUserField = () => (
   </svg>
 );
 
+const PERFIL_OPTIONS = [
+  { value: 'almoxarifado', label: 'Almoxarifado' },
+  { value: 'seguranca', label: 'Segurança do Trabalho' },
+];
+
+const darkSelectStyles = {
+  control: (base: any, state: any) => ({
+    ...base,
+    backgroundColor: 'rgba(255,255,255,.06)',
+    borderColor: state.isFocused ? 'var(--primary)' : 'rgba(255,255,255,.14)',
+    borderWidth: '1.5px',
+    minHeight: '50px',
+    borderRadius: '12px',
+    boxShadow: state.isFocused ? '0 0 0 3px rgba(245,166,35,.15)' : 'none',
+    fontFamily: 'DM Sans, sans-serif',
+    fontSize: '15px',
+    '&:hover': { borderColor: state.isFocused ? 'var(--primary)' : 'rgba(255,255,255,.25)' },
+  }),
+  placeholder: (base: any) => ({ ...base, color: 'rgba(255,255,255,.4)' }),
+  singleValue: (base: any) => ({ ...base, color: '#fff' }),
+  input: (base: any) => ({ ...base, color: '#fff' }),
+  option: (base: any, state: any) => ({
+    ...base,
+    backgroundColor: state.isSelected ? 'var(--primary)' : state.isFocused ? 'rgba(255,255,255,.08)' : '#1A1A2E',
+    color: state.isSelected ? '#1A1A2E' : '#fff',
+    fontSize: '14px',
+    fontFamily: 'DM Sans, sans-serif',
+    cursor: 'pointer',
+  }),
+  menu: (base: any) => ({
+    ...base,
+    zIndex: 99999,
+    borderRadius: '10px',
+    background: '#1A1A2E',
+    border: '1px solid rgba(255,255,255,.12)',
+    boxShadow: '0 8px 24px rgba(0,0,0,.5)',
+  }),
+  menuPortal: (base: any) => ({ ...base, zIndex: 99999 }),
+  indicatorSeparator: () => ({ display: 'none' }),
+  dropdownIndicator: (base: any) => ({ ...base, color: 'rgba(255,255,255,.4)' }),
+};
+
 /**
  * Modal para identificar o operador que regista as movimentações.
  * - Sem `onClose` → modo obrigatório (não fecha por ESC nem por clique fora; sem botão Cancelar).
@@ -228,15 +271,18 @@ const IconUserField = () => (
 export function IdentificacaoModal({
   onConfirm,
   initialValue = '',
+  initialPerfil = '',
   onClose,
 }: {
-  onConfirm: (nome: string) => void;
+  onConfirm: (nome: string, perfil: string) => void;
   initialValue?: string;
+  initialPerfil?: string;
   onClose?: () => void;
 }) {
   const [nome, setNome] = useState(initialValue);
+  const [perfil, setPerfil] = useState(initialPerfil);
   const [focused, setFocused] = useState(false);
-  const valido = nome.trim().length >= 2;
+  const valido = nome.trim().length >= 2 && perfil !== '';
 
   // ESC só fecha quando NÃO é obrigatório
   useEffect(() => {
@@ -245,7 +291,7 @@ export function IdentificacaoModal({
     return () => window.removeEventListener('keydown', onEsc);
   }, [onClose]);
 
-  const submit = () => { if (valido) onConfirm(nome.trim()); };
+  const submit = () => { if (valido) onConfirm(nome.trim(), perfil); };
 
   return ReactDOM.createPortal(
     <div
@@ -349,6 +395,23 @@ export function IdentificacaoModal({
               onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); submit(); } }}
             />
           </div>
+
+          {/* Select de perfil */}
+          <label style={{
+            display: 'block', fontSize: '10.5px', fontWeight: 700, letterSpacing: '.6px',
+            textTransform: 'uppercase', color: 'rgba(255,255,255,.45)', marginBottom: '8px', marginTop: '16px',
+          }}>
+            Perfil de acesso
+          </label>
+          <Select
+            options={PERFIL_OPTIONS}
+            value={PERFIL_OPTIONS.find(o => o.value === perfil) || null}
+            onChange={(opt: any) => setPerfil(opt?.value ?? '')}
+            placeholder="Selecione o seu perfil"
+            styles={darkSelectStyles}
+            menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
+            isSearchable={false}
+          />
 
           {/* Ações */}
           {onClose ? (

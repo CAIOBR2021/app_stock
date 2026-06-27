@@ -1012,12 +1012,14 @@ export function ProdutoCard({
   onEditar,
   onExcluir,
   onTogglePrioritario,
+  bloqueado = false,
 }: {
   produto: Produto;
   onMovimentar: () => void;
   onEditar: () => void;
   onExcluir: () => void;
   onTogglePrioritario: () => void;
+  bloqueado?: boolean;
 }) {
   const isBelowMin =
     produto.estoqueMinimo != null &&
@@ -1079,16 +1081,28 @@ export function ProdutoCard({
           <button
             className="btn btn-sm btn-movimentar flex-fill"
             onClick={onMovimentar}
+            disabled={bloqueado}
+            title={bloqueado ? 'Sem permissão — apenas itens EPI' : undefined}
+            style={bloqueado ? { opacity: 0.3, cursor: 'not-allowed' } : undefined}
           >
             <IconMove /> Mover
           </button>
           <button
             className="btn btn-sm btn-editar  flex-fill"
             onClick={onEditar}
+            disabled={bloqueado}
+            title={bloqueado ? 'Sem permissão — apenas itens EPI' : undefined}
+            style={bloqueado ? { opacity: 0.3, cursor: 'not-allowed' } : undefined}
           >
             <IconEdit /> Editar
           </button>
-          <button className="btn btn-sm btn-excluir" onClick={onExcluir}>
+          <button
+            className="btn btn-sm btn-excluir"
+            onClick={onExcluir}
+            disabled={bloqueado}
+            title={bloqueado ? 'Sem permissão — apenas itens EPI' : undefined}
+            style={bloqueado ? { opacity: 0.3, cursor: 'not-allowed' } : undefined}
+          >
             <IconTrash />
           </button>
         </div>
@@ -1249,6 +1263,7 @@ export function ProdutosTable({
   sortOrder,
   onToggleSort,
   allProdutos = [],
+  canEdit,
 }: {
   produtos: Produto[];
   onEdit: (id: UUID, patch: Partial<Produto>) => void;
@@ -1260,6 +1275,7 @@ export function ProdutosTable({
   sortOrder?: 'asc' | 'desc' | null;
   onToggleSort?: () => void;
   allProdutos?: Produto[];
+  canEdit?: (produto: Produto) => boolean;
 }) {
   const [editingId, setEditingId] = useState<UUID | null>(null);
   const [movProdId, setMovProdId] = useState<UUID | null>(null);
@@ -1433,32 +1449,44 @@ export function ProdutosTable({
                       {p.localArmazenamento ?? '—'}
                     </td>
                     <td>
-                      <div className="action-group d-flex justify-content-end gap-1">
-                        <button
-                          type="button"
-                          className="act-btn"
-                          onClick={() => setMovProdId(p.id)}
-                          title="Movimentar"
-                        >
-                          <IconMove />
-                        </button>
-                        <button
-                          type="button"
-                          className="act-btn"
-                          onClick={() => setEditingId(p.id)}
-                          title="Editar"
-                        >
-                          <IconEdit />
-                        </button>
-                        <button
-                          type="button"
-                          className="act-btn del"
-                          onClick={() => setDeleteId(p.id)}
-                          title="Excluir"
-                        >
-                          <IconTrash />
-                        </button>
-                      </div>
+                      {(() => {
+                        const permitido = !canEdit || canEdit(p);
+                        const bloqueioTitle = 'Sem permissão — apenas itens EPI';
+                        return (
+                          <div className="action-group d-flex justify-content-end gap-1">
+                            <button
+                              type="button"
+                              className="act-btn"
+                              onClick={() => permitido && setMovProdId(p.id)}
+                              title={permitido ? 'Movimentar' : bloqueioTitle}
+                              disabled={!permitido}
+                              style={!permitido ? { opacity: 0.3, cursor: 'not-allowed' } : undefined}
+                            >
+                              <IconMove />
+                            </button>
+                            <button
+                              type="button"
+                              className="act-btn"
+                              onClick={() => permitido && setEditingId(p.id)}
+                              title={permitido ? 'Editar' : bloqueioTitle}
+                              disabled={!permitido}
+                              style={!permitido ? { opacity: 0.3, cursor: 'not-allowed' } : undefined}
+                            >
+                              <IconEdit />
+                            </button>
+                            <button
+                              type="button"
+                              className="act-btn del"
+                              onClick={() => permitido && setDeleteId(p.id)}
+                              title={permitido ? 'Excluir' : bloqueioTitle}
+                              disabled={!permitido}
+                              style={!permitido ? { opacity: 0.3, cursor: 'not-allowed' } : undefined}
+                            >
+                              <IconTrash />
+                            </button>
+                          </div>
+                        );
+                      })()}
                     </td>
                   </tr>
                 );
@@ -1496,19 +1524,22 @@ export function ProdutosTable({
 
       <div className="d-lg-none">
         <div className="row g-3">
-          {produtos.map((p) => (
+          {produtos.map((p) => {
+            const permitido = !canEdit || canEdit(p);
+            return (
             <div key={p.id} className="col-12 col-md-6">
               <ProdutoCard
                 produto={p}
-                onMovimentar={() => setMovProdId(p.id)}
-                onEditar={() => setEditingId(p.id)}
-                onExcluir={() => setDeleteId(p.id)}
+                onMovimentar={() => permitido && setMovProdId(p.id)}
+                onEditar={() => permitido && setEditingId(p.id)}
+                onExcluir={() => permitido && setDeleteId(p.id)}
                 onTogglePrioritario={() =>
                   onTogglePrioritario(p.id, !!p.prioritario)
                 }
+                bloqueado={!permitido}
               />
             </div>
-          ))}
+          ); })}
           {produtos.length === 0 && (
             <div
               className="col-12 text-center py-5"
