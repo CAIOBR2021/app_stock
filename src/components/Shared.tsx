@@ -211,6 +211,122 @@ export function PasswordEntryModal({
   );
 }
 
+// ── MODAL DE IDENTIFICAÇÃO DO OPERADOR ────────────────────────────────────────
+
+const IconUserCircle = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" width="28" height="28">
+    <circle cx="12" cy="8" r="4" />
+    <path d="M4 21v-1a7 7 0 0 1 14 0v1" />
+  </svg>
+);
+
+/**
+ * Modal para identificar o operador que regista as movimentações.
+ * - Sem `onClose` → modo obrigatório (não fecha por ESC nem por clique fora; sem botão Cancelar).
+ * - Com `onClose` → modo "alterar nome" (permite cancelar).
+ */
+export function IdentificacaoModal({
+  onConfirm,
+  initialValue = '',
+  onClose,
+}: {
+  onConfirm: (nome: string) => void;
+  initialValue?: string;
+  onClose?: () => void;
+}) {
+  const [nome, setNome] = useState(initialValue);
+  const valido = nome.trim().length >= 2;
+
+  // ESC só fecha quando NÃO é obrigatório
+  useEffect(() => {
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape' && onClose) onClose(); };
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, [onClose]);
+
+  const submit = () => { if (valido) onConfirm(nome.trim()); };
+
+  return ReactDOM.createPortal(
+    <div
+      onClick={() => { if (onClose) onClose(); }} // clicar fora só fecha se não for obrigatório
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(15,17,23,.55)',
+        zIndex: 10000, display: 'flex', alignItems: 'center',
+        justifyContent: 'center', padding: '16px',
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        role="dialog" aria-modal="true" aria-labelledby="ident-title"
+        style={{
+          background: '#fff', borderRadius: '16px',
+          boxShadow: '0 20px 48px rgba(0,0,0,.18)',
+          width: '100%', maxWidth: '420px',
+          padding: '28px 28px 24px', position: 'relative',
+          animation: 'fadeUp .25s ease both',
+        }}
+      >
+        {/* Ícone */}
+        <div style={{
+          width: '56px', height: '56px', borderRadius: '50%',
+          background: 'var(--primary-light)', color: 'var(--primary-dark)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '0 auto 16px',
+        }}>
+          <IconUserCircle />
+        </div>
+
+        {/* Título + mensagem */}
+        <h5 id="ident-title" style={{ fontSize: '18px', fontWeight: 700, color: '#0F1117', textAlign: 'center', margin: '0 0 6px' }}>
+          Identificação
+        </h5>
+        <p style={{ fontSize: '13.5px', color: 'var(--text-2)', textAlign: 'center', lineHeight: 1.5, margin: '0 0 20px' }}>
+          Qual é o seu nome? Ele ficará registado nas movimentações que fizer.
+        </p>
+
+        {/* Campo */}
+        <label className="form-label" htmlFor="ident-input" style={{ fontSize: '12.5px' }}>Nome</label>
+        <input
+          id="ident-input"
+          className="form-control"
+          style={{ height: '46px', borderRadius: '10px', fontSize: '15px' }}
+          placeholder="Ex: João Silva"
+          value={nome}
+          autoFocus
+          maxLength={60}
+          onChange={e => setNome(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); submit(); } }}
+        />
+        <small style={{ display: 'block', fontSize: '11.5px', color: 'var(--text-3)', marginTop: '6px' }}>
+          Fica guardado neste dispositivo — só precisa de escrever uma vez.
+        </small>
+
+        {/* Ações */}
+        <div style={{ display: 'flex', justifyContent: onClose ? 'space-between' : 'flex-end', gap: '8px', marginTop: '22px' }}>
+          {onClose && (
+            <button
+              type="button" className="btn btn-ghost"
+              style={{ borderRadius: '999px', padding: '0 20px', height: '40px' }}
+              onClick={onClose}
+            >
+              Cancelar
+            </button>
+          )}
+          <button
+            type="button" className="btn btn-primary"
+            style={{ borderRadius: '999px', padding: '0 28px', height: '40px', fontWeight: 700, opacity: valido ? 1 : .5 }}
+            disabled={!valido}
+            onClick={submit}
+          >
+            Confirmar
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 // ── PAGINAÇÃO ─────────────────────────────────────────────────────────────────
 
 export function Paginacao({

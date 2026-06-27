@@ -12,7 +12,8 @@ import type { Produto, Movimentacao, Entrega } from './types';
 import { API_URL, PING_URL, ITEMS_PER_PAGE } from './constants';
 import { isDelivered, normalizeEntrega, formatPhoneNumber } from './utils';
 import { useDebounce } from './hooks';
-import { ModalComponent, Paginacao } from './components/Shared';
+import { ModalComponent, Paginacao, IdentificacaoModal } from './components/Shared';
+import { safeLocalStorageGet, safeLocalStorageSet } from './utils/storage';
 import {
   ValorTotalEstoque,
   Relatorios,
@@ -178,6 +179,19 @@ export default function App() {
   const [mostrarPrioritarios, setMostrarPrioritarios] = useState(false);
   const [page, setPage] = useState(1);
 
+  // ── IDENTIFICAÇÃO DO OPERADOR ──────────────────────────────────────────────
+  const [nomeUsuario, setNomeUsuario] = useState<string>(
+    () => safeLocalStorageGet<string>('nomeOperador', '')
+  );
+  const [showIdentModal, setShowIdentModal] = useState<boolean>(
+    () => !safeLocalStorageGet<string>('nomeOperador', '')
+  );
+  const salvarNomeOperador = useCallback((nome: string) => {
+    setNomeUsuario(nome);
+    safeLocalStorageSet('nomeOperador', nome);
+    setShowIdentModal(false);
+  }, []);
+
   const [selectedEntregaIds, setSelectedEntregaIds] = useState<string[]>([]);
   const [showReprogramModal, setShowReprogramModal] = useState(false);
   const [newDeliveryDate, setNewDeliveryDate] = useState('');
@@ -332,6 +346,7 @@ export default function App() {
           ...m,
           custoEntrada,
           dataCompetencia: m.dataCompetencia,
+          operadorNome: nomeUsuario || undefined,
         }),
       });
       if (!res.ok) {
@@ -371,6 +386,7 @@ export default function App() {
         nomeObra: dados.nomeObra || undefined,
         ordemCompra: dados.ordemCompra || undefined,
         dataCompetencia: dados.dataCompetencia,
+        operadorNome: nomeUsuario || undefined,
       };
       const response = await fetch(`${API_URL}/movimentacoes/lote`, {
         method: 'POST',
@@ -1389,6 +1405,10 @@ export default function App() {
             <button className="btn btn-danger" onClick={() => confirmDeleteEntrega(entregaToDeleteId!)}>Excluir</button>
           </div>
         </ModalComponent>
+      )}
+
+      {showIdentModal && (
+        <IdentificacaoModal onConfirm={salvarNomeOperador} />
       )}
 
       <ChatWidget />

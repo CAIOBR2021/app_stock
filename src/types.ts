@@ -37,6 +37,7 @@ export interface Movimentacao {
   ordemCompra?: string;
   custoUnitarioHistorico?: number;
   dataCompetencia?: string;   // ← adiciona esta linha
+  operadorNome?: string;      // ← nome de quem registou a movimentação
 }
 
 export interface Entrega {
