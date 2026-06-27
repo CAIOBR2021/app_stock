@@ -100,6 +100,13 @@ const IconBuilding = () => (
   </svg>
 );
 
+const IconUser = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="11" height="11" style={{ flexShrink: 0 }}>
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  </svg>
+);
+
 // Tipo badge variant → token de cor
 const tipoBadgeStyle = (tipo: string): React.CSSProperties => {
   if (tipo === 'entrada')
@@ -259,10 +266,20 @@ export function MovsList({ movs, produtos }: { movs: Movimentacao[]; produtos: P
             <span style={{ color: 'var(--text-2)', fontSize: '13.5px' }}>
               {' '}— {getProdutoNome(m.produtoId)}
             </span>
-            {m.motivo && (
-              <small style={{ display: 'block', color: 'var(--text-3)', fontSize: '12px', marginTop: '2px' }}>
-                {m.motivo}
-              </small>
+            {(m.motivo || m.operadorNome) && (
+              <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px', marginTop: '2px' }}>
+                {m.motivo && (
+                  <small style={{ color: 'var(--text-3)', fontSize: '12px' }}>{m.motivo}</small>
+                )}
+                {m.motivo && m.operadorNome && (
+                  <span style={{ color: 'var(--border)', fontSize: '11px', lineHeight: 1 }}>•</span>
+                )}
+                {m.operadorNome && (
+                  <small style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', color: 'var(--text-3)', fontSize: '11.5px' }}>
+                    <IconUser /> {m.operadorNome}
+                  </small>
+                )}
+              </div>
             )}
           </div>
           <small style={{ color: 'var(--text-3)', fontSize: '12px', whiteSpace: 'nowrap', flexShrink: 0 }}>
