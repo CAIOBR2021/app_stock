@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import Select from 'react-select';
+import { API_URL } from '../constants';
 
 // ── SVG ICONS ─────────────────────────────────────────────────────────────────
 
@@ -221,9 +222,16 @@ const IconUserField = () => (
   </svg>
 );
 
+const IconLock = ({ size = 18 }: { size?: number }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width={size} height={size}>
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </svg>
+);
+
 const PERFIL_OPTIONS = [
-  { value: 'almoxarifado', label: 'Almoxarifado' },
-  { value: 'seguranca', label: 'Segurança do Trabalho' },
+  { value: 'almoxarifado', label: 'Almoxarifado', locked: true },
+  { value: 'seguranca', label: 'Segurança do Trabalho', locked: false },
 ];
 
 const DARK_BG = '#1A1A2E';
@@ -301,7 +309,14 @@ export function IdentificacaoModal({
   const [nome, setNome] = useState(initialValue);
   const [perfil, setPerfil] = useState(initialPerfil);
   const [focused, setFocused] = useState(false);
-  const valido = nome.trim().length >= 2 && perfil !== '';
+  const [senha, setSenha] = useState('');
+  const [senhaErro, setSenhaErro] = useState('');
+  const [verificando, setVerificando] = useState(false);
+  const [senhaVerificada, setSenhaVerificada] = useState(initialPerfil === 'almoxarifado');
+  const [senhaFocused, setSenhaFocused] = useState(false);
+
+  const precisaSenha = perfil === 'almoxarifado' && !senhaVerificada;
+  const valido = nome.trim().length >= 2 && perfil !== '' && (!precisaSenha || senha.length >= 4);
 
   // ESC só fecha quando NÃO é obrigatório
   useEffect(() => {
@@ -310,7 +325,32 @@ export function IdentificacaoModal({
     return () => window.removeEventListener('keydown', onEsc);
   }, [onClose]);
 
-  const submit = () => { if (valido) onConfirm(nome.trim(), perfil); };
+  const submit = async () => {
+    if (!valido || verificando) return;
+    if (perfil === 'almoxarifado' && !senhaVerificada) {
+      setVerificando(true);
+      setSenhaErro('');
+      try {
+        const res = await fetch(`${API_URL}/api/auth/verify-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: senha }),
+        });
+        if (!res.ok) {
+          setSenhaErro('Senha incorreta.');
+          setVerificando(false);
+          return;
+        }
+        setSenhaVerificada(true);
+      } catch {
+        setSenhaErro('Não foi possível verificar. Tente novamente.');
+        setVerificando(false);
+        return;
+      }
+      setVerificando(false);
+    }
+    onConfirm(nome.trim(), perfil);
+  };
 
   return ReactDOM.createPortal(
     <div
@@ -425,12 +465,74 @@ export function IdentificacaoModal({
           <Select
             options={PERFIL_OPTIONS}
             value={PERFIL_OPTIONS.find(o => o.value === perfil) || null}
-            onChange={(opt: any) => setPerfil(opt?.value ?? '')}
+            onChange={(opt: any) => {
+              const novoPerf = opt?.value ?? '';
+              setPerfil(novoPerf);
+              setSenha('');
+              setSenhaErro('');
+              setSenhaVerificada(novoPerf === 'almoxarifado' && initialPerfil === 'almoxarifado');
+            }}
             placeholder="Selecione o seu perfil"
             styles={darkSelectStyles}
             menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
             isSearchable={false}
+            formatOptionLabel={(opt: any) => (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                {opt.label}
+                {opt.locked && (
+                  <span style={{ opacity: 0.55, display: 'flex', alignItems: 'center' }}>
+                    <IconLock size={13} />
+                  </span>
+                )}
+              </span>
+            )}
           />
+
+          {/* Campo de senha — visível apenas quando Almoxarifado ainda não foi verificado */}
+          {precisaSenha && (
+            <>
+              <label style={{
+                display: 'block', fontSize: '10.5px', fontWeight: 700, letterSpacing: '.6px',
+                textTransform: 'uppercase', color: 'rgba(255,255,255,.45)', marginBottom: '8px', marginTop: '16px',
+              }}>
+                Senha de acesso
+              </label>
+              <div style={{ position: 'relative' }}>
+                <span style={{
+                  position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)',
+                  color: senhaFocused ? 'var(--primary)' : 'rgba(255,255,255,.45)', display: 'flex',
+                  pointerEvents: 'none', transition: 'color .2s ease',
+                }}>
+                  <IconLock />
+                </span>
+                <input
+                  type="password"
+                  className="ident-input-dark"
+                  style={{
+                    width: '100%', height: '50px', borderRadius: '12px',
+                    background: 'rgba(255,255,255,.06)',
+                    border: `1.5px solid ${senhaErro ? '#ff6b6b' : senhaFocused ? 'var(--primary)' : 'rgba(255,255,255,.14)'}`,
+                    color: '#fff', fontSize: '15px', paddingLeft: '46px', paddingRight: '14px',
+                    outline: 'none', fontFamily: 'DM Sans, sans-serif',
+                    transition: 'border-color .2s ease, box-shadow .2s ease',
+                    boxShadow: senhaErro ? '0 0 0 3px rgba(255,107,107,.15)' : senhaFocused ? '0 0 0 3px rgba(245,166,35,.15)' : 'none',
+                  }}
+                  placeholder="Senha de administrador"
+                  value={senha}
+                  maxLength={100}
+                  onFocus={() => setSenhaFocused(true)}
+                  onBlur={() => setSenhaFocused(false)}
+                  onChange={e => { setSenha(e.target.value); setSenhaErro(''); }}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); submit(); } }}
+                />
+              </div>
+              {senhaErro && (
+                <p style={{ margin: '8px 0 0', fontSize: '12.5px', color: '#ff6b6b', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  {senhaErro}
+                </p>
+              )}
+            </>
+          )}
 
           {/* Ações */}
           {onClose ? (
@@ -442,33 +544,33 @@ export function IdentificacaoModal({
                 Cancelar
               </button>
               <button
-                type="button" disabled={!valido} onClick={submit}
+                type="button" disabled={!valido || verificando} onClick={submit}
                 style={{
-                  border: 'none', cursor: valido ? 'pointer' : 'not-allowed',
+                  border: 'none', cursor: valido && !verificando ? 'pointer' : 'not-allowed',
                   background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
                   color: 'var(--accent)', borderRadius: '11px', padding: '0 26px', height: '46px',
-                  fontSize: '14px', fontWeight: 700, opacity: valido ? 1 : .4,
-                  boxShadow: valido ? '0 8px 20px rgba(245,166,35,.4)' : 'none',
+                  fontSize: '14px', fontWeight: 700, opacity: valido && !verificando ? 1 : .4,
+                  boxShadow: valido && !verificando ? '0 8px 20px rgba(245,166,35,.4)' : 'none',
                   transition: 'opacity .2s ease, box-shadow .2s ease',
                 }}
               >
-                Guardar
+                {verificando ? 'Verificando...' : 'Guardar'}
               </button>
             </div>
           ) : (
             <button
-              type="button" disabled={!valido} onClick={submit}
+              type="button" disabled={!valido || verificando} onClick={submit}
               style={{
                 width: '100%', marginTop: '26px',
-                border: 'none', cursor: valido ? 'pointer' : 'not-allowed',
+                border: 'none', cursor: valido && !verificando ? 'pointer' : 'not-allowed',
                 background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
                 color: 'var(--accent)', borderRadius: '12px', height: '50px',
-                fontSize: '14.5px', fontWeight: 700, opacity: valido ? 1 : .4,
-                boxShadow: valido ? '0 10px 24px rgba(245,166,35,.42)' : 'none',
+                fontSize: '14.5px', fontWeight: 700, opacity: valido && !verificando ? 1 : .4,
+                boxShadow: valido && !verificando ? '0 10px 24px rgba(245,166,35,.42)' : 'none',
                 transition: 'opacity .2s ease, box-shadow .2s ease',
               }}
             >
-              Continuar
+              {verificando ? 'Verificando...' : 'Continuar'}
             </button>
           )}
         </div>
