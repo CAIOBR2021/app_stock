@@ -278,19 +278,17 @@ export function MovsList({ movs, produtos }: { movs: Movimentacao[]; produtos: P
                 ? new Date(String(m.dataCompetencia).split('T')[0] + 'T12:00:00').toLocaleDateString('pt-BR')
                 : new Date(m.criadoEm).toLocaleDateString('pt-BR')}
             </small>
-            {m.operadorNome && (
-              <small
-                title={m.operadorNome}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '3px',
-                  color: 'var(--text-3)', fontSize: '11.5px', whiteSpace: 'nowrap',
-                  maxWidth: '160px',
-                }}
-              >
-                <IconUser />
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.operadorNome}</span>
-              </small>
-            )}
+            <small
+              title={m.operadorNome ?? undefined}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '3px',
+                color: 'var(--text-3)', fontSize: '11.5px', whiteSpace: 'nowrap',
+                maxWidth: '160px', visibility: m.operadorNome ? 'visible' : 'hidden',
+              }}
+            >
+              <IconUser />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.operadorNome ?? ' '}</span>
+            </small>
           </div>
         </li>
       ))}

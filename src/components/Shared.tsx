@@ -213,10 +213,10 @@ export function PasswordEntryModal({
 
 // ── MODAL DE IDENTIFICAÇÃO DO OPERADOR ────────────────────────────────────────
 
-const IconUserCircle = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" width="28" height="28">
-    <circle cx="12" cy="8" r="4" />
-    <path d="M4 21v-1a7 7 0 0 1 14 0v1" />
+const IconUserField = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="18" height="18">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
   </svg>
 );
 
@@ -235,6 +235,7 @@ export function IdentificacaoModal({
   onClose?: () => void;
 }) {
   const [nome, setNome] = useState(initialValue);
+  const [focused, setFocused] = useState(false);
   const valido = nome.trim().length >= 2;
 
   // ESC só fecha quando NÃO é obrigatório
@@ -250,7 +251,8 @@ export function IdentificacaoModal({
     <div
       onClick={() => { if (onClose) onClose(); }} // clicar fora só fecha se não for obrigatório
       style={{
-        position: 'fixed', inset: 0, background: 'rgba(15,17,23,.55)',
+        position: 'fixed', inset: 0, background: 'rgba(15,17,23,.5)',
+        backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
         zIndex: 10000, display: 'flex', alignItems: 'center',
         justifyContent: 'center', padding: '16px',
       }}
@@ -259,67 +261,134 @@ export function IdentificacaoModal({
         onClick={e => e.stopPropagation()}
         role="dialog" aria-modal="true" aria-labelledby="ident-title"
         style={{
-          background: '#fff', borderRadius: '16px',
-          boxShadow: '0 20px 48px rgba(0,0,0,.18)',
-          width: '100%', maxWidth: '420px',
-          padding: '28px 28px 24px', position: 'relative',
-          animation: 'fadeUp .25s ease both',
+          background: 'var(--accent)', borderRadius: '20px',
+          boxShadow: '0 30px 80px rgba(0,0,0,.55)',
+          border: '1px solid rgba(255,255,255,.08)',
+          width: '100%', maxWidth: '400px',
+          padding: '34px 32px 30px', position: 'relative', overflow: 'hidden',
+          animation: 'fadeUp .28s ease both',
         }}
       >
-        {/* Ícone */}
+        {/* Brilho âmbar (como o menu lateral) */}
         <div style={{
-          width: '56px', height: '56px', borderRadius: '50%',
-          background: 'var(--primary-light)', color: 'var(--primary-dark)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          margin: '0 auto 16px',
-        }}>
-          <IconUserCircle />
-        </div>
+          position: 'absolute', inset: 0, pointerEvents: 'none',
+          background: 'linear-gradient(160deg, rgba(245,166,35,.12) 0%, transparent 55%)',
+        }} />
 
-        {/* Título + mensagem */}
-        <h5 id="ident-title" style={{ fontSize: '18px', fontWeight: 700, color: '#0F1117', textAlign: 'center', margin: '0 0 6px' }}>
-          Identificação
-        </h5>
-        <p style={{ fontSize: '13.5px', color: 'var(--text-2)', textAlign: 'center', lineHeight: 1.5, margin: '0 0 20px' }}>
-          Qual é o seu nome? Ele ficará registado nas movimentações que fizer.
-        </p>
-
-        {/* Campo */}
-        <label className="form-label" htmlFor="ident-input" style={{ fontSize: '12.5px' }}>Nome</label>
-        <input
-          id="ident-input"
-          className="form-control"
-          style={{ height: '46px', borderRadius: '10px', fontSize: '15px' }}
-          placeholder="Ex: João Silva"
-          value={nome}
-          autoFocus
-          maxLength={60}
-          onChange={e => setNome(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); submit(); } }}
-        />
-        <small style={{ display: 'block', fontSize: '11.5px', color: 'var(--text-3)', marginTop: '6px' }}>
-          Fica guardado neste dispositivo — só precisa de escrever uma vez.
-        </small>
-
-        {/* Ações */}
-        <div style={{ display: 'flex', justifyContent: onClose ? 'space-between' : 'flex-end', gap: '8px', marginTop: '22px' }}>
+        <div style={{ position: 'relative' }}>
+          {/* Fechar (apenas no modo edição) */}
           {onClose && (
             <button
-              type="button" className="btn btn-ghost"
-              style={{ borderRadius: '999px', padding: '0 20px', height: '40px' }}
-              onClick={onClose}
+              type="button" onClick={onClose} aria-label="Fechar"
+              style={{
+                position: 'absolute', top: '-6px', right: '-6px',
+                width: '30px', height: '30px', borderRadius: '8px',
+                border: 'none', background: 'transparent', color: 'rgba(255,255,255,.5)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+              }}
             >
-              Cancelar
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
             </button>
           )}
-          <button
-            type="button" className="btn btn-primary"
-            style={{ borderRadius: '999px', padding: '0 28px', height: '40px', fontWeight: 700, opacity: valido ? 1 : .5 }}
-            disabled={!valido}
-            onClick={submit}
-          >
-            Confirmar
-          </button>
+
+          {/* Badge dourado */}
+          <div style={{
+            width: '50px', height: '50px', borderRadius: '14px',
+            background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
+            color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            marginBottom: '18px', boxShadow: '0 8px 22px rgba(245,166,35,.35)',
+            fontWeight: 700, fontSize: '20px',
+          }}>
+            {onClose && nome.trim() ? nome.trim().charAt(0).toUpperCase() : <IconUserField />}
+          </div>
+
+          {/* Título + apoio */}
+          <h5 id="ident-title" style={{ fontSize: '20px', fontWeight: 700, color: '#fff', letterSpacing: '-.3px', margin: '0 0 7px' }}>
+            {onClose ? 'Alterar identificação' : 'Identificação'}
+          </h5>
+          <p style={{ fontSize: '13.5px', color: 'rgba(255,255,255,.55)', lineHeight: 1.55, margin: '0 0 24px' }}>
+            Qual é o seu nome? Ele ficará registado nas movimentações que fizer.
+          </p>
+
+          {/* Campo com ícone */}
+          <label htmlFor="ident-input" style={{
+            display: 'block', fontSize: '10.5px', fontWeight: 700, letterSpacing: '.6px',
+            textTransform: 'uppercase', color: 'rgba(255,255,255,.45)', marginBottom: '8px',
+          }}>
+            Nome do operador
+          </label>
+          <div style={{ position: 'relative' }}>
+            <span style={{
+              position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)',
+              color: focused ? 'var(--primary)' : 'rgba(255,255,255,.45)', display: 'flex',
+              pointerEvents: 'none', transition: 'color .2s ease',
+            }}>
+              <IconUserField />
+            </span>
+            <input
+              id="ident-input"
+              className="ident-input-dark"
+              style={{
+                width: '100%', height: '50px', borderRadius: '12px',
+                background: 'rgba(255,255,255,.06)',
+                border: `1.5px solid ${focused ? 'var(--primary)' : 'rgba(255,255,255,.14)'}`,
+                color: '#fff', fontSize: '15px', paddingLeft: '46px', paddingRight: '14px',
+                outline: 'none', fontFamily: 'DM Sans, sans-serif',
+                transition: 'border-color .2s ease, box-shadow .2s ease',
+                boxShadow: focused ? '0 0 0 3px rgba(245,166,35,.15)' : 'none',
+              }}
+              placeholder="Escreva o seu nome"
+              value={nome}
+              autoFocus
+              maxLength={60}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
+              onChange={e => setNome(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); submit(); } }}
+            />
+          </div>
+
+          {/* Ações */}
+          {onClose ? (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '14px', marginTop: '26px' }}>
+              <button
+                type="button" onClick={onClose}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '13.5px', fontWeight: 600, color: 'rgba(255,255,255,.55)', padding: 0 }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button" disabled={!valido} onClick={submit}
+                style={{
+                  border: 'none', cursor: valido ? 'pointer' : 'not-allowed',
+                  background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
+                  color: 'var(--accent)', borderRadius: '11px', padding: '0 26px', height: '46px',
+                  fontSize: '14px', fontWeight: 700, opacity: valido ? 1 : .4,
+                  boxShadow: valido ? '0 8px 20px rgba(245,166,35,.4)' : 'none',
+                  transition: 'opacity .2s ease, box-shadow .2s ease',
+                }}
+              >
+                Guardar
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button" disabled={!valido} onClick={submit}
+              style={{
+                width: '100%', marginTop: '26px',
+                border: 'none', cursor: valido ? 'pointer' : 'not-allowed',
+                background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
+                color: 'var(--accent)', borderRadius: '12px', height: '50px',
+                fontSize: '14.5px', fontWeight: 700, opacity: valido ? 1 : .4,
+                boxShadow: valido ? '0 10px 24px rgba(245,166,35,.42)' : 'none',
+                transition: 'opacity .2s ease, box-shadow .2s ease',
+              }}
+            >
+              Continuar
+            </button>
+          )}
         </div>
       </div>
     </div>,

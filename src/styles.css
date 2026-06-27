@@ -89,6 +89,9 @@ body {
   pointer-events: none;
 }
 
+/* Modal de identificação — tema escuro */
+.ident-input-dark::placeholder { color: rgba(255, 255, 255, .4); }
+
 .sidebar-logo-area {
   padding: 18px 20px 16px;
   border-bottom: 1px solid rgba(255,255,255,0.08);

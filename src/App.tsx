@@ -186,10 +186,12 @@ export default function App() {
   const [showIdentModal, setShowIdentModal] = useState<boolean>(
     () => !safeLocalStorageGet<string>('nomeOperador', '')
   );
+  const [showEditarNome, setShowEditarNome] = useState(false);
   const salvarNomeOperador = useCallback((nome: string) => {
     setNomeUsuario(nome);
     safeLocalStorageSet('nomeOperador', nome);
     setShowIdentModal(false);
+    setShowEditarNome(false);
   }, []);
 
   const [selectedEntregaIds, setSelectedEntregaIds] = useState<string[]>([]);
@@ -1025,18 +1027,33 @@ export default function App() {
       {/* ── MOBILE HEADER ── */}
       <div className="mobile-header d-lg-none d-flex justify-content-between align-items-center px-3">
         <img src={meuLogo} alt="Logo" style={{ height: '36px' }} />
-        <div
-          onClick={() => setShowLowStockModal(true)}
-          style={{ cursor: 'pointer', position: 'relative', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-        >
-          <span style={{ color: produtosAbaixoMinimo.length > 0 ? 'var(--danger)' : 'var(--text-3)' }}>
-            <IconBell active={produtosAbaixoMinimo.length > 0} />
-          </span>
-          {produtosAbaixoMinimo.length > 0 && (
-            <span className="notif-count" style={{ top: '-2px', right: '-2px' }}>
-              {produtosAbaixoMinimo.length}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div
+            onClick={() => setShowLowStockModal(true)}
+            style={{ cursor: 'pointer', position: 'relative', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <span style={{ color: produtosAbaixoMinimo.length > 0 ? 'var(--danger)' : 'var(--text-3)' }}>
+              <IconBell active={produtosAbaixoMinimo.length > 0} />
             </span>
-          )}
+            {produtosAbaixoMinimo.length > 0 && (
+              <span className="notif-count" style={{ top: '-2px', right: '-2px' }}>
+                {produtosAbaixoMinimo.length}
+              </span>
+            )}
+          </div>
+          <div
+            onClick={() => setShowEditarNome(true)}
+            title="Alterar identificação"
+            style={{
+              cursor: 'pointer', width: '32px', height: '32px', borderRadius: '50%',
+              background: 'transparent', border: '1.5px solid var(--border)',
+              color: 'var(--primary)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: 700, fontSize: '13px', flexShrink: 0,
+            }}
+          >
+            {(nomeUsuario.trim().charAt(0) || '?').toUpperCase()}
+          </div>
         </div>
       </div>
 
@@ -1056,13 +1073,42 @@ export default function App() {
               {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             </div>
           </div>
-          <div className="icon-btn" onClick={() => setShowLowStockModal(true)} title="Alertas de Estoque" style={{ cursor: 'pointer' }}>
-            <span style={{ color: produtosAbaixoMinimo.length > 0 ? 'var(--danger)' : 'var(--text-3)' }}>
-              <IconBell active={produtosAbaixoMinimo.length > 0} />
-            </span>
-            {produtosAbaixoMinimo.length > 0 && (
-              <span className="notif-count">{produtosAbaixoMinimo.length}</span>
-            )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div className="icon-btn" onClick={() => setShowLowStockModal(true)} title="Alertas de Estoque" style={{ cursor: 'pointer' }}>
+              <span style={{ color: produtosAbaixoMinimo.length > 0 ? 'var(--danger)' : 'var(--text-3)' }}>
+                <IconBell active={produtosAbaixoMinimo.length > 0} />
+              </span>
+              {produtosAbaixoMinimo.length > 0 && (
+                <span className="notif-count">{produtosAbaixoMinimo.length}</span>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowEditarNome(true)}
+              title={nomeUsuario ? `${nomeUsuario} — alterar identificação` : 'Identificar-me'}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                background: 'transparent', border: 'none', padding: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              <span style={{
+                width: '28px', height: '28px', borderRadius: '50%',
+                background: 'transparent', border: '1.5px solid var(--border)',
+                color: 'var(--primary)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontWeight: 700, fontSize: '12px', flexShrink: 0,
+              }}>
+                {(nomeUsuario.trim().charAt(0) || '?').toUpperCase()}
+              </span>
+              <span style={{
+                fontSize: '13px', fontWeight: 500, color: 'var(--text-2)',
+                maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>
+                {nomeUsuario || 'Identificar-me'}
+              </span>
+            </button>
           </div>
         </header>
 
@@ -1409,6 +1455,14 @@ export default function App() {
 
       {showIdentModal && (
         <IdentificacaoModal onConfirm={salvarNomeOperador} />
+      )}
+
+      {showEditarNome && (
+        <IdentificacaoModal
+          initialValue={nomeUsuario}
+          onConfirm={salvarNomeOperador}
+          onClose={() => setShowEditarNome(false)}
+        />
       )}
 
       <ChatWidget />
