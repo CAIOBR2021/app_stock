@@ -1055,11 +1055,11 @@ export default function App() {
             onClick={() => setShowEditarNome(true)}
             title="Alterar identificação"
             style={{
-              cursor: 'pointer', width: '32px', height: '32px', borderRadius: '50%',
-              background: 'transparent', border: '1.5px solid var(--border)',
-              color: 'var(--primary)',
+              cursor: 'pointer', width: '36px', height: '36px', borderRadius: '10px',
+              background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
+              color: 'var(--accent)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 700, fontSize: '13px', flexShrink: 0,
+              fontWeight: 800, fontSize: '14px', flexShrink: 0,
             }}
           >
             {(nomeUsuario.trim().charAt(0) || '?').toUpperCase()}
@@ -1098,28 +1098,43 @@ export default function App() {
               onClick={() => setShowEditarNome(true)}
               title={nomeUsuario ? `${nomeUsuario} — alterar identificação` : 'Identificar-me'}
               style={{
-                display: 'flex', alignItems: 'center', gap: '8px',
+                display: 'flex', alignItems: 'center', gap: '10px',
                 background: 'var(--surface-2)', border: '1px solid var(--border)',
-                borderRadius: '999px', padding: '4px 12px 4px 4px',
-                cursor: 'pointer', transition: 'border-color .15s',
+                borderRadius: '12px', padding: '6px 16px 6px 6px',
+                cursor: 'pointer', transition: 'border-color .15s ease, box-shadow .15s ease',
               }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--primary)')}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = 'var(--primary)';
+                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(245,166,35,.1)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = 'var(--border)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
             >
               <span style={{
-                width: '28px', height: '28px', borderRadius: '50%',
-                background: 'var(--primary-light)', color: 'var(--primary)',
+                width: '34px', height: '34px', borderRadius: '9px',
+                background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
+                color: 'var(--accent)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 700, fontSize: '12px', flexShrink: 0,
+                fontWeight: 800, fontSize: '14px', flexShrink: 0,
               }}>
                 {(nomeUsuario.trim().charAt(0) || '?').toUpperCase()}
               </span>
-              <span style={{
-                fontSize: '13px', fontWeight: 600, color: 'var(--text-1)',
-                maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              }}>
-                {nomeUsuario || 'Identificar-me'}
-              </span>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px' }}>
+                <span style={{
+                  fontSize: '13px', fontWeight: 700, color: 'var(--text-1)', lineHeight: 1,
+                  maxWidth: '130px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
+                  {nomeUsuario || 'Identificar-me'}
+                </span>
+                <span style={{
+                  fontSize: '10.5px', fontWeight: 600, lineHeight: 1,
+                  color: perfilUsuario === 'almoxarifado' ? 'var(--primary)' : 'var(--text-3)',
+                }}>
+                  {perfilUsuario === 'almoxarifado' ? 'Almoxarifado' : perfilUsuario === 'seguranca' ? 'Seg. Trabalho' : 'Sem perfil'}
+                </span>
+              </div>
             </button>
           </div>
         </header>
