@@ -1073,12 +1073,12 @@ export default function App() {
               <span style={{ display: 'flex', alignItems: 'center', gap: '4px', lineHeight: 1 }}>
                 {perfilUsuario === 'almoxarifado' && (
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--primary)', flexShrink: 0 }}>
-                    <path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+                    <path d="M3 17a3 3 0 1 0 6 0 3 3 0 0 0-6 0z"/><path d="M15 17a3 3 0 1 0 6 0 3 3 0 0 0-6 0z"/><path d="M3 17H1v-4l4-5h8V4h2l2 4 2 1v8h-2"/><path d="M9 17H18"/>
                   </svg>
                 )}
                 {perfilUsuario === 'seguranca' && (
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'rgba(255,255,255,0.4)', flexShrink: 0 }}>
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/>
                   </svg>
                 )}
                 <span style={{
@@ -1384,7 +1384,7 @@ export default function App() {
             <PrevisaoConsumo produtos={allProdutos} movimentacoes={movs} />
           </div>
         )}
-        <div style={{ marginTop: 'auto', padding: '20px 0', borderTop: '1px solid #E5E7EB', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'center' }}>
+        <div style={{ marginTop: 'auto', padding: '20px 0', borderTop: '1px solid #E5E7EB', display: 'flex', justifyContent: 'center', alignItems: 'baseline', gap: '8px', width: '100%', textAlign: 'center' }}>
           <span style={{ fontSize: '10px', color: '#9B97B2', letterSpacing: '0.5px', textTransform: 'uppercase', fontWeight: 500 }}>Desenvolvido por</span>
           <span style={{ fontSize: '13px', fontWeight: 600, color: '#1e1b2e', letterSpacing: '0.2px' }}>Caio Vinícius de Carvalho Bezerra</span>
         </div>
