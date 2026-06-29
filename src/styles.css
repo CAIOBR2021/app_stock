@@ -242,6 +242,23 @@ body {
   background: rgba(255, 255, 255, .06);
 }
 
+.user-card:hover .user-avatar-edit-overlay {
+  opacity: 1;
+}
+
+.user-avatar-edit-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--transition);
+  pointer-events: none;
+}
+
 .user-avatar {
   width: 32px;
   height: 32px;

@@ -1054,6 +1054,12 @@ export default function App() {
                   ? nomeUsuario.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('')
                   : '?'}
               </span>
+              {/* Overlay de edição no hover */}
+              <span className="user-avatar-edit-overlay">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </span>
               {/* Indicador de presença */}
               <span style={{
                 position: 'absolute', bottom: '1px', right: '1px',
