@@ -230,8 +230,8 @@ body {
 .user-card {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+  gap: 12px;
+  padding: 12px 14px;
   border-radius: 10px;
   cursor: pointer;
   transition: background var(--transition);
