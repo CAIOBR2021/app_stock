@@ -223,18 +223,20 @@ body {
 /* Sidebar footer / user card */
 .sidebar-footer {
   margin-top: auto;
-  padding: 16px 12px;
+  padding: 16px;
   border-top: 1px solid rgba(255, 255, 255, .07);
 }
 
 .user-card {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: 8px;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
   cursor: pointer;
   transition: background var(--transition);
+  width: 100%;
 }
 
 .user-card:hover {

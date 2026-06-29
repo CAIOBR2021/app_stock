@@ -1038,24 +1038,24 @@ export default function App() {
             className="user-card"
             onClick={() => setShowEditarNome(true)}
             title={nomeUsuario ? `${nomeUsuario} — alterar identificação` : 'Identificar-me'}
-            style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left' }}
+            style={{ background: 'none', border: 'none', width: '100%' }}
           >
             <span style={{
-              width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0,
+              width: '42px', height: '42px', borderRadius: '50%', flexShrink: 0,
               background: '#F5A623',
               color: '#fff',
               border: '2px solid #C47D0E',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 700, fontSize: '13px', letterSpacing: '0.5px',
+              fontWeight: 700, fontSize: '14px', letterSpacing: '0.5px',
             }}>
               {nomeUsuario.trim()
                 ? nomeUsuario.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('')
                 : '?'}
             </span>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '3px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', minWidth: 0, flex: 1 }}>
               <span style={{
-                fontSize: '12px', fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1,
-                maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                fontSize: '13px', fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1,
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%',
               }}>
                 {nomeUsuario || 'Identificar-me'}
               </span>
@@ -1360,13 +1360,9 @@ export default function App() {
             <PrevisaoConsumo produtos={allProdutos} movimentacoes={movs} />
           </div>
         )}
-        <div style={{ textAlign: 'center', padding: '32px 0 16px', marginTop: 'auto' }}>
-          <div style={{ fontSize: '10px', fontWeight: 500, color: 'var(--text-3)', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
-            Desenvolvido por
-          </div>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-2)', letterSpacing: '0.3px', marginTop: '2px' }}>
-            Caio Vinícius de Carvalho Bezerra
-          </div>
+        <div style={{ marginTop: 'auto', padding: '20px 32px', borderTop: '1px solid #E5E7EB', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '10px', color: '#9B97B2', letterSpacing: '0.5px', textTransform: 'uppercase', fontWeight: 500 }}>Desenvolvido por</span>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: '#1e1b2e', letterSpacing: '0.2px' }}>Caio Vinícius de Carvalho Bezerra</span>
         </div>
       </main>
 
