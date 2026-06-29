@@ -26,6 +26,7 @@ export function ChatWidget() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
+  const [fabHovered, setFabHovered] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const nextId = useRef(1);
@@ -117,6 +118,8 @@ export function ChatWidget() {
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
+          onMouseEnter={() => setFabHovered(true)}
+          onMouseLeave={() => setFabHovered(false)}
           style={{
             position: 'fixed', bottom: `${pos.bottom}px`, right: `${pos.right}px`, zIndex: 9999,
             touchAction: 'none',
@@ -124,14 +127,19 @@ export function ChatWidget() {
             background: '#f3f4f6',
             borderRadius: '999px',
             boxShadow: '0 2px 12px rgba(0,0,0,.10)',
-            padding: '6px 6px 6px 18px',
+            padding: fabHovered ? '6px 6px 6px 18px' : '6px',
             cursor: 'pointer',
             userSelect: 'none',
+            transition: 'padding 0.2s ease',
           }}
         >
           <span style={{
             fontSize: '13px', color: '#9ca3af', fontFamily: 'DM Sans, sans-serif',
-            fontWeight: 400, whiteSpace: 'nowrap', marginRight: '12px',
+            fontWeight: 400, whiteSpace: 'nowrap', marginRight: fabHovered ? '12px' : '0',
+            maxWidth: fabHovered ? '120px' : '0',
+            overflow: 'hidden',
+            opacity: fabHovered ? 1 : 0,
+            transition: 'max-width 0.2s ease, opacity 0.2s ease, margin 0.2s ease',
           }}>
             Pergunte algo...
           </span>
