@@ -927,6 +927,12 @@ table.table tbody tr.row-danger:hover td {
   color: var(--text-1);
 }
 
+.act-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .act-btn.del:hover,
 .btn-excluir:hover {
   background: var(--danger-light);
