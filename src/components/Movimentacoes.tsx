@@ -411,12 +411,13 @@ export function MovimentacaoEditForm({
 // ── CONSULTA MOVIMENTAÇÕES ────────────────────────────────────────────────────
 
 export function ConsultaMovimentacoes({
-  movs, produtos, onDelete, onEdit,
+  movs, produtos, onDelete, onEdit, perfilUsuario,
 }: {
   movs: Movimentacao[];
   produtos: Produto[];
   onDelete: (id: UUID) => void;
   onEdit: (id: UUID, patch: { quantidade: number; motivo?: string }) => void;
+  perfilUsuario?: string;
 }) {
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
@@ -637,23 +638,43 @@ export function ConsultaMovimentacoes({
                 </td>
                 <td>
                   <div className="d-flex justify-content-end gap-1">
-                    <button
-                      className="act-btn"
-                      onClick={() => setEditId(m.id)}
-                      disabled={m.tipo === 'ajuste' || m.tipo === 'saldo_inicial'}
-                      title={m.tipo === 'ajuste' || m.tipo === 'saldo_inicial' ? 'Ajustes e Saldos Iniciais não são editáveis' : 'Editar'}
-                      style={{ color: 'var(--text-3)' }}
-                    >
-                      <IconEdit />
-                    </button>
-                    <button
-                      className="act-btn del"
-                      onClick={() => setDeleteId(m.id)}
-                      disabled={m.tipo === 'ajuste' || m.tipo === 'saldo_inicial'}
-                      title={m.tipo === 'ajuste' || m.tipo === 'saldo_inicial' ? 'Ajustes e Saldos Iniciais não podem ser excluídos' : 'Excluir'}
-                    >
-                      <IconTrash />
-                    </button>
+                    {(() => {
+                      const produtoCategoria = produtoMap.get(m.produtoId)?.categoria;
+                      const bloqueadoPorPerfil = perfilUsuario === 'seguranca' && produtoCategoria !== 'EPI';
+                      const bloqueadoPorTipo = m.tipo === 'ajuste' || m.tipo === 'saldo_inicial';
+                      const editDisabled = bloqueadoPorTipo || bloqueadoPorPerfil;
+                      const editTitle = bloqueadoPorTipo
+                        ? 'Ajustes e Saldos Iniciais não são editáveis'
+                        : bloqueadoPorPerfil
+                        ? 'Sem permissão para editar esta movimentação'
+                        : 'Editar';
+                      const delTitle = bloqueadoPorTipo
+                        ? 'Ajustes e Saldos Iniciais não podem ser excluídos'
+                        : bloqueadoPorPerfil
+                        ? 'Sem permissão para excluir esta movimentação'
+                        : 'Excluir';
+                      return (
+                        <>
+                          <button
+                            className="act-btn"
+                            onClick={() => setEditId(m.id)}
+                            disabled={editDisabled}
+                            title={editTitle}
+                            style={{ color: 'var(--text-3)' }}
+                          >
+                            <IconEdit />
+                          </button>
+                          <button
+                            className="act-btn del"
+                            onClick={() => setDeleteId(m.id)}
+                            disabled={editDisabled}
+                            title={delTitle}
+                          >
+                            <IconTrash />
+                          </button>
+                        </>
+                      );
+                    })()}
                   </div>
                 </td>
               </tr>

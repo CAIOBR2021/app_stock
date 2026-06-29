@@ -20,6 +20,7 @@ interface ItemExtraido {
 
 interface NotaFiscalReaderProps {
   produtos: Produto[];
+  perfilUsuario?: string;
   onImportar: (dados: {
     tipo: 'entrada';
     ordemCompra: string;
@@ -228,7 +229,10 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 
 // ── COMPONENT ────────────────────────────────────────────────────────────────
 
-export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps) {
+export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFiscalReaderProps) {
+  const produtosPermitidos = perfilUsuario === 'seguranca'
+    ? produtos.filter(p => p.categoria === 'EPI')
+    : produtos;
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -305,7 +309,7 @@ export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps
       if (data.dataEmissao) setDataCompetencia(data.dataEmissao);
 
       const extraidos: ItemExtraido[] = (data.itens || []).map((item: any) => {
-        const match = findBestMatch(item.nome, produtos);
+        const match = findBestMatch(item.nome, produtosPermitidos);
         let parsed: ItemExtraido = {
           nome: item.nome,
           quantidade: Number(item.quantidade) || 0,
@@ -335,7 +339,7 @@ export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps
           : item;
         const updated = { ...base, produtoIdMatch: produtoId || undefined, confianca: produtoId ? 1 : 0 };
         if (produtoId) {
-          const prod = produtos.find(p => p.id === produtoId);
+          const prod = produtosPermitidos.find(p => p.id === produtoId);
           if (prod) return aplicarConversao(updated, prod);
         }
         return updated;
@@ -821,7 +825,7 @@ export function NotaFiscalReader({ produtos, onImportar }: NotaFiscalReaderProps
                         onBlur={e => { e.target.style.borderColor = item.produtoIdMatch ? 'var(--success)' : 'var(--border)'; e.target.style.boxShadow = 'none'; }}
                       >
                         <option value="">Selecionar produto...</option>
-                        {produtos.map(p => (
+                        {produtosPermitidos.map(p => (
                           <option key={p.id} value={p.id}>
                             {p.nome} ({p.sku})
                           </option>

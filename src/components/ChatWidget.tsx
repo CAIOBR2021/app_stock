@@ -113,33 +113,48 @@ export function ChatWidget() {
     <>
       {/* ── FAB ── */}
       {!open && (
-        <button
+        <div
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
-          aria-label="Abrir chat"
           style={{
             position: 'fixed', bottom: `${pos.bottom}px`, right: `${pos.right}px`, zIndex: 9999,
             touchAction: 'none',
-            width: '56px', height: '56px', borderRadius: '16px',
-            background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%)',
-            border: 'none', cursor: 'pointer', color: '#fff',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 6px 24px rgba(30,27,75,.45), 0 0 0 3px rgba(67,56,202,.12)',
-            transition: 'transform 200ms, box-shadow 200ms',
+            display: 'flex', alignItems: 'center', gap: '0',
+            background: '#f3f4f6',
+            borderRadius: '999px',
+            boxShadow: '0 2px 12px rgba(0,0,0,.10)',
+            padding: '6px 6px 6px 18px',
+            cursor: 'pointer',
+            userSelect: 'none',
           }}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.06)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(30,27,75,.55), 0 0 0 5px rgba(67,56,202,.15)'; }}
-          onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 6px 24px rgba(30,27,75,.45), 0 0 0 3px rgba(67,56,202,.12)'; }}
+          onClick={() => { if (!dragRef.current?.dragged) setOpen(true); }}
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="26" height="26">
-            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-          </svg>
-          <div style={{
-            position: 'absolute', top: '-2px', right: '-2px',
-            width: '14px', height: '14px', borderRadius: '50%',
-            background: '#22C55E', border: '2.5px solid #1e1b4b',
-          }} />
-        </button>
+          <span style={{
+            fontSize: '13px', color: '#9ca3af', fontFamily: 'DM Sans, sans-serif',
+            fontWeight: 400, whiteSpace: 'nowrap', marginRight: '12px',
+          }}>
+            Pergunte algo...
+          </span>
+          <div style={{ position: 'relative' }}>
+            <div style={{
+              width: '44px', height: '44px', borderRadius: '50%',
+              background: '#1e1b4b',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#fff',
+              flexShrink: 0,
+            }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="22" height="22">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+              </svg>
+            </div>
+            <div style={{
+              position: 'absolute', bottom: '1px', right: '1px',
+              width: '11px', height: '11px', borderRadius: '50%',
+              background: '#22C55E', border: '2px solid #f3f4f6',
+            }} />
+          </div>
+        </div>
       )}
 
       {/* ── Chat Window ── */}

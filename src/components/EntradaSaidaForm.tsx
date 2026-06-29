@@ -107,11 +107,12 @@ export interface EntradaSaidaPayload {
 interface EntradaSaidaFormProps {
   produtos: Produto[];
   onSubmit: (dados: EntradaSaidaPayload) => void;
+  perfilUsuario?: string;
 }
 
 // ── COMPONENT ─────────────────────────────────────────────────────────────────
 
-export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) {
+export function EntradaSaidaForm({ produtos, onSubmit, perfilUsuario }: EntradaSaidaFormProps) {
   const [ordemCompra,     setOrdemCompra]     = useState('');
   const [nomeObra,        setNomeObra]        = useState('');
   const [tipo,            setTipo]            = useState<'entrada' | 'saida' | 'ajuste'>('entrada');
@@ -148,6 +149,7 @@ export function EntradaSaidaForm({ produtos, onSubmit }: EntradaSaidaFormProps) 
   const produtosDisponiveis = useMemo(() => {
     const tokens = busca.trim().toLowerCase().split(/\s+/).filter(Boolean);
     return produtos.filter(p => {
+      if (perfilUsuario === 'seguranca' && p.categoria !== 'EPI') return false;
       const searchableText = [p.nome, p.sku, p.categoria ?? '', p.descricao ?? '', p.localArmazenamento ?? '', p.fornecedor ?? ''].join(' ').toLowerCase();
       return (
         (tokens.length === 0 || tokens.every(token => searchableText.includes(token))) &&
