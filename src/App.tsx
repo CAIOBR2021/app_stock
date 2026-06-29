@@ -1360,7 +1360,7 @@ export default function App() {
             <PrevisaoConsumo produtos={allProdutos} movimentacoes={movs} />
           </div>
         )}
-        <div style={{ marginTop: 'auto', padding: '20px 32px', borderTop: '1px solid #E5E7EB', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
+        <div style={{ marginTop: 'auto', padding: '20px 0', borderTop: '1px solid #E5E7EB', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'center' }}>
           <span style={{ fontSize: '10px', color: '#9B97B2', letterSpacing: '0.5px', textTransform: 'uppercase', fontWeight: 500 }}>Desenvolvido por</span>
           <span style={{ fontSize: '13px', fontWeight: 600, color: '#1e1b2e', letterSpacing: '0.2px' }}>Caio Vinícius de Carvalho Bezerra</span>
         </div>
