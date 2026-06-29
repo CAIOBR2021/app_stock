@@ -128,7 +128,6 @@ export function ChatWidget() {
             cursor: 'pointer',
             userSelect: 'none',
           }}
-          onClick={() => { if (!dragRef.current?.dragged) setOpen(true); }}
         >
           <span style={{
             fontSize: '13px', color: '#9ca3af', fontFamily: 'DM Sans, sans-serif',

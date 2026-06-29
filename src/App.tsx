@@ -1023,7 +1023,7 @@ export default function App() {
             >
               <Icon /> {label}
               {(id === 'nota_fiscal' || id === 'previsao') && (
-                <span style={{ fontSize: '9px', fontWeight: 700, background: 'transparent', color: '#f59e0b', border: '1px solid #f59e0b', padding: '2px 7px', borderRadius: 999, marginLeft: 'auto', letterSpacing: '.3px', textTransform: 'uppercase', lineHeight: 1, whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: '9px', fontWeight: 700, background: '#1e1b2e', color: '#f59e0b', border: '1px solid #f59e0b', padding: '3px 8px', borderRadius: 999, marginLeft: 'auto', letterSpacing: '.5px', textIndent: '.5px', textTransform: 'uppercase', lineHeight: 1, whiteSpace: 'nowrap' }}>
                   Novo
                 </span>
               )}
