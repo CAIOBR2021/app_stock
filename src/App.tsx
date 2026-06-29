@@ -1040,30 +1040,54 @@ export default function App() {
             title={nomeUsuario ? `${nomeUsuario} — alterar identificação` : 'Identificar-me'}
             style={{ background: 'none', border: 'none', width: '100%' }}
           >
-            <span style={{
-              width: '42px', height: '42px', borderRadius: '50%', flexShrink: 0,
-              background: '#F5A623',
-              color: '#fff',
-              border: '2px solid #C47D0E',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 700, fontSize: '14px', letterSpacing: '0.5px',
-            }}>
-              {nomeUsuario.trim()
-                ? nomeUsuario.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('')
-                : '?'}
+            {/* Avatar com indicador de presença */}
+            <span style={{ position: 'relative', flexShrink: 0 }}>
+              <span style={{
+                width: '38px', height: '38px', borderRadius: '50%',
+                background: '#F5A623',
+                color: '#fff',
+                border: '2px solid #C47D0E',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontWeight: 700, fontSize: '13px', letterSpacing: '0.5px',
+              }}>
+                {nomeUsuario.trim()
+                  ? nomeUsuario.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('')
+                  : '?'}
+              </span>
+              {/* Indicador de presença */}
+              <span style={{
+                position: 'absolute', bottom: '1px', right: '1px',
+                width: '9px', height: '9px', borderRadius: '50%',
+                background: '#22C55E', border: '2px solid #1e1b2e',
+              }} />
             </span>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', minWidth: 0, flex: 1 }}>
               <span style={{
-                fontSize: '13px', fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1,
+                fontSize: '12px', fontWeight: 700, color: '#FFFFFF', lineHeight: 1,
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%',
+                letterSpacing: '0.1px',
               }}>
                 {nomeUsuario || 'Identificar-me'}
               </span>
-              <span style={{
-                fontSize: '10px', fontWeight: 500, lineHeight: 1,
-                color: 'rgba(255,255,255,0.45)',
-              }}>
-                {perfilUsuario === 'almoxarifado' ? 'Almoxarifado' : perfilUsuario === 'seguranca' ? 'Seg. Trabalho' : 'Sem perfil'}
+              {/* Cargo com ícone */}
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', lineHeight: 1 }}>
+                {perfilUsuario === 'almoxarifado' && (
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--primary)', flexShrink: 0 }}>
+                    <path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+                  </svg>
+                )}
+                {perfilUsuario === 'seguranca' && (
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'rgba(255,255,255,0.4)', flexShrink: 0 }}>
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  </svg>
+                )}
+                <span style={{
+                  fontSize: '10px', fontWeight: 500,
+                  color: perfilUsuario === 'almoxarifado' ? 'var(--primary)' : 'rgba(255,255,255,0.4)',
+                  letterSpacing: '0.2px',
+                }}>
+                  {perfilUsuario === 'almoxarifado' ? 'Almoxarifado' : perfilUsuario === 'seguranca' ? 'Seg. Trabalho' : 'Sem perfil'}
+                </span>
               </span>
             </div>
           </button>
