@@ -1042,8 +1042,9 @@ export default function App() {
           >
             <span style={{
               width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0,
-              background: '#6B5E52',
+              background: '#F5A623',
               color: '#fff',
+              border: '2px solid #C47D0E',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontWeight: 700, fontSize: '13px', letterSpacing: '0.5px',
             }}>
