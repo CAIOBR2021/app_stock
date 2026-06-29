@@ -1030,13 +1030,42 @@ export default function App() {
             </button>
           ))}
         </nav>
-        <div style={{ padding: '16px 20px', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 'auto' }}>
-          <div style={{ fontSize: '10px', fontWeight: 500, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
-            Desenvolvido por
-          </div>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.3px', marginTop: '2px' }}>
-            Caio Vinícius de Carvalho Bezerra
-          </div>
+
+        {/* ── PERFIL RODAPÉ ── */}
+        <div className="sidebar-footer">
+          <button
+            type="button"
+            className="user-card"
+            onClick={() => setShowEditarNome(true)}
+            title={nomeUsuario ? `${nomeUsuario} — alterar identificação` : 'Identificar-me'}
+            style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left' }}
+          >
+            <span style={{
+              width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0,
+              background: '#6B5E52',
+              color: '#fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: 700, fontSize: '13px', letterSpacing: '0.5px',
+            }}>
+              {nomeUsuario.trim()
+                ? nomeUsuario.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('')
+                : '?'}
+            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '3px' }}>
+              <span style={{
+                fontSize: '12px', fontWeight: 700, color: 'rgba(255,255,255,0.9)', lineHeight: 1,
+                maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>
+                {nomeUsuario || 'Identificar-me'}
+              </span>
+              <span style={{
+                fontSize: '10px', fontWeight: 500, lineHeight: 1,
+                color: 'rgba(255,255,255,0.45)',
+              }}>
+                {perfilUsuario === 'almoxarifado' ? 'Almoxarifado' : perfilUsuario === 'seguranca' ? 'Seg. Trabalho' : 'Sem perfil'}
+              </span>
+            </div>
+          </button>
         </div>
       </aside>
 
@@ -1099,49 +1128,6 @@ export default function App() {
               )}
             </div>
 
-            <button
-              type="button"
-              onClick={() => setShowEditarNome(true)}
-              title={nomeUsuario ? `${nomeUsuario} — alterar identificação` : 'Identificar-me'}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
-                background: 'var(--surface-2)', border: '1px solid var(--border)',
-                borderRadius: '12px', padding: '6px 16px 6px 6px',
-                cursor: 'pointer', transition: 'border-color .15s ease, box-shadow .15s ease',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = 'var(--primary)';
-                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(245,166,35,.1)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = 'var(--border)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
-            >
-              <span style={{
-                width: '34px', height: '34px', borderRadius: '9px',
-                background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
-                color: 'var(--accent)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 800, fontSize: '14px', flexShrink: 0,
-              }}>
-                {(nomeUsuario.trim().charAt(0) || '?').toUpperCase()}
-              </span>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px' }}>
-                <span style={{
-                  fontSize: '13px', fontWeight: 700, color: 'var(--text-1)', lineHeight: 1,
-                  maxWidth: '130px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                }}>
-                  {nomeUsuario || 'Identificar-me'}
-                </span>
-                <span style={{
-                  fontSize: '10.5px', fontWeight: 600, lineHeight: 1,
-                  color: perfilUsuario === 'almoxarifado' ? 'var(--primary)' : 'var(--text-3)',
-                }}>
-                  {perfilUsuario === 'almoxarifado' ? 'Almoxarifado' : perfilUsuario === 'seguranca' ? 'Seg. Trabalho' : 'Sem perfil'}
-                </span>
-              </div>
-            </button>
           </div>
         </header>
 
@@ -1373,6 +1359,14 @@ export default function App() {
             <PrevisaoConsumo produtos={allProdutos} movimentacoes={movs} />
           </div>
         )}
+        <div style={{ textAlign: 'center', padding: '32px 0 16px', marginTop: 'auto' }}>
+          <div style={{ fontSize: '10px', fontWeight: 500, color: 'var(--text-3)', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
+            Desenvolvido por
+          </div>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-2)', letterSpacing: '0.3px', marginTop: '2px' }}>
+            Caio Vinícius de Carvalho Bezerra
+          </div>
+        </div>
       </main>
 
       {/* ── BOTTOM NAV ── */}
