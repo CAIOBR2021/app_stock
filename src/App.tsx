@@ -280,7 +280,7 @@ export default function App() {
       const res = await fetch(`${API_URL}/produtos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(p),
+        body: JSON.stringify({ ...p, operadorNome: nomeUsuario || undefined }),
       });
       if (!res.ok) throw new Error();
       const novoProduto = await res.json();
@@ -491,7 +491,7 @@ export default function App() {
       const res = await fetch(`${API_URL}/entregas/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, operadorNome: nomeUsuario || undefined }),
       });
       if (!res.ok) {
         const d = await res.json().catch(() => null);
@@ -519,7 +519,7 @@ export default function App() {
       const res = await fetch(`${API_URL}/entregas`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, operadorNome: nomeUsuario || undefined }),
       });
       if (!res.ok) {
         const d = await res.json().catch(() => null);
@@ -577,7 +577,11 @@ export default function App() {
 
   async function confirmDeleteEntrega(id: string) {
     try {
-      const res = await fetch(`${API_URL}/entregas/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${API_URL}/entregas/${id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ operadorNome: nomeUsuario || undefined }),
+      });
       if (!res.ok) {
         const d = await res.json().catch(() => null);
         throw new Error(res.status < 500 && d?.error ? d.error : '');
@@ -602,7 +606,7 @@ export default function App() {
       await fetch(`${API_URL}/entregas/${id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, operadorNome: nomeUsuario || undefined }),
       });
       setEntregas((prev) =>
         prev.map((e) => (e.id === id ? { ...e, status } : e)),
@@ -625,7 +629,7 @@ export default function App() {
       await fetch(`${API_URL}/entregas/status/lote`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: selectedEntregaIds, status: bulkTargetStatus }),
+        body: JSON.stringify({ ids: selectedEntregaIds, status: bulkTargetStatus, operadorNome: nomeUsuario || undefined }),
       });
       const eRes = await fetch(`${API_URL}/entregas`);
       setEntregas((await eRes.json()).map(normalizeEntrega));
