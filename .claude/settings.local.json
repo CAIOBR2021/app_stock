@@ -23,7 +23,14 @@
       "Bash(python -c ' *)",
       "Bash(python -c \"from PIL import Image; img=Image.open\\(r'D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_FRONT_END_VERCEL-main\\\\public\\\\almoxarife-avatar-original.png'\\); print\\(f'Original: {img.size}'\\)\")",
       "Bash(pip install *)",
-      "Bash(curl -s -X POST \"https://small-lanae-caiobezerra-b22ba187.koyeb.app/api/classificar\" -H \"Content-Type: application/json\" -d '{\"nome\":\"Disco de serra clipper\"}')"
+      "Bash(curl -s -X POST \"https://small-lanae-caiobezerra-b22ba187.koyeb.app/api/classificar\" -H \"Content-Type: application/json\" -d '{\"nome\":\"Disco de serra clipper\"}')",
+      "Bash(git rm *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(node -e \"import\\('eslint-plugin-react-hooks'\\).then\\(m => console.log\\('hooks configs:', Object.keys\\(m.default.configs || m.configs || {}\\)\\)\\)\")",
+      "Bash(node -e \"import\\('eslint-plugin-react-refresh'\\).then\\(m => console.log\\('refresh configs:', Object.keys\\(m.default.configs || m.configs || {}\\)\\)\\)\")",
+      "Bash(npm ls *)",
+      "Bash(node -e ' *)"
     ]
   }
 }

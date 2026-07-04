@@ -315,7 +315,8 @@ export default function App() {
 
   async function deleteProduto(id: UUID) {
     try {
-      await fetch(`${API_URL}/produtos/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${API_URL}/produtos/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error();
       setAllProdutos((prev) => prev.filter((p) => p.id !== id));
       setMovs((prev) => prev.filter((m) => m.produtoId !== id));
     } catch {

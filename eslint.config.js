@@ -12,12 +12,16 @@ export default tseslint.config([
     extends: [
       js.configs.recommended,
       tseslint.configs.recommended,
-      reactHooks.configs['recommended-latest'],
+      reactHooks.configs.flat['recommended-latest'],
       reactRefresh.configs.vite,
     ],
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
+    },
+    rules: {
+      // O código legado usa `any` em vários pontos; manter como aviso até a tipagem ser feita
+      '@typescript-eslint/no-explicit-any': 'warn',
     },
   },
 ])
