@@ -160,9 +160,6 @@ const IconError = () => (
 // ── APP ───────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [produtos, setProdutos] = useState<Produto[]>([]);
-  const [allProdutos, setAllProdutos] = useState<Produto[]>([]);
-  const [movs, setMovs] = useState<Movimentacao[]>([]);
   const [editingEntrega, setEditingEntrega] = useState<Entrega | null>(null);
 
   const [entregaToDeleteId, setEntregaToDeleteId] = useState<string | null>(null);
@@ -172,9 +169,8 @@ export default function App() {
   const [pendingDeliveryData, setPendingDeliveryData] = useState<EntregaPayload | null>(null);
   const [showLowStockModal, setShowLowStockModal] = useState(false);
 
-  const [loading, setLoading] = useState(true);
-  const [loadingAll, setLoadingAll] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Ligado durante mutações demoradas (lote, edição de entrega) para exibir o spinner
+  const [mutating, setMutating] = useState(false);
 
   const [view, setView] = useState<'estoque' | 'movimentacoes' | 'rotas' | 'entradas_saidas' | 'nota_fiscal' | 'previsao'>('estoque');
   const [showScroll, setShowScroll] = useState(false);
@@ -236,132 +232,148 @@ export default function App() {
     };
   }, []);
 
-  // ── DATA FETCH ───────────────────────────────────────────────────────────
+  // ── DATA FETCH (TanStack Query) ──────────────────────────────────────────
+  // O cache das chaves ['produtos'], ['movimentacoes'] e ['entregas'] é a
+  // fonte de verdade; mutações invalidam a chave (ou escrevem no cache) e a
+  // lib cuida de refetch, dedupe e revalidação ao refocar a janela.
 
-  // Entregas são gerenciadas pelo TanStack Query: o cache da chave ['entregas']
-  // é a fonte de verdade; mutações invalidam a chave e a lib refaz a busca.
   const queryClient = useQueryClient();
-  const { data: entregas = [] } = useQuery({
+
+  // Primeira página: carrega rápido e serve de placeholder enquanto a lista
+  // completa (10k itens) chega. Só é usada no boot, por isso nunca "envelhece".
+  const primeiraPaginaQuery = useQuery({
+    queryKey: ['produtos-primeira-pagina'],
+    queryFn: () => apiFetch<Produto[]>(`/produtos?_page=1&_limit=${ITEMS_PER_PAGE}`),
+    staleTime: Infinity,
+  });
+
+  const produtosQuery = useQuery({
+    queryKey: ['produtos'],
+    queryFn: () => apiFetch<Produto[]>('/produtos?_limit=10000'),
+    placeholderData: primeiraPaginaQuery.data,
+  });
+  // useMemo mantém a referência estável enquanto data é undefined (memos abaixo dependem delas)
+  const allProdutos = useMemo(() => produtosQuery.data ?? [], [produtosQuery.data]);
+
+  const movsQuery = useQuery({
+    queryKey: ['movimentacoes'],
+    queryFn: () => apiFetch<Movimentacao[]>('/movimentacoes'),
+  });
+  const movs = useMemo(() => movsQuery.data ?? [], [movsQuery.data]);
+
+  const entregasQuery = useQuery({
     queryKey: ['entregas'],
     queryFn: async () => (await apiFetch<Entrega[]>('/entregas')).map(normalizeEntrega),
   });
+  const entregas = useMemo(() => entregasQuery.data ?? [], [entregasQuery.data]);
+
+  // Estados derivados, com a mesma semântica dos antigos useStates:
+  // loading    → nada de produtos na tela ainda (nem o placeholder), ou mutação em curso
+  // loadingAll → a lista completa de produtos/movimentações ainda não chegou
+  const loading = produtosQuery.data === undefined || mutating;
+  const loadingAll =
+    produtosQuery.data === undefined || produtosQuery.isPlaceholderData || movsQuery.isPending;
+  const error =
+    primeiraPaginaQuery.isError || produtosQuery.isError || movsQuery.isError
+      ? 'Tivemos um problema ao carregar seus dados. Tente atualizar a página.'
+      : null;
+
   const invalidateEntregas = useCallback(
     () => queryClient.invalidateQueries({ queryKey: ['entregas'] }),
     [queryClient],
   );
-
-  const refetchProdutosEMovs = useCallback(async () => {
-    const [produtosData, movsData] = await Promise.all([
-      apiFetch<Produto[]>('/produtos?_limit=10000'),
-      apiFetch<Movimentacao[]>('/movimentacoes'),
-    ]);
-    setAllProdutos(produtosData);
-    setMovs(movsData);
-  }, []);
+  const invalidateProdutos = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: ['produtos'] }),
+    [queryClient],
+  );
+  const invalidateMovs = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: ['movimentacoes'] }),
+    [queryClient],
+  );
 
   useEffect(() => {
-    async function fetchInitialData() {
-      try {
-        setLoading(true);
-        setProdutos(
-          await apiFetch<Produto[]>(`/produtos?_page=1&_limit=${ITEMS_PER_PAGE}`),
-        );
-        setLoading(false);
-        await refetchProdutosEMovs();
-      } catch {
-        setError('Tivemos um problema ao carregar seus dados. Tente atualizar a página.');
-      } finally {
-        setLoadingAll(false);
-      }
-    }
-    fetchInitialData();
-
     const onScroll = () => setShowScroll(window.pageYOffset > 400);
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
-  }, [refetchProdutosEMovs]);
+  }, []);
 
-  // ── CRUD PRODUTOS ────────────────────────────────────────────────────────
+  // ── CRUD PRODUTOS (TanStack Query) ───────────────────────────────────────
+  // O backend devolve a entidade atualizada, então escrevemos direto no cache
+  // (setQueryData) em vez de refazer a busca da lista inteira.
 
-  async function addProduto(
-    p: Omit<Produto, 'id' | 'criadoEm' | 'atualizadoEm' | 'sku'>,
-  ) {
-    try {
-      const novoProduto = await apiFetch<Produto>('/produtos', {
+  const addProdutoMutation = useMutation({
+    mutationFn: (p: Omit<Produto, 'id' | 'criadoEm' | 'atualizadoEm' | 'sku'>) =>
+      apiFetch<Produto>('/produtos', {
         method: 'POST',
         body: { ...p, operadorNome: nomeUsuario || undefined },
-      });
-      setAllProdutos((prev) => [novoProduto, ...prev]);
+      }),
+    onSuccess: (novoProduto) => {
+      queryClient.setQueryData<Produto[]>(['produtos'], (prev = []) => [novoProduto, ...prev]);
+      if (novoProduto.quantidade > 0) invalidateMovs();
+    },
+    onError: () =>
+      toast.error('Não conseguimos cadastrar o produto. Tente novamente em instantes.'),
+  });
+  const addProduto = (p: Omit<Produto, 'id' | 'criadoEm' | 'atualizadoEm' | 'sku'>) =>
+    addProdutoMutation.mutate(p);
 
-      if (novoProduto.quantidade > 0) {
-        apiFetch<Movimentacao[]>('/movimentacoes').then(setMovs).catch(() => {});
-      }
-    } catch {
-      toast.error('Não conseguimos cadastrar o produto. Tente novamente em instantes.');
-    }
-  }
-
-  async function updateProduto(
-    id: UUID,
-    patch: Partial<Omit<Produto, 'id' | 'sku' | 'criadoEm'>>,
-  ) {
-    try {
-      const updated = await apiFetch<Produto>(`/produtos/${id}`, {
-        method: 'PATCH',
-        body: patch,
-      });
-      setAllProdutos((prev) => prev.map((x) => (x.id === id ? updated : x)));
-    } catch {
-      toast.error('Não conseguimos salvar as alterações do produto. Tente novamente em instantes.');
-    }
-  }
-
-  async function deleteProduto(id: UUID) {
-    try {
-      await apiFetch(`/produtos/${id}`, { method: 'DELETE' });
-      setAllProdutos((prev) => prev.filter((p) => p.id !== id));
-      setMovs((prev) => prev.filter((m) => m.produtoId !== id));
-    } catch {
-      toast.error('Não conseguimos remover o produto. Tente novamente em instantes.');
-    }
-  }
-
-  const togglePrioritario = useCallback(async (id: UUID) => {
-    const produto = allProdutos.find((p) => p.id === id);
-    if (!produto) return;
-
-    const novoEstado = !produto.prioritario;
-
-    setAllProdutos((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, prioritario: novoEstado } : p)),
-    );
-
-    try {
-      await apiFetch(`/produtos/${id}`, {
-        method: 'PATCH',
-        body: { prioritario: novoEstado },
-      });
-    } catch {
-      toast.error('Não conseguimos salvar a alteração. Tente novamente em instantes.');
-      setAllProdutos((prev) =>
-        prev.map((p) =>
-          p.id === id ? { ...p, prioritario: produto.prioritario } : p,
-        ),
+  const updateProdutoMutation = useMutation({
+    mutationFn: ({ id, patch }: { id: UUID; patch: Partial<Omit<Produto, 'id' | 'sku' | 'criadoEm'>> }) =>
+      apiFetch<Produto>(`/produtos/${id}`, { method: 'PATCH', body: patch }),
+    onSuccess: (updated, { id }) => {
+      queryClient.setQueryData<Produto[]>(['produtos'], (prev = []) =>
+        prev.map((x) => (x.id === id ? updated : x)),
       );
-    }
-  }, [allProdutos]);
+    },
+    onError: () =>
+      toast.error('Não conseguimos salvar as alterações do produto. Tente novamente em instantes.'),
+  });
+  const updateProduto = (id: UUID, patch: Partial<Omit<Produto, 'id' | 'sku' | 'criadoEm'>>) =>
+    updateProdutoMutation.mutate({ id, patch });
 
-  // ── CRUD MOVIMENTAÇÕES ───────────────────────────────────────────────────
+  const deleteProdutoMutation = useMutation({
+    mutationFn: (id: UUID) => apiFetch(`/produtos/${id}`, { method: 'DELETE' }),
+    onSuccess: (_data, id) => {
+      queryClient.setQueryData<Produto[]>(['produtos'], (prev = []) =>
+        prev.filter((p) => p.id !== id),
+      );
+      queryClient.setQueryData<Movimentacao[]>(['movimentacoes'], (prev = []) =>
+        prev.filter((m) => m.produtoId !== id),
+      );
+    },
+    onError: () =>
+      toast.error('Não conseguimos remover o produto. Tente novamente em instantes.'),
+  });
+  const deleteProduto = (id: UUID) => deleteProdutoMutation.mutate(id);
 
-  async function addMov(
-    m: Omit<Movimentacao, 'id' | 'criadoEm'>,
-    custoEntrada?: number,
-  ) {
-    try {
-      const { movimentacao, produto } = await apiFetch<{
-        movimentacao: Movimentacao;
-        produto: Produto;
-      }>('/movimentacoes', {
+  // Atualização otimista: marca/desmarca na hora e reverte se o servidor recusar
+  const togglePrioritarioMutation = useMutation({
+    mutationFn: ({ id, prioritario }: { id: UUID; prioritario: boolean }) =>
+      apiFetch(`/produtos/${id}`, { method: 'PATCH', body: { prioritario } }),
+    onMutate: async ({ id, prioritario }) => {
+      await queryClient.cancelQueries({ queryKey: ['produtos'] });
+      const anterior = queryClient.getQueryData<Produto[]>(['produtos']);
+      queryClient.setQueryData<Produto[]>(['produtos'], (prev = []) =>
+        prev.map((p) => (p.id === id ? { ...p, prioritario } : p)),
+      );
+      return { anterior };
+    },
+    onError: (_err, _vars, contexto) => {
+      toast.error('Não conseguimos salvar a alteração. Tente novamente em instantes.');
+      if (contexto?.anterior) queryClient.setQueryData(['produtos'], contexto.anterior);
+    },
+  });
+  const togglePrioritario = (id: UUID) => {
+    const produto = (queryClient.getQueryData<Produto[]>(['produtos']) ?? []).find((p) => p.id === id);
+    if (!produto) return;
+    togglePrioritarioMutation.mutate({ id, prioritario: !produto.prioritario });
+  };
+
+  // ── CRUD MOVIMENTAÇÕES (TanStack Query) ──────────────────────────────────
+
+  const addMovMutation = useMutation({
+    mutationFn: ({ m, custoEntrada }: { m: Omit<Movimentacao, 'id' | 'criadoEm'>; custoEntrada?: number }) =>
+      apiFetch<{ movimentacao: Movimentacao; produto: Produto }>('/movimentacoes', {
         method: 'POST',
         body: {
           ...m,
@@ -369,19 +381,22 @@ export default function App() {
           dataCompetencia: m.dataCompetencia,
           operadorNome: nomeUsuario || undefined,
         },
-      });
-      setMovs((prev) => [movimentacao, ...prev]);
-      setAllProdutos((prev) =>
+      }),
+    onSuccess: ({ movimentacao, produto }) => {
+      queryClient.setQueryData<Movimentacao[]>(['movimentacoes'], (prev = []) => [movimentacao, ...prev]);
+      queryClient.setQueryData<Produto[]>(['produtos'], (prev = []) =>
         prev.map((p) => (p.id === produto.id ? produto : p)),
       );
-    } catch (err) {
-      toast.error(errorMessage(err, 'Não conseguimos registrar a movimentação. Tente novamente em instantes.'));
-    }
-  }
+    },
+    onError: (err) =>
+      toast.error(errorMessage(err, 'Não conseguimos registrar a movimentação. Tente novamente em instantes.')),
+  });
+  const addMov = (m: Omit<Movimentacao, 'id' | 'criadoEm'>, custoEntrada?: number) =>
+    addMovMutation.mutate({ m, custoEntrada });
 
   const handleEntradaSaidaSubmit = async (dados: LoteMovimentacaoDados) => {
     try {
-      setLoading(true);
+      setMutating(true);
 
       const partes = [];
       if (dados.ordemCompra) partes.push(`OC: ${dados.ordemCompra}`);
@@ -406,63 +421,63 @@ export default function App() {
       };
       await apiFetch('/movimentacoes/lote', { method: 'POST', body: payload });
 
-      await Promise.all([
-        apiFetch<Movimentacao[]>('/movimentacoes'),
-        apiFetch<Produto[]>('/produtos?_limit=10000'),
-      ])
-        .then(([movsData, produtosData]) => {
-          setMovs(movsData);
-          setAllProdutos(produtosData);
-        })
-        .catch(() => {});
+      await Promise.all([invalidateMovs(), invalidateProdutos()]);
       toast.success('Movimentações registradas com sucesso!');
       setView('estoque');
       scrollTop();
     } catch (err) {
       toast.error(errorMessage(err, 'Não conseguimos registrar as movimentações. Tente novamente em instantes.'));
     } finally {
-      setLoading(false);
+      setMutating(false);
     }
   };
 
-  async function updateMov(
-    id: UUID,
-    patch: { quantidade: number; motivo?: string },
-  ) {
-    try {
-      const { movimentacaoAtualizada, produtoAtualizado } = await apiFetch<{
-        movimentacaoAtualizada: Movimentacao;
-        produtoAtualizado: Produto;
-      }>(`/movimentacoes/${id}`, { method: 'PATCH', body: patch });
-      setMovs((prev) => prev.map((m) => (m.id === id ? movimentacaoAtualizada : m)));
-      setAllProdutos((prev) =>
-        prev.map((p) => (p.id === produtoAtualizado.id ? produtoAtualizado : p)),
-      );
-      await invalidateEntregas();
-    } catch (err) {
-      toast.error(errorMessage(err, 'Não conseguimos salvar a alteração da movimentação. Tente novamente em instantes.'));
-    }
-  }
-
-  async function deleteMov(id: UUID) {
-    try {
-      const { produtoAtualizado } = await apiFetch<{ produtoAtualizado: Produto }>(
+  const updateMovMutation = useMutation({
+    mutationFn: ({ id, patch }: { id: UUID; patch: { quantidade: number; motivo?: string } }) =>
+      apiFetch<{ movimentacaoAtualizada: Movimentacao; produtoAtualizado: Produto }>(
         `/movimentacoes/${id}`,
-        { method: 'DELETE' },
+        { method: 'PATCH', body: patch },
+      ),
+    onSuccess: async ({ movimentacaoAtualizada, produtoAtualizado }, { id }) => {
+      queryClient.setQueryData<Movimentacao[]>(['movimentacoes'], (prev = []) =>
+        prev.map((m) => (m.id === id ? movimentacaoAtualizada : m)),
       );
-      setMovs((prev) => prev.filter((m) => m.id !== id));
-      setAllProdutos((prev) =>
+      queryClient.setQueryData<Produto[]>(['produtos'], (prev = []) =>
         prev.map((p) => (p.id === produtoAtualizado.id ? produtoAtualizado : p)),
       );
       await invalidateEntregas();
-    } catch (err) {
-      toast.error(errorMessage(err, 'Não conseguimos remover a movimentação. Tente novamente em instantes.'));
-    }
-  }
+    },
+    onError: (err) =>
+      toast.error(errorMessage(err, 'Não conseguimos salvar a alteração da movimentação. Tente novamente em instantes.')),
+  });
+  const updateMov = (id: UUID, patch: { quantidade: number; motivo?: string }) =>
+    updateMovMutation.mutate({ id, patch });
+
+  const deleteMovMutation = useMutation({
+    mutationFn: (id: UUID) =>
+      apiFetch<{ produtoAtualizado: Produto }>(`/movimentacoes/${id}`, { method: 'DELETE' }),
+    onSuccess: async ({ produtoAtualizado }, id) => {
+      queryClient.setQueryData<Movimentacao[]>(['movimentacoes'], (prev = []) =>
+        prev.filter((m) => m.id !== id),
+      );
+      queryClient.setQueryData<Produto[]>(['produtos'], (prev = []) =>
+        prev.map((p) => (p.id === produtoAtualizado.id ? produtoAtualizado : p)),
+      );
+      await invalidateEntregas();
+    },
+    onError: (err) =>
+      toast.error(errorMessage(err, 'Não conseguimos remover a movimentação. Tente novamente em instantes.')),
+  });
+  const deleteMov = (id: UUID) => deleteMovMutation.mutate(id);
 
   // ── CRUD ENTREGAS (TanStack Query) ───────────────────────────────────────
-  // Entregas mexem no estoque no backend, então além de invalidar ['entregas']
-  // recarregamos produtos e movimentações (ainda gerenciados manualmente).
+  // Entregas mexem no estoque no backend, então além de ['entregas']
+  // invalidamos também ['produtos'] e ['movimentacoes'].
+
+  const invalidateTudo = useCallback(
+    () => Promise.all([invalidateEntregas(), invalidateProdutos(), invalidateMovs()]),
+    [invalidateEntregas, invalidateProdutos, invalidateMovs],
+  );
 
   const updateEntregaMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: EntregaPayload }) =>
@@ -470,15 +485,15 @@ export default function App() {
         method: 'PUT',
         body: { ...data, operadorNome: nomeUsuario || undefined },
       }),
-    onMutate: () => setLoading(true),
+    onMutate: () => setMutating(true),
     onSuccess: async () => {
-      await Promise.all([invalidateEntregas(), refetchProdutosEMovs()]);
+      await invalidateTudo();
       setEditingEntrega(null);
       toast.success('Entrega atualizada com sucesso!');
     },
     onError: (err) =>
       toast.error(errorMessage(err, 'Não conseguimos atualizar a entrega. Tente novamente em instantes.')),
-    onSettled: () => setLoading(false),
+    onSettled: () => setMutating(false),
   });
 
   const addEntregaMutation = useMutation({
@@ -488,7 +503,7 @@ export default function App() {
         body: { ...data, operadorNome: nomeUsuario || undefined },
       }),
     onSuccess: async () => {
-      await Promise.all([invalidateEntregas(), refetchProdutosEMovs()]);
+      await invalidateTudo();
       toast.success('Agendamento criado com sucesso!');
     },
     onError: (err) =>
@@ -538,7 +553,7 @@ export default function App() {
         body: { operadorNome: nomeUsuario || undefined },
       }),
     onSuccess: async () => {
-      await Promise.all([invalidateEntregas(), refetchProdutosEMovs()]);
+      await invalidateTudo();
       setEntregaToDeleteId(null);
       toast.success('Entrega excluída com sucesso.');
     },
@@ -574,7 +589,7 @@ export default function App() {
 
   const confirmBulkStatusChange = async () => {
     try {
-      setLoading(true);
+      setMutating(true);
       await apiFetch('/entregas/status/lote', {
         method: 'PATCH',
         body: { ids: selectedEntregaIds, status: bulkTargetStatus, operadorNome: nomeUsuario || undefined },
@@ -586,7 +601,7 @@ export default function App() {
     } catch {
       toast.error('Não conseguimos atualizar as entregas. Tente novamente em instantes.');
     } finally {
-      setLoading(false);
+      setMutating(false);
     }
   };
 
@@ -896,7 +911,8 @@ export default function App() {
     [filteredDeliveries],
   );
 
-  const fonteDados = loadingAll ? produtos : allProdutos;
+  // Enquanto a lista completa carrega, allProdutos contém a primeira página (placeholderData)
+  const fonteDados = allProdutos;
 
   const filteredProdutos = useMemo(() => {
     let result = fonteDados.filter((p) => {
