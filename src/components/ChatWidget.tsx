@@ -67,7 +67,7 @@ export function ChatWidget() {
     if (wasDrag) {
       e.preventDefault();
       const dist = Math.sqrt((pos.right - ORIGIN.right) ** 2 + (pos.bottom - ORIGIN.bottom) ** 2);
-      if (dist <= SNAP_RADIUS) setPos({ ...ORIGIN });
+      if (dist <= SNAP_RADIUS) { setPos({ ...ORIGIN }); setFabHovered(false); }
     } else if (!open) setOpen(true);
   };
 
@@ -77,6 +77,7 @@ export function ChatWidget() {
 
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 100);
+    else setFabHovered(false);
   }, [open]);
 
   const sendMessage = async (text: string) => {
