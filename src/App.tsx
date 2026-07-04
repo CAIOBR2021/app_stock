@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import meuLogo from './assets/logo.svg';
 import { DeliveryForm } from './components/DeliveryForm';
 import { DeliveryTable } from './components/DeliveryTable';
@@ -162,7 +163,6 @@ export default function App() {
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [allProdutos, setAllProdutos] = useState<Produto[]>([]);
   const [movs, setMovs] = useState<Movimentacao[]>([]);
-  const [entregas, setEntregas] = useState<Entrega[]>([]);
   const [editingEntrega, setEditingEntrega] = useState<Entrega | null>(null);
 
   const [entregaToDeleteId, setEntregaToDeleteId] = useState<string | null>(null);
@@ -238,17 +238,23 @@ export default function App() {
 
   // ── DATA FETCH ───────────────────────────────────────────────────────────
 
-  const refetchEntregas = useCallback(async () => {
-    setEntregas((await apiFetch<Entrega[]>('/entregas')).map(normalizeEntrega));
-  }, []);
+  // Entregas são gerenciadas pelo TanStack Query: o cache da chave ['entregas']
+  // é a fonte de verdade; mutações invalidam a chave e a lib refaz a busca.
+  const queryClient = useQueryClient();
+  const { data: entregas = [] } = useQuery({
+    queryKey: ['entregas'],
+    queryFn: async () => (await apiFetch<Entrega[]>('/entregas')).map(normalizeEntrega),
+  });
+  const invalidateEntregas = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: ['entregas'] }),
+    [queryClient],
+  );
 
-  const refetchAll = useCallback(async () => {
-    const [entregasData, produtosData, movsData] = await Promise.all([
-      apiFetch<Entrega[]>('/entregas'),
+  const refetchProdutosEMovs = useCallback(async () => {
+    const [produtosData, movsData] = await Promise.all([
       apiFetch<Produto[]>('/produtos?_limit=10000'),
       apiFetch<Movimentacao[]>('/movimentacoes'),
     ]);
-    setEntregas(entregasData.map(normalizeEntrega));
     setAllProdutos(produtosData);
     setMovs(movsData);
   }, []);
@@ -261,7 +267,7 @@ export default function App() {
           await apiFetch<Produto[]>(`/produtos?_page=1&_limit=${ITEMS_PER_PAGE}`),
         );
         setLoading(false);
-        await refetchAll();
+        await refetchProdutosEMovs();
       } catch {
         setError('Tivemos um problema ao carregar seus dados. Tente atualizar a página.');
       } finally {
@@ -273,7 +279,7 @@ export default function App() {
     const onScroll = () => setShowScroll(window.pageYOffset > 400);
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
-  }, [refetchAll]);
+  }, [refetchProdutosEMovs]);
 
   // ── CRUD PRODUTOS ────────────────────────────────────────────────────────
 
@@ -432,7 +438,7 @@ export default function App() {
       setAllProdutos((prev) =>
         prev.map((p) => (p.id === produtoAtualizado.id ? produtoAtualizado : p)),
       );
-      await refetchEntregas();
+      await invalidateEntregas();
     } catch (err) {
       toast.error(errorMessage(err, 'Não conseguimos salvar a alteração da movimentação. Tente novamente em instantes.'));
     }
@@ -448,47 +454,50 @@ export default function App() {
       setAllProdutos((prev) =>
         prev.map((p) => (p.id === produtoAtualizado.id ? produtoAtualizado : p)),
       );
-      await refetchEntregas();
+      await invalidateEntregas();
     } catch (err) {
       toast.error(errorMessage(err, 'Não conseguimos remover a movimentação. Tente novamente em instantes.'));
     }
   }
 
-  // ── CRUD ENTREGAS ────────────────────────────────────────────────────────
+  // ── CRUD ENTREGAS (TanStack Query) ───────────────────────────────────────
+  // Entregas mexem no estoque no backend, então além de invalidar ['entregas']
+  // recarregamos produtos e movimentações (ainda gerenciados manualmente).
 
-  async function updateEntregaFull(id: string, data: EntregaPayload) {
-    try {
-      setLoading(true);
-      await apiFetch(`/entregas/${id}`, {
+  const updateEntregaMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: EntregaPayload }) =>
+      apiFetch(`/entregas/${id}`, {
         method: 'PUT',
         body: { ...data, operadorNome: nomeUsuario || undefined },
-      });
-      await refetchAll();
+      }),
+    onMutate: () => setLoading(true),
+    onSuccess: async () => {
+      await Promise.all([invalidateEntregas(), refetchProdutosEMovs()]);
       setEditingEntrega(null);
       toast.success('Entrega atualizada com sucesso!');
-    } catch (err) {
-      toast.error(errorMessage(err, 'Não conseguimos atualizar a entrega. Tente novamente em instantes.'));
-    } finally {
-      setLoading(false);
-    }
-  }
+    },
+    onError: (err) =>
+      toast.error(errorMessage(err, 'Não conseguimos atualizar a entrega. Tente novamente em instantes.')),
+    onSettled: () => setLoading(false),
+  });
 
-  async function addEntrega(data: EntregaPayload) {
-    try {
-      await apiFetch('/entregas', {
+  const addEntregaMutation = useMutation({
+    mutationFn: (data: EntregaPayload) =>
+      apiFetch('/entregas', {
         method: 'POST',
         body: { ...data, operadorNome: nomeUsuario || undefined },
-      });
-      await refetchAll();
+      }),
+    onSuccess: async () => {
+      await Promise.all([invalidateEntregas(), refetchProdutosEMovs()]);
       toast.success('Agendamento criado com sucesso!');
-    } catch (err) {
-      toast.error(errorMessage(err, 'Não conseguimos criar o agendamento. Tente novamente em instantes.'));
-    }
-  }
+    },
+    onError: (err) =>
+      toast.error(errorMessage(err, 'Não conseguimos criar o agendamento. Tente novamente em instantes.')),
+  });
 
   const processDeliverySave = (data: EntregaPayload) => {
-    if (editingEntrega) updateEntregaFull(editingEntrega.id, data);
-    else addEntrega(data);
+    if (editingEntrega) updateEntregaMutation.mutate({ id: editingEntrega.id, data });
+    else addEntregaMutation.mutate(data);
   };
 
   const handleSaveDelivery = (data: EntregaPayload) => {
@@ -522,34 +531,40 @@ export default function App() {
     setShowStockLimitModal(false);
   };
 
-  async function confirmDeleteEntrega(id: string) {
-    try {
-      await apiFetch(`/entregas/${id}`, {
+  const deleteEntregaMutation = useMutation({
+    mutationFn: (id: string) =>
+      apiFetch(`/entregas/${id}`, {
         method: 'DELETE',
         body: { operadorNome: nomeUsuario || undefined },
-      });
-      await refetchAll();
+      }),
+    onSuccess: async () => {
+      await Promise.all([invalidateEntregas(), refetchProdutosEMovs()]);
       setEntregaToDeleteId(null);
       toast.success('Entrega excluída com sucesso.');
-    } catch (err) {
-      toast.error(errorMessage(err, 'Não conseguimos remover a entrega. Tente novamente em instantes.'));
-    }
-  }
+    },
+    onError: (err) =>
+      toast.error(errorMessage(err, 'Não conseguimos remover a entrega. Tente novamente em instantes.')),
+  });
+  const confirmDeleteEntrega = (id: string) => deleteEntregaMutation.mutate(id);
 
-  async function updateEntregaStatus(id: string, status: string) {
-    try {
-      await apiFetch(`/entregas/${id}/status`, {
+  const updateEntregaStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      apiFetch(`/entregas/${id}/status`, {
         method: 'PATCH',
         body: { status, operadorNome: nomeUsuario || undefined },
-      });
-      setEntregas((prev) =>
+      }),
+    onSuccess: (_data, { id, status }) => {
+      // Atualiza o cache localmente (o backend não devolve a entrega atualizada)
+      queryClient.setQueryData<Entrega[]>(['entregas'], (prev = []) =>
         prev.map((e) => (e.id === id ? { ...e, status } : e)),
       );
       toast.success(`Status atualizado para ${status}.`);
-    } catch {
-      toast.error('Não conseguimos atualizar o status. Tente novamente em instantes.');
-    }
-  }
+    },
+    onError: () =>
+      toast.error('Não conseguimos atualizar o status. Tente novamente em instantes.'),
+  });
+  const updateEntregaStatus = (id: string, status: string) =>
+    updateEntregaStatusMutation.mutate({ id, status });
 
   const handleBulkStatusChange = (newStatus: string) => {
     if (selectedEntregaIds.length === 0) return;
@@ -564,7 +579,7 @@ export default function App() {
         method: 'PATCH',
         body: { ids: selectedEntregaIds, status: bulkTargetStatus, operadorNome: nomeUsuario || undefined },
       });
-      await refetchEntregas();
+      await invalidateEntregas();
       setSelectedEntregaIds([]);
       setShowBulkConfirmModal(false);
       toast.success(`Entregas marcadas como ${bulkTargetStatus}.`);
@@ -830,7 +845,7 @@ export default function App() {
       toast.success(`${valid.length} entrega(s) reprogramada(s)!`);
       setShowReprogramModal(false);
       setNewDeliveryDate('');
-      await refetchEntregas();
+      await invalidateEntregas();
     } catch {
       toast.error('Não conseguimos reprogramar as entregas. Tente novamente em instantes.');
     }
