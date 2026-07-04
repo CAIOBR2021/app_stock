@@ -56,6 +56,27 @@ export interface Entrega {
     status: string;
 }
 
+/** Payload enviado pelo formulário de entregas (DeliveryForm). */
+export interface EntregaPayload {
+  localArmazenagem: string;
+  localObra: string;
+  produtoId: string;
+  itemNome: string;
+  itemQuantidade: number;
+  responsavelNome?: string;
+  responsavelTelefone?: string;
+  dataHoraSolicitacao: string;
+}
+
+/** Dados do formulário de entrada/saída em lote (EntradaSaidaForm e NotaFiscalReader). */
+export interface LoteMovimentacaoDados {
+  tipo: 'entrada' | 'saida';
+  itens: { produtoId: string; quantidade: number; valorUnitario?: number }[];
+  ordemCompra?: string;
+  nomeObra?: string;
+  dataCompetencia?: string;
+}
+
 declare global {
   interface Window {
     jspdf: any;

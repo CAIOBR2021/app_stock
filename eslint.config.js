@@ -22,6 +22,12 @@ export default tseslint.config([
     rules: {
       // O código legado usa `any` em vários pontos; manter como aviso até a tipagem ser feita
       '@typescript-eslint/no-explicit-any': 'warn',
+      // Prefixo _ é a convenção para parâmetros intencionalmente ignorados
+      '@typescript-eslint/no-unused-vars': ['error', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_',
+      }],
     },
   },
 ])

@@ -8,8 +8,9 @@ import { PrevisaoConsumo } from './components/PrevisaoConsumo';
 import { ChatWidget } from './components/ChatWidget';
 import './styles.css';
 
-import type { Produto, Movimentacao, Entrega } from './types';
-import { API_URL, PING_URL, ITEMS_PER_PAGE } from './constants';
+import type { Produto, Movimentacao, Entrega, EntregaPayload, LoteMovimentacaoDados } from './types';
+import { PING_URL, ITEMS_PER_PAGE } from './constants';
+import { apiFetch, errorMessage } from './utils/api';
 import { isDelivered, normalizeEntrega, formatPhoneNumber } from './utils';
 import { useDebounce } from './hooks';
 import { ModalComponent, Paginacao, IdentificacaoModal } from './components/Shared';
@@ -168,7 +169,7 @@ export default function App() {
   const [showBulkConfirmModal, setShowBulkConfirmModal] = useState(false);
   const [bulkTargetStatus, setBulkTargetStatus] = useState('');
   const [showStockLimitModal, setShowStockLimitModal] = useState(false);
-  const [pendingDeliveryData, setPendingDeliveryData] = useState<any>(null);
+  const [pendingDeliveryData, setPendingDeliveryData] = useState<EntregaPayload | null>(null);
   const [showLowStockModal, setShowLowStockModal] = useState(false);
 
   const [loading, setLoading] = useState(true);
@@ -237,27 +238,30 @@ export default function App() {
 
   // ── DATA FETCH ───────────────────────────────────────────────────────────
 
+  const refetchEntregas = useCallback(async () => {
+    setEntregas((await apiFetch<Entrega[]>('/entregas')).map(normalizeEntrega));
+  }, []);
+
+  const refetchAll = useCallback(async () => {
+    const [entregasData, produtosData, movsData] = await Promise.all([
+      apiFetch<Entrega[]>('/entregas'),
+      apiFetch<Produto[]>('/produtos?_limit=10000'),
+      apiFetch<Movimentacao[]>('/movimentacoes'),
+    ]);
+    setEntregas(entregasData.map(normalizeEntrega));
+    setAllProdutos(produtosData);
+    setMovs(movsData);
+  }, []);
+
   useEffect(() => {
     async function fetchInitialData() {
       try {
         setLoading(true);
-        const firstPageRes = await fetch(
-          `${API_URL}/produtos?_page=1&_limit=${ITEMS_PER_PAGE}`,
+        setProdutos(
+          await apiFetch<Produto[]>(`/produtos?_page=1&_limit=${ITEMS_PER_PAGE}`),
         );
-        if (!firstPageRes.ok) throw new Error();
-        setProdutos(await firstPageRes.json());
         setLoading(false);
-
-        const [allProdsRes, movsRes, entregasRes] = await Promise.all([
-          fetch(`${API_URL}/produtos?_limit=10000`),
-          fetch(`${API_URL}/movimentacoes`),
-          fetch(`${API_URL}/entregas`),
-        ]);
-        if (!allProdsRes.ok || !movsRes.ok || !entregasRes.ok)
-          throw new Error();
-        setAllProdutos(await allProdsRes.json());
-        setMovs(await movsRes.json());
-        setEntregas((await entregasRes.json()).map(normalizeEntrega));
+        await refetchAll();
       } catch {
         setError('Tivemos um problema ao carregar seus dados. Tente atualizar a página.');
       } finally {
@@ -269,7 +273,7 @@ export default function App() {
     const onScroll = () => setShowScroll(window.pageYOffset > 400);
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  }, [refetchAll]);
 
   // ── CRUD PRODUTOS ────────────────────────────────────────────────────────
 
@@ -277,18 +281,14 @@ export default function App() {
     p: Omit<Produto, 'id' | 'criadoEm' | 'atualizadoEm' | 'sku'>,
   ) {
     try {
-      const res = await fetch(`${API_URL}/produtos`, {
+      const novoProduto = await apiFetch<Produto>('/produtos', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...p, operadorNome: nomeUsuario || undefined }),
+        body: { ...p, operadorNome: nomeUsuario || undefined },
       });
-      if (!res.ok) throw new Error();
-      const novoProduto = await res.json();
       setAllProdutos((prev) => [novoProduto, ...prev]);
 
       if (novoProduto.quantidade > 0) {
-        const mRes = await fetch(`${API_URL}/movimentacoes`);
-        if (mRes.ok) setMovs(await mRes.json());
+        apiFetch<Movimentacao[]>('/movimentacoes').then(setMovs).catch(() => {});
       }
     } catch {
       toast.error('Não conseguimos cadastrar o produto. Tente novamente em instantes.');
@@ -300,13 +300,10 @@ export default function App() {
     patch: Partial<Omit<Produto, 'id' | 'sku' | 'criadoEm'>>,
   ) {
     try {
-      const res = await fetch(`${API_URL}/produtos/${id}`, {
+      const updated = await apiFetch<Produto>(`/produtos/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(patch),
+        body: patch,
       });
-      if (!res.ok) throw new Error();
-      const updated = await res.json();
       setAllProdutos((prev) => prev.map((x) => (x.id === id ? updated : x)));
     } catch {
       toast.error('Não conseguimos salvar as alterações do produto. Tente novamente em instantes.');
@@ -315,8 +312,7 @@ export default function App() {
 
   async function deleteProduto(id: UUID) {
     try {
-      const res = await fetch(`${API_URL}/produtos/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error();
+      await apiFetch(`/produtos/${id}`, { method: 'DELETE' });
       setAllProdutos((prev) => prev.filter((p) => p.id !== id));
       setMovs((prev) => prev.filter((m) => m.produtoId !== id));
     } catch {
@@ -335,12 +331,10 @@ export default function App() {
     );
 
     try {
-      const res = await fetch(`${API_URL}/produtos/${id}`, {
+      await apiFetch(`/produtos/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prioritario: novoEstado }),
+        body: { prioritario: novoEstado },
       });
-      if (!res.ok) throw new Error();
     } catch {
       toast.error('Não conseguimos salvar a alteração. Tente novamente em instantes.');
       setAllProdutos((prev) =>
@@ -358,31 +352,28 @@ export default function App() {
     custoEntrada?: number,
   ) {
     try {
-      const res = await fetch(`${API_URL}/movimentacoes`, {
+      const { movimentacao, produto } = await apiFetch<{
+        movimentacao: Movimentacao;
+        produto: Produto;
+      }>('/movimentacoes', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: {
           ...m,
           custoEntrada,
           dataCompetencia: m.dataCompetencia,
           operadorNome: nomeUsuario || undefined,
-        }),
+        },
       });
-      if (!res.ok) {
-        const d = await res.json().catch(() => null);
-        throw new Error(res.status < 500 && d?.error ? d.error : '');
-      }
-      const { movimentacao, produto } = await res.json();
       setMovs((prev) => [movimentacao, ...prev]);
       setAllProdutos((prev) =>
         prev.map((p) => (p.id === produto.id ? produto : p)),
       );
-    } catch (err: any) {
-      toast.error(err?.message || 'Não conseguimos registrar a movimentação. Tente novamente em instantes.');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Não conseguimos registrar a movimentação. Tente novamente em instantes.'));
     }
   }
 
-  const handleEntradaSaidaSubmit = async (dados: any) => {
+  const handleEntradaSaidaSubmit = async (dados: LoteMovimentacaoDados) => {
     try {
       setLoading(true);
 
@@ -395,7 +386,7 @@ export default function App() {
           : `Movimentação em lote (${dados.tipo})`;
 
       const payload = {
-        itens: dados.itens.map((item: any) => ({
+        itens: dados.itens.map((item) => ({
           produtoId: item.produtoId,
           quantidade: item.quantidade,
           valorUnitario: dados.tipo === 'entrada' ? item.valorUnitario : undefined,
@@ -407,33 +398,22 @@ export default function App() {
         dataCompetencia: dados.dataCompetencia,
         operadorNome: nomeUsuario || undefined,
       };
-      const response = await fetch(`${API_URL}/movimentacoes/lote`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      await apiFetch('/movimentacoes/lote', { method: 'POST', body: payload });
 
-      const responseData = await response.json().catch(() => ({}));
-
-      if (response.ok) {
-        const [mRes, pRes] = await Promise.all([
-          fetch(`${API_URL}/movimentacoes`),
-          fetch(`${API_URL}/produtos`),
-        ]);
-        if (mRes.ok) {
-          const movsData = await mRes.json();
+      await Promise.all([
+        apiFetch<Movimentacao[]>('/movimentacoes'),
+        apiFetch<Produto[]>('/produtos?_limit=10000'),
+      ])
+        .then(([movsData, produtosData]) => {
           setMovs(movsData);
-        }
-        if (pRes.ok) setAllProdutos(await pRes.json());
-        toast.success('Movimentações registradas com sucesso!');
-        setView('estoque');
-        scrollTop();
-      } else {
-        const d = responseData;
-        toast.error(response.status < 500 && d?.error ? d.error : 'Não conseguimos registrar as movimentações. Tente novamente em instantes.');
-      }
-    } catch {
-      toast.error('Não conseguimos registrar as movimentações. Tente novamente em instantes.');
+          setAllProdutos(produtosData);
+        })
+        .catch(() => {});
+      toast.success('Movimentações registradas com sucesso!');
+      setView('estoque');
+      scrollTop();
+    } catch (err) {
+      toast.error(errorMessage(err, 'Não conseguimos registrar as movimentações. Tente novamente em instantes.'));
     } finally {
       setLoading(false);
     }
@@ -444,108 +424,74 @@ export default function App() {
     patch: { quantidade: number; motivo?: string },
   ) {
     try {
-      const res = await fetch(`${API_URL}/movimentacoes/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(patch),
-      });
-      if (!res.ok) {
-        const d = await res.json().catch(() => null);
-        throw new Error(res.status < 500 && d?.error ? d.error : '');
-      }
-      const { movimentacaoAtualizada, produtoAtualizado } = await res.json();
+      const { movimentacaoAtualizada, produtoAtualizado } = await apiFetch<{
+        movimentacaoAtualizada: Movimentacao;
+        produtoAtualizado: Produto;
+      }>(`/movimentacoes/${id}`, { method: 'PATCH', body: patch });
       setMovs((prev) => prev.map((m) => (m.id === id ? movimentacaoAtualizada : m)));
       setAllProdutos((prev) =>
         prev.map((p) => (p.id === produtoAtualizado.id ? produtoAtualizado : p)),
       );
-      const eRes = await fetch(`${API_URL}/entregas`);
-      setEntregas((await eRes.json()).map(normalizeEntrega));
-    } catch (err: any) {
-      toast.error(err?.message || 'Não conseguimos salvar a alteração da movimentação. Tente novamente em instantes.');
+      await refetchEntregas();
+    } catch (err) {
+      toast.error(errorMessage(err, 'Não conseguimos salvar a alteração da movimentação. Tente novamente em instantes.'));
     }
   }
 
   async function deleteMov(id: UUID) {
     try {
-      const res = await fetch(`${API_URL}/movimentacoes/${id}`, { method: 'DELETE' });
-      if (!res.ok) {
-        const d = await res.json().catch(() => null);
-        throw new Error(res.status < 500 && d?.error ? d.error : '');
-      }
-      const { produtoAtualizado } = await res.json();
+      const { produtoAtualizado } = await apiFetch<{ produtoAtualizado: Produto }>(
+        `/movimentacoes/${id}`,
+        { method: 'DELETE' },
+      );
       setMovs((prev) => prev.filter((m) => m.id !== id));
       setAllProdutos((prev) =>
         prev.map((p) => (p.id === produtoAtualizado.id ? produtoAtualizado : p)),
       );
-      const eRes = await fetch(`${API_URL}/entregas`);
-      setEntregas((await eRes.json()).map(normalizeEntrega));
-    } catch (err: any) {
-      toast.error(err?.message || 'Não conseguimos remover a movimentação. Tente novamente em instantes.');
+      await refetchEntregas();
+    } catch (err) {
+      toast.error(errorMessage(err, 'Não conseguimos remover a movimentação. Tente novamente em instantes.'));
     }
   }
 
   // ── CRUD ENTREGAS ────────────────────────────────────────────────────────
 
-  async function updateEntregaFull(id: string, data: any) {
+  async function updateEntregaFull(id: string, data: EntregaPayload) {
     try {
       setLoading(true);
-      const res = await fetch(`${API_URL}/entregas/${id}`, {
+      await apiFetch(`/entregas/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, operadorNome: nomeUsuario || undefined }),
+        body: { ...data, operadorNome: nomeUsuario || undefined },
       });
-      if (!res.ok) {
-        const d = await res.json().catch(() => null);
-        throw new Error(res.status < 500 && d?.error ? d.error : '');
-      }
-      const [eRes, pRes, mRes] = await Promise.all([
-        fetch(`${API_URL}/entregas`),
-        fetch(`${API_URL}/produtos?_limit=10000`),
-        fetch(`${API_URL}/movimentacoes`),
-      ]);
-      setEntregas((await eRes.json()).map(normalizeEntrega));
-      setAllProdutos(await pRes.json());
-      setMovs(await mRes.json());
+      await refetchAll();
       setEditingEntrega(null);
       toast.success('Entrega atualizada com sucesso!');
-    } catch (err: any) {
-      toast.error(err?.message || 'Não conseguimos atualizar a entrega. Tente novamente em instantes.');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Não conseguimos atualizar a entrega. Tente novamente em instantes.'));
     } finally {
       setLoading(false);
     }
   }
 
-  async function addEntrega(data: any) {
+  async function addEntrega(data: EntregaPayload) {
     try {
-      const res = await fetch(`${API_URL}/entregas`, {
+      await apiFetch('/entregas', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, operadorNome: nomeUsuario || undefined }),
+        body: { ...data, operadorNome: nomeUsuario || undefined },
       });
-      if (!res.ok) {
-        const d = await res.json().catch(() => null);
-        throw new Error(res.status < 500 && d?.error ? d.error : '');
-      }
-      const [eRes, pRes, mRes] = await Promise.all([
-        fetch(`${API_URL}/entregas`),
-        fetch(`${API_URL}/produtos?_limit=10000`),
-        fetch(`${API_URL}/movimentacoes`),
-      ]);
-      setEntregas((await eRes.json()).map(normalizeEntrega));
-      setAllProdutos(await pRes.json());
-      setMovs(await mRes.json());
+      await refetchAll();
       toast.success('Agendamento criado com sucesso!');
-    } catch (err: any) {
-      toast.error(err?.message || 'Não conseguimos criar o agendamento. Tente novamente em instantes.');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Não conseguimos criar o agendamento. Tente novamente em instantes.'));
     }
   }
 
-  const processDeliverySave = (data: any) => {
+  const processDeliverySave = (data: EntregaPayload) => {
     if (editingEntrega) updateEntregaFull(editingEntrega.id, data);
     else addEntrega(data);
   };
 
-  const handleSaveDelivery = (data: any) => {
+  const handleSaveDelivery = (data: EntregaPayload) => {
     let produto = allProdutos.find((p) => p.id === data.produtoId);
     if (!produto && data.itemNome)
       produto = allProdutos.find(
@@ -578,36 +524,23 @@ export default function App() {
 
   async function confirmDeleteEntrega(id: string) {
     try {
-      const res = await fetch(`${API_URL}/entregas/${id}`, {
+      await apiFetch(`/entregas/${id}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ operadorNome: nomeUsuario || undefined }),
+        body: { operadorNome: nomeUsuario || undefined },
       });
-      if (!res.ok) {
-        const d = await res.json().catch(() => null);
-        throw new Error(res.status < 500 && d?.error ? d.error : '');
-      }
-      const [eRes, pRes, mRes] = await Promise.all([
-        fetch(`${API_URL}/entregas`),
-        fetch(`${API_URL}/produtos?_limit=10000`),
-        fetch(`${API_URL}/movimentacoes`),
-      ]);
-      setEntregas((await eRes.json()).map(normalizeEntrega));
-      setAllProdutos(await pRes.json());
-      setMovs(await mRes.json());
+      await refetchAll();
       setEntregaToDeleteId(null);
       toast.success('Entrega excluída com sucesso.');
-    } catch (err: any) {
-      toast.error(err?.message || 'Não conseguimos remover a entrega. Tente novamente em instantes.');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Não conseguimos remover a entrega. Tente novamente em instantes.'));
     }
   }
 
   async function updateEntregaStatus(id: string, status: string) {
     try {
-      await fetch(`${API_URL}/entregas/${id}/status`, {
+      await apiFetch(`/entregas/${id}/status`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status, operadorNome: nomeUsuario || undefined }),
+        body: { status, operadorNome: nomeUsuario || undefined },
       });
       setEntregas((prev) =>
         prev.map((e) => (e.id === id ? { ...e, status } : e)),
@@ -627,13 +560,11 @@ export default function App() {
   const confirmBulkStatusChange = async () => {
     try {
       setLoading(true);
-      await fetch(`${API_URL}/entregas/status/lote`, {
+      await apiFetch('/entregas/status/lote', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: selectedEntregaIds, status: bulkTargetStatus, operadorNome: nomeUsuario || undefined }),
+        body: { ids: selectedEntregaIds, status: bulkTargetStatus, operadorNome: nomeUsuario || undefined },
       });
-      const eRes = await fetch(`${API_URL}/entregas`);
-      setEntregas((await eRes.json()).map(normalizeEntrega));
+      await refetchEntregas();
       setSelectedEntregaIds([]);
       setShowBulkConfirmModal(false);
       toast.success(`Entregas marcadas como ${bulkTargetStatus}.`);
@@ -889,10 +820,9 @@ export default function App() {
             const e = entregaMap.get(id);
             if (!e) return Promise.resolve();
             const time = e.dataHoraSolicitacao.split('T')[1] || '08:00:00';
-            return fetch(`${API_URL}/entregas/${id}`, {
+            return apiFetch(`/entregas/${id}`, {
               method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ dataHoraSolicitacao: `${newDeliveryDate}T${time}` }),
+              body: { dataHoraSolicitacao: `${newDeliveryDate}T${time}` },
             });
           }),
         );
@@ -900,8 +830,7 @@ export default function App() {
       toast.success(`${valid.length} entrega(s) reprogramada(s)!`);
       setShowReprogramModal(false);
       setNewDeliveryDate('');
-      const eRes = await fetch(`${API_URL}/entregas`);
-      setEntregas((await eRes.json()).map(normalizeEntrega));
+      await refetchEntregas();
     } catch {
       toast.error('Não conseguimos reprogramar as entregas. Tente novamente em instantes.');
     }
@@ -1351,7 +1280,7 @@ export default function App() {
                   <DeliveryTable
                     deliveries={filteredDeliveries}
                     onDelete={(id) => setEntregaToDeleteId(id)}
-                    onEdit={(item: any) => {
+                    onEdit={(item: Entrega) => {
                       const ent = normalizeEntrega(item);
                       if (!isDelivered(ent.status)) {
                         setEditingEntrega(ent);

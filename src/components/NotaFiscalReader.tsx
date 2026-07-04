@@ -242,7 +242,6 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
   const [numeroNF, setNumeroNF] = useState('');
   const [ordemCompra, setOrdemCompra] = useState('');
   const [nomeObra, setNomeObra] = useState('');
-  const [fornecedor, setFornecedor] = useState('');
   const [dataCompetencia, setDataCompetencia] = useState(hojeISO());
 
   const [dragging, setDragging] = useState(false);
@@ -305,10 +304,10 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
       if (data.numeroNF) setNumeroNF(data.numeroNF);
       if (data.ordemCompra) setOrdemCompra(data.ordemCompra);
       if (data.nomeObra) setNomeObra(data.nomeObra);
-      if (data.fornecedor) setFornecedor(data.fornecedor);
       if (data.dataEmissao) setDataCompetencia(data.dataEmissao);
 
-      const extraidos: ItemExtraido[] = (data.itens || []).map((item: any) => {
+      type ItemNF = { nome: string; quantidade?: number | string; unidade?: string; valorUnitario?: number | string };
+      const extraidos: ItemExtraido[] = (data.itens || []).map((item: ItemNF) => {
         const match = findBestMatch(item.nome, produtosPermitidos);
         let parsed: ItemExtraido = {
           nome: item.nome,
@@ -323,7 +322,7 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
       });
 
       setItensExtraidos(extraidos);
-    } catch (err: any) {
+    } catch {
       setError('Não conseguimos processar o documento. Tente novamente em instantes.');
     } finally {
       setLoading(false);
@@ -375,9 +374,9 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
     onImportar({
       tipo: 'entrada',
       ordemCompra: ordemCompra || (numeroNF ? `NF-${numeroNF}` : ''),
-      nomeObra: '',
+      nomeObra,
       itens: itensParaImportar,
-      dataCompetencia: hojeISO(),
+      dataCompetencia,
     });
 
     setFile(null);
@@ -386,7 +385,6 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
     setNumeroNF('');
     setOrdemCompra('');
     setNomeObra('');
-    setFornecedor('');
     setDataCompetencia(hojeISO());
   };
 
@@ -397,7 +395,6 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
     setNumeroNF('');
     setOrdemCompra('');
     setNomeObra('');
-    setFornecedor('');
     setError(null);
     setDataCompetencia(hojeISO());
   };

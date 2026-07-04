@@ -6,7 +6,8 @@
 export function sanitizePdfString(str: string): string {
   if (!str) return '';
   return str
-    .replace(/[\x00-\x1F\x7F]/g, ' ') // remove caracteres de controle
+    // eslint-disable-next-line no-control-regex -- remoção de caracteres de controle é intencional
+    .replace(/[\x00-\x1F\x7F]/g, ' ')
     .replace(/\s+/g, ' ')              // colapsa espaços múltiplos
     .trim();
 }

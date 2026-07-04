@@ -141,7 +141,7 @@ export function gerarPdfEstoque(
   try {
     const JsPDF = resolveJsPDF();
     doc = new JsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-  } catch (err: any) {
+  } catch {
     return { ok: false, mensagem: 'Não conseguimos gerar o relatório. Tente novamente em instantes.' };
   }
 

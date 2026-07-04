@@ -161,7 +161,7 @@ export function DeliveryTable({
                   <td>
                     <div style={localNameStyle}>{delivery.localObra}</div>
                     <div style={localSubStyle}>
-                      {delivery.localArmazenagem || (delivery as any).localArmazenamento || '—'}
+                      {delivery.localArmazenagem || delivery.localArmazenamento || '—'}
                     </div>
                   </td>
 

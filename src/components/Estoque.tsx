@@ -286,25 +286,77 @@ const IconInfoLg = () => (
   </svg>
 );
 
+const SortIcon = ({ order }: { order?: 'asc' | 'desc' | null }) => {
+  if (order === 'asc')
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="10" height="10">
+        <path d="M12 5v14M5 12l7-7 7 7" />
+      </svg>
+    );
+  if (order === 'desc')
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="10" height="10">
+        <path d="M12 5v14M5 12l7 7 7-7" />
+      </svg>
+    );
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="10" height="10" style={{ opacity: 0.4 }}>
+      <path d="M8 9l4-4 4 4M8 15l4 4 4-4" />
+    </svg>
+  );
+};
+
+type ManageFieldKey = 'categorias' | 'locais' | 'fornecedores';
+
+type SelectOption = { value: string; label: string };
+
+/** Dados produzidos pelo ProdutoForm: tudo opcional exceto o nome (quantidade só na criação). */
+type ProdutoFormData = Partial<Omit<Produto, 'id' | 'sku' | 'criadoEm' | 'atualizadoEm'>> & {
+  nome: string;
+};
+
+const FieldLabel = ({
+  label,
+  field,
+  onManage,
+}: {
+  label: string;
+  field: ManageFieldKey;
+  onManage: (field: ManageFieldKey) => void;
+}) => (
+  <div className="d-flex justify-content-between align-items-center mb-1">
+    <label className="form-label mb-0">{label}</label>
+    <button
+      type="button"
+      className="btn-manage-discreet"
+      style={{ height: '24px', padding: '0 6px' }}
+      onClick={() => onManage(field)}
+      title="Gerenciar histórico"
+    >
+      <IconGear />
+    </button>
+  </div>
+);
+
 // ── VALOR TOTAL ESTOQUE ───────────────────────────────────────────────────────
 
 export function ValorTotalEstoque({ allProdutos }: { allProdutos: Produto[] }) {
-  const [valorTotal, setValorTotal] = useState<number | null>(null);
+  const [apiValorTotal, setApiValorTotal] = useState<number | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (isVisible && allProdutos.length > 0) {
-      const total = allProdutos.reduce((acc, p) => {
-        if (p.valorUnitario && p.quantidade)
-          return acc + p.valorUnitario * p.quantidade;
-        return acc;
-      }, 0);
-      setValorTotal(total);
-    }
-  }, [allProdutos, isVisible]);
+  const localValorTotal = useMemo(() => {
+    if (allProdutos.length === 0) return null;
+    return allProdutos.reduce((acc, p) => {
+      if (p.valorUnitario && p.quantidade)
+        return acc + p.valorUnitario * p.quantidade;
+      return acc;
+    }, 0);
+  }, [allProdutos]);
+
+  const valorTotal = localValorTotal ?? apiValorTotal;
 
   const handlePasswordSubmit = async (password: string) => {
     setLoading(true);
@@ -320,11 +372,11 @@ export function ValorTotalEstoque({ allProdutos }: { allProdutos: Produto[] }) {
         throw new Error();
       }
       const data = await response.json();
-      setValorTotal(data.valorTotal);
+      setApiValorTotal(data.valorTotal);
       setIsVisible(true);
       setShowPasswordModal(false);
-    } catch (err: any) {
-      setError(err.message === 'Senha incorreta.' ? err.message : 'Não conseguimos exibir o valor total. Tente novamente em instantes.');
+    } catch (err) {
+      setError(err instanceof Error && err.message === 'Senha incorreta.' ? err.message : 'Não conseguimos exibir o valor total. Tente novamente em instantes.');
     } finally {
       setLoading(false);
     }
@@ -333,7 +385,7 @@ export function ValorTotalEstoque({ allProdutos }: { allProdutos: Produto[] }) {
   const toggleVisibility = () => {
     if (isVisible) {
       setIsVisible(false);
-      setValorTotal(null);
+      setApiValorTotal(null);
     } else {
       setError('');
       setShowPasswordModal(true);
@@ -495,13 +547,13 @@ export function ProdutoForm({
   allProdutos = [],
 }: {
   onCancel: () => void;
-  onSave: (p: any) => void;
+  onSave: (p: ProdutoFormData) => void;
   produto?: Produto;
   categorias: string[];
   locais: string[];
   allProdutos?: Produto[];
 }) {
-  const [nomeOption, setNomeOption] = useState<any>(
+  const [nomeOption, setNomeOption] = useState<SelectOption | null>(
     produto?.nome ? { value: produto.nome, label: produto.nome } : null,
   );
   const [descricao, setDescricao] = useState(produto?.descricao ?? '');
@@ -515,17 +567,17 @@ export function ProdutoForm({
   const [valorUnitario, setValorUnitario] = useState<number | undefined>(
     produto?.valorUnitario ?? undefined,
   );
-  const [categoriaOption, setCategoriaOption] = useState<any>(
+  const [categoriaOption, setCategoriaOption] = useState<SelectOption | null>(
     produto?.categoria
       ? { value: produto.categoria, label: produto.categoria }
       : null,
   );
-  const [localOption, setLocalOption] = useState<any>(
+  const [localOption, setLocalOption] = useState<SelectOption | null>(
     produto?.localArmazenamento
       ? { value: produto.localArmazenamento, label: produto.localArmazenamento }
       : null,
   );
-  const [fornecedorOption, setFornecedorOption] = useState<any>(
+  const [fornecedorOption, setFornecedorOption] = useState<SelectOption | null>(
     produto?.fornecedor
       ? { value: produto.fornecedor, label: produto.fornecedor }
       : null,
@@ -660,29 +712,10 @@ export function ProdutoForm({
     });
   }
 
-  const FieldLabel = ({
-    label,
-    field,
-  }: {
-    label: string;
-    field: 'categorias' | 'locais' | 'fornecedores';
-  }) => (
-    <div className="d-flex justify-content-between align-items-center mb-1">
-      <label className="form-label mb-0">{label}</label>
-      <button
-        type="button"
-        className="btn-manage-discreet"
-        style={{ height: '24px', padding: '0 6px' }}
-        onClick={() => {
-          setManageField(field);
-          setShowManageModal(true);
-        }}
-        title="Gerenciar histórico"
-      >
-        <IconGear />
-      </button>
-    </div>
-  );
+  const openManageModal = (field: 'categorias' | 'locais' | 'fornecedores') => {
+    setManageField(field);
+    setShowManageModal(true);
+  };
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -724,7 +757,7 @@ export function ProdutoForm({
               isClearable
               options={nomesOptions}
               value={nomeOption}
-              onChange={(opt: any) => {
+              onChange={(opt) => {
                 setNomeOption(opt);
                 if (opt && opt.value && !produto) {
                   jaClassificouRef.current = false;
@@ -756,12 +789,12 @@ export function ProdutoForm({
             />
           </div>
           <div className="col-12 col-md-6">
-            <FieldLabel label="Categoria" field="categorias" />
+            <FieldLabel label="Categoria" field="categorias" onManage={openManageModal} />
             <CreatableSelect
               isClearable
               options={categoriasOptions}
               value={categoriaOption}
-              onChange={(opt: any) => setCategoriaOption(opt)}
+              onChange={(opt) => setCategoriaOption(opt)}
               placeholder="Ex: Ferragens"
               formatCreateLabel={(i: string) => `Usar "${i}"`}
               styles={selectStyles}
@@ -769,12 +802,12 @@ export function ProdutoForm({
             />
           </div>
           <div className="col-12 col-md-6">
-            <FieldLabel label="Local de Armazenamento" field="locais" />
+            <FieldLabel label="Local de Armazenamento" field="locais" onManage={openManageModal} />
             <CreatableSelect
               isClearable
               options={locaisOptions}
               value={localOption}
-              onChange={(opt: any) => setLocalOption(opt)}
+              onChange={(opt) => setLocalOption(opt)}
               placeholder="Ex: Pátio 04"
               formatCreateLabel={(i: string) => `Usar "${i}"`}
               styles={selectStyles}
@@ -911,12 +944,12 @@ export function ProdutoForm({
           </div>
 
           <div className="col-md-12">
-            <FieldLabel label="Fornecedor" field="fornecedores" />
+            <FieldLabel label="Fornecedor" field="fornecedores" onManage={openManageModal} />
             <CreatableSelect
               isClearable
               options={fornecedoresOptions}
               value={fornecedorOption}
-              onChange={(opt: any) => setFornecedorOption(opt)}
+              onChange={(opt) => setFornecedorOption(opt)}
               placeholder="Nome do fornecedor (opcional)"
               formatCreateLabel={(i: string) => `Usar "${i}"`}
               styles={selectStyles}
@@ -991,7 +1024,7 @@ export function BotaoNovoProduto({
           <ProdutoForm
             onCancel={() => setOpen(false)}
             onSave={(p) => {
-              onCreate(p);
+              onCreate(p as Omit<Produto, 'id' | 'criadoEm' | 'atualizadoEm' | 'sku'>);
               setOpen(false);
             }}
             categorias={categorias}
@@ -1152,10 +1185,6 @@ export function MovimentacaoForm({
     );
   }
 
-  useEffect(() => {
-    if (tipo !== 'entrada') setCustoEntrada(undefined);
-  }, [tipo]);
-
   return (
     <form onSubmit={submit}>
       <div
@@ -1185,7 +1214,11 @@ export function MovimentacaoForm({
           <Select
             options={tipoOptions}
             value={tipoOptions.find((o) => o.value === tipo) || null}
-            onChange={(opt: any) => setTipo(opt?.value as TipoMov)}
+            onChange={(opt) => {
+              const novoTipo = opt?.value as TipoMov;
+              setTipo(novoTipo);
+              if (novoTipo !== 'entrada') setCustoEntrada(undefined);
+            }}
             styles={selectStyles}
             menuPortalTarget={document.body}
             isSearchable={false}
@@ -1294,48 +1327,6 @@ export function ProdutosTable({
     [deleteId, produtos],
   );
 
-  const SortIcon = () => {
-    if (sortOrder === 'asc')
-      return (
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          width="10"
-          height="10"
-        >
-          <path d="M12 5v14M5 12l7-7 7 7" />
-        </svg>
-      );
-    if (sortOrder === 'desc')
-      return (
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          width="10"
-          height="10"
-        >
-          <path d="M12 5v14M5 12l7 7 7-7" />
-        </svg>
-      );
-    return (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        width="10"
-        height="10"
-        style={{ opacity: 0.4 }}
-      >
-        <path d="M8 9l4-4 4 4M8 15l4 4 4-4" />
-      </svg>
-    );
-  };
-
   return (
     <>
       <div className="d-none d-lg-block">
@@ -1363,7 +1354,7 @@ export function ProdutosTable({
                       marginLeft: 4,
                     }}
                   >
-                    <SortIcon />
+                    <SortIcon order={sortOrder} />
                   </span>
                 </th>
                 <th style={{ width: '11%' }}>Categoria</th>

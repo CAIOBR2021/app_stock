@@ -30,7 +30,14 @@
       "Bash(node -e \"import\\('eslint-plugin-react-hooks'\\).then\\(m => console.log\\('hooks configs:', Object.keys\\(m.default.configs || m.configs || {}\\)\\)\\)\")",
       "Bash(node -e \"import\\('eslint-plugin-react-refresh'\\).then\\(m => console.log\\('refresh configs:', Object.keys\\(m.default.configs || m.configs || {}\\)\\)\\)\")",
       "Bash(npm ls *)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(npx eslint *)",
+      "Bash(grep -v '^$')",
+      "Bash(awk '/^[A-Z]:/{file=$0} /error/{print file\" -> \"$0}')",
+      "Bash(grep -vE 'no-explicit-any|^\\\\s*$')",
+      "Bash(awk '/^D:/{file=$0} /no-explicit-any/{sub\\(/.*\\\\\\\\/, \"\", file\\); print file, $1}')",
+      "Bash(awk '/^D:/{file=$0} /no-explicit-any/{n=split\\(file,a,\"\\\\\\\\\"\\); print a[n], $1}')",
+      "Bash(awk '/^D:/{file=$0} /warning/{n=split\\(file,a,\"\\\\\\\\\"\\); print a[n], $1}')"
     ]
   }
 }

@@ -77,8 +77,12 @@ export function ChatWidget() {
 
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 100);
-    else setFabHovered(false);
   }, [open]);
+
+  const closeChat = () => {
+    setOpen(false);
+    setFabHovered(false);
+  };
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || loading) return;
@@ -96,7 +100,7 @@ export function ChatWidget() {
       const data = await res.json();
       if (!res.ok) throw new Error();
       setMessages(prev => [...prev, { id: nextId.current++, role: 'assistant', text: data.resposta, timestamp: new Date() }]);
-    } catch (err: any) {
+    } catch {
       setMessages(prev => [...prev, { id: nextId.current++, role: 'assistant', text: 'Não consegui processar sua mensagem agora. Tente novamente ou pergunte sobre produtos, estoque e movimentações.', timestamp: new Date() }]);
     } finally {
       setLoading(false);
@@ -197,7 +201,7 @@ export function ChatWidget() {
 
             {/* Close button */}
             <button
-              onClick={() => setOpen(false)}
+              onClick={closeChat}
               style={{
                 position: 'absolute', top: '12px', right: '12px', zIndex: 2,
                 width: '28px', height: '28px', borderRadius: '8px',

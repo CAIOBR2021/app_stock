@@ -81,7 +81,7 @@ const TIPO_LABELS: Record<TipoRelatorio, string> = {
 // ── ESTILOS DOS BOTÕES ────────────────────────────────────────────────────────
 
 const btnCancelarStyle: React.CSSProperties = {
-  all: 'unset' as any,
+  all: 'unset',
   height: '40px',
   padding: '0 18px',
   borderRadius: '10px',
@@ -99,7 +99,7 @@ const btnCancelarStyle: React.CSSProperties = {
 };
 
 const btnGerarStyle: React.CSSProperties = {
-  all: 'unset' as any,
+  all: 'unset',
   height: '40px',
   padding: '0 22px',
   borderRadius: '10px',
@@ -222,7 +222,7 @@ export function RelatorioModal({ categorias, produtos, onGerar, onClose }: Relat
           </div>
           <button
             onClick={onClose}
-            style={{ all: 'unset' as any, width: '30px', height: '30px', borderRadius: '8px', background: 'rgba(0,0,0,.04)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', flexShrink: 0, boxSizing: 'border-box' }}
+            style={{ all: 'unset', width: '30px', height: '30px', borderRadius: '8px', background: 'rgba(0,0,0,.04)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', flexShrink: 0, boxSizing: 'border-box' }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>

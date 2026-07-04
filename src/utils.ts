@@ -4,13 +4,19 @@ export const isDelivered = (status: string | undefined) => {
   return status?.trim().toLowerCase() === 'entregue';
 };
 
-export const normalizeEntrega = (e: any): Entrega => {
+/** Entrega como pode vir do backend, com variações antigas de nome de campo. */
+type RawEntrega = Partial<Entrega> & {
+  produtoid?: string;
+  localArmazenamento?: string;
+};
+
+export const normalizeEntrega = (e: RawEntrega): Entrega => {
   return {
     ...e,
     produtoId: e.produtoId || e.produtoid || '',
     localArmazenagem: e.localArmazenagem || e.localArmazenamento || '',
     dataHoraSolicitacao: e.dataHoraSolicitacao || new Date().toISOString()
-  };
+  } as Entrega;
 };
 
 export const formatPhoneNumber = (value: string) => {

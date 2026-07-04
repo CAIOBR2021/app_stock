@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import Select from 'react-select';
+import type { StylesConfig } from 'react-select';
 import { API_URL } from '../constants';
 
 // ── SVG ICONS ─────────────────────────────────────────────────────────────────
@@ -229,7 +230,13 @@ const IconLock = ({ size = 18 }: { size?: number }) => (
   </svg>
 );
 
-const PERFIL_OPTIONS = [
+interface PerfilOption {
+  value: string;
+  label: string;
+  locked: boolean;
+}
+
+const PERFIL_OPTIONS: PerfilOption[] = [
   { value: 'almoxarifado', label: 'Almoxarifado', locked: true },
   { value: 'seguranca', label: 'Segurança do Trabalho', locked: false },
 ];
@@ -237,8 +244,8 @@ const PERFIL_OPTIONS = [
 const DARK_BG = '#1A1A2E';
 const DARK_BORDER = 'rgba(255,255,255,.14)';
 
-const darkSelectStyles = {
-  control: (_: any, state: any) => ({
+const darkSelectStyles: StylesConfig = {
+  control: (_, state) => ({
     backgroundColor: 'rgba(255,255,255,.06)',
     borderColor: state.isFocused ? '#F5A623' : DARK_BORDER,
     borderWidth: '1.5px',
@@ -253,13 +260,13 @@ const darkSelectStyles = {
     cursor: 'pointer',
     transition: 'border-color .2s ease, box-shadow .2s ease',
   }),
-  valueContainer: (base: any) => ({ ...base, padding: '0 14px' }),
-  placeholder: (base: any) => ({ ...base, color: 'rgba(255,255,255,.38)', fontSize: '15px' }),
-  singleValue: (base: any) => ({ ...base, color: '#fff', fontSize: '15px', fontFamily: 'DM Sans, sans-serif' }),
-  input: (_: any) => ({ color: '#fff', margin: 0, padding: 0 }),
+  valueContainer: (base) => ({ ...base, padding: '0 14px' }),
+  placeholder: (base) => ({ ...base, color: 'rgba(255,255,255,.38)', fontSize: '15px' }),
+  singleValue: (base) => ({ ...base, color: '#fff', fontSize: '15px', fontFamily: 'DM Sans, sans-serif' }),
+  input: () => ({ color: '#fff', margin: 0, padding: 0 }),
   indicatorSeparator: () => ({ display: 'none' }),
-  dropdownIndicator: (_: any) => ({ color: 'rgba(255,255,255,.45)', padding: '0 12px', display: 'flex' }),
-  menu: (_: any) => ({
+  dropdownIndicator: () => ({ color: 'rgba(255,255,255,.45)', padding: '0 12px', display: 'flex' }),
+  menu: () => ({
     backgroundColor: DARK_BG,
     borderRadius: '12px',
     border: '1px solid rgba(255,255,255,.12)',
@@ -267,13 +274,13 @@ const darkSelectStyles = {
     overflow: 'hidden',
     marginTop: '6px',
   }),
-  menuList: (_: any) => ({
+  menuList: () => ({
     backgroundColor: DARK_BG,
     padding: '4px',
     borderRadius: '12px',
   }),
-  menuPortal: (base: any) => ({ ...base, zIndex: 99999 }),
-  option: (_: any, state: any) => ({
+  menuPortal: (base) => ({ ...base, zIndex: 99999 }),
+  option: (_, state) => ({
     backgroundColor: state.isSelected
       ? '#F5A623'
       : state.isFocused
@@ -465,8 +472,8 @@ export function IdentificacaoModal({
           <Select
             options={PERFIL_OPTIONS}
             value={PERFIL_OPTIONS.find(o => o.value === perfil) || null}
-            onChange={(opt: any) => {
-              const novoPerf = opt?.value ?? '';
+            onChange={(opt) => {
+              const novoPerf = (opt as PerfilOption | null)?.value ?? '';
               setPerfil(novoPerf);
               setSenha('');
               setSenhaErro('');
@@ -476,7 +483,7 @@ export function IdentificacaoModal({
             styles={darkSelectStyles}
             menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
             isSearchable={false}
-            formatOptionLabel={(opt: any) => (
+            formatOptionLabel={(opt) => (
               <span style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
                 {opt.label}
                 {opt.locked && (

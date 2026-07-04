@@ -3,6 +3,7 @@ import Select from 'react-select';
 import CreatableSelect from 'react-select/creatable';
 import type { StylesConfig } from 'react-select';
 import { safeLocalStorageGet, safeLocalStorageSet } from '../utils/storage';
+import type { Produto, Entrega, EntregaPayload } from '../types';
 
 // ── SVG ICONS ─────────────────────────────────────────────────────────────────
 
@@ -67,12 +68,22 @@ const HIDDEN_OPTIONS_DEFAULT: HiddenOptions = {
   responsaveis: [],
 };
 
+interface ProdutoOption {
+  value: string;
+  label: string;
+  nomeProduto: string;
+  unidade: string;
+  quantidade: number;
+}
+
+type SimpleOption = { value: string; label: string } | null;
+
 interface DeliveryFormProps {
-  onSave: (data: any) => void;
+  onSave: (data: EntregaPayload) => void;
   onCancelEdit?: () => void;
-  deliveryToEdit?: any;
-  produtosDisponiveis: any[];
-  historicoEntregas?: any[];
+  deliveryToEdit?: Entrega | null;
+  produtosDisponiveis: Produto[];
+  historicoEntregas?: Entrega[];
 }
 
 // ── REACT-SELECT STYLES ───────────────────────────────────────────────────────
@@ -107,6 +118,29 @@ const selectStyles: StylesConfig = {
 
 // ── COMPONENT ─────────────────────────────────────────────────────────────────
 
+const FieldLabel = ({
+  label,
+  field,
+  onManage,
+}: {
+  label: string;
+  field: keyof HiddenOptions;
+  onManage: (field: keyof HiddenOptions) => void;
+}) => (
+  <div className="d-flex justify-content-between align-items-center mb-1">
+    <label className="form-label mb-0">{label}</label>
+    <button
+      type="button"
+      className="btn-manage-discreet"
+      style={{ height: '24px', padding: '0 6px' }}
+      onClick={() => onManage(field)}
+      title="Gerenciar histórico"
+    >
+      <IconGear />
+    </button>
+  </div>
+);
+
 export function DeliveryForm({
   onSave,
   produtosDisponiveis,
@@ -125,7 +159,7 @@ export function DeliveryForm({
   });
   const [data,           setData]           = useState(todayStr);
   const [hora,           setHora]           = useState('08:00');
-  const [selectedOption, setSelectedOption] = useState<any>(null);
+  const [selectedOption, setSelectedOption] = useState<ProdutoOption | null>(null);
   const [formError,      setFormError]      = useState('');
 
   const [showManageModal, setShowManageModal] = useState(false);
@@ -187,7 +221,11 @@ export function DeliveryForm({
       quantidade: p.quantidade,
     })), [produtosDisponiveis]);
 
-  useEffect(() => {
+  // Preenche o formulário quando uma entrega entra em edição
+  // (ajuste de estado durante o render, conforme https://react.dev/learn/you-might-not-need-an-effect)
+  const [prevDeliveryToEdit, setPrevDeliveryToEdit] = useState(deliveryToEdit);
+  if (deliveryToEdit !== prevDeliveryToEdit) {
+    setPrevDeliveryToEdit(deliveryToEdit);
     if (deliveryToEdit) {
       const d = new Date(deliveryToEdit.dataHoraSolicitacao);
       setData(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
@@ -203,7 +241,7 @@ export function DeliveryForm({
       });
       setSelectedOption(options.find(o => o.value === deliveryToEdit.produtoId) || null);
     }
-  }, [deliveryToEdit, options]);
+  }
 
   // ── SUBMIT COM VALIDAÇÃO ──────────────────────────────────────────────────
   const handleSubmit = (e: React.FormEvent) => {
@@ -248,7 +286,7 @@ export function DeliveryForm({
     }
   };
 
-  const handleResponsavelChange = (newValue: any) => {
+  const handleResponsavelChange = (newValue: SimpleOption) => {
     const nome = newValue?.value || '';
     const tel  = nome ? (sugestoes.mapaTelefonePorNome[nome.toLowerCase()] || formData.responsavelTelefone) : '';
     setFormData(prev => ({ ...prev, responsavelNome: nome, responsavelTelefone: tel }));
@@ -266,20 +304,10 @@ export function DeliveryForm({
     setHiddenOptions(prev => ({ ...prev, [field]: [...(prev[field] || []), ...sugestoes[field]] }));
   };
 
-  const FieldLabel = ({ label, field }: { label: string; field: keyof HiddenOptions }) => (
-    <div className="d-flex justify-content-between align-items-center mb-1">
-      <label className="form-label mb-0">{label}</label>
-      <button
-        type="button"
-        className="btn-manage-discreet"
-        style={{ height: '24px', padding: '0 6px' }}
-        onClick={() => { setManageField(field); setShowManageModal(true); }}
-        title="Gerenciar histórico"
-      >
-        <IconGear />
-      </button>
-    </div>
-  );
+  const openManageModal = (field: keyof HiddenOptions) => {
+    setManageField(field);
+    setShowManageModal(true);
+  };
 
   return (
     <>
@@ -317,9 +345,10 @@ export function DeliveryForm({
           <label className="form-label">Produto *</label>
           <Select
             value={selectedOption}
-            onChange={(opt: any) => {
-              setSelectedOption(opt);
-              setFormData(prev => ({ ...prev, produtoId: opt?.value || '', itemNome: opt?.nomeProduto || '' }));
+            onChange={(opt) => {
+              const option = opt as ProdutoOption | null;
+              setSelectedOption(option);
+              setFormData(prev => ({ ...prev, produtoId: option?.value || '', itemNome: option?.nomeProduto || '' }));
               setFormError('');
             }}
             options={options}
@@ -341,11 +370,11 @@ export function DeliveryForm({
         </div>
 
         <div className="mb-3">
-          <FieldLabel label="Origem (Armazém) *" field="origens" />
+          <FieldLabel label="Origem (Armazém) *" field="origens" onManage={openManageModal} />
           <CreatableSelect
             isClearable options={origensOptions}
             value={formData.localArmazenagem ? { value: formData.localArmazenagem, label: formData.localArmazenagem } : null}
-            onChange={(v: any) => setFormData(prev => ({ ...prev, localArmazenagem: v?.value || '' }))}
+            onChange={(v) => setFormData(prev => ({ ...prev, localArmazenagem: (v as SimpleOption)?.value || '' }))}
             placeholder="Selecione ou digite..."
             formatCreateLabel={(i: string) => `Usar "${i}"`}
             styles={selectStyles} menuPortalTarget={document.body}
@@ -353,11 +382,11 @@ export function DeliveryForm({
         </div>
 
         <div className="mb-3">
-          <FieldLabel label="Destino (Obra) *" field="destinos" />
+          <FieldLabel label="Destino (Obra) *" field="destinos" onManage={openManageModal} />
           <CreatableSelect
             isClearable options={destinosOptions}
             value={formData.localObra ? { value: formData.localObra, label: formData.localObra } : null}
-            onChange={(v: any) => setFormData(prev => ({ ...prev, localObra: v?.value || '' }))}
+            onChange={(v) => setFormData(prev => ({ ...prev, localObra: (v as SimpleOption)?.value || '' }))}
             placeholder="Ex: Bloco A"
             formatCreateLabel={(i: string) => `Usar "${i}"`}
             styles={selectStyles} menuPortalTarget={document.body}
@@ -365,11 +394,11 @@ export function DeliveryForm({
         </div>
 
         <div className="mb-3">
-          <FieldLabel label="Responsável" field="responsaveis" />
+          <FieldLabel label="Responsável" field="responsaveis" onManage={openManageModal} />
           <CreatableSelect
             isClearable options={responsaveisOptions}
             value={formData.responsavelNome ? { value: formData.responsavelNome, label: formData.responsavelNome } : null}
-            onChange={handleResponsavelChange}
+            onChange={(v) => handleResponsavelChange(v as SimpleOption)}
             placeholder="Nome de quem recebe"
             formatCreateLabel={(i: string) => `Usar "${i}"`}
             styles={selectStyles} menuPortalTarget={document.body}
@@ -381,7 +410,7 @@ export function DeliveryForm({
           <CreatableSelect
             isClearable options={telefonesOptions}
             value={formData.responsavelTelefone ? { value: formData.responsavelTelefone, label: formData.responsavelTelefone } : null}
-            onChange={(v: any) => setFormData(prev => ({ ...prev, responsavelTelefone: v?.value || '' }))}
+            onChange={(v) => setFormData(prev => ({ ...prev, responsavelTelefone: (v as SimpleOption)?.value || '' }))}
             placeholder="(00) 00000-0000"
             formatCreateLabel={(i: string) => `Usar "${i}"`}
             styles={selectStyles} menuPortalTarget={document.body}

@@ -118,7 +118,7 @@ export function EntradaSaidaForm({ produtos, onSubmit, perfilUsuario }: EntradaS
   const [tipo,            setTipo]            = useState<'entrada' | 'saida' | 'ajuste'>('entrada');
   const [selecionados,    setSelecionados]    = useState<Record<string, { quantidade: number; valorUnitario: number }>>({});
   const [busca,           setBusca]           = useState('');
-  const [categoriaOption, setCategoriaOption] = useState<any>(null);
+  const [categoriaOption, setCategoriaOption] = useState<{ value: string; label: string } | null>(null);
   const [dataCompetencia, setDataCompetencia] = useState(hojeISO());
   const pendingFocusRef = useRef<string | null>(null);
 
@@ -157,7 +157,7 @@ export function EntradaSaidaForm({ produtos, onSubmit, perfilUsuario }: EntradaS
         (!categoriaFiltro || p.categoria === categoriaFiltro)
       );
     });
-  }, [produtos, tipo, busca, categoriaFiltro]);
+  }, [produtos, tipo, busca, categoriaFiltro, perfilUsuario]);
 
   const handleTipoChange = (novoTipo: 'entrada' | 'saida' | 'ajuste') => {
     setTipo(novoTipo);
@@ -417,7 +417,7 @@ export function EntradaSaidaForm({ produtos, onSubmit, perfilUsuario }: EntradaS
               <Select
                 options={categoriasOptions}
                 value={categoriaOption || categoriasOptions[0]}
-                onChange={(opt: any) => setCategoriaOption(opt?.value ? opt : null)}
+                onChange={(opt) => setCategoriaOption(opt?.value ? opt : null)}
                 styles={selectStyles}
                 menuPortalTarget={document.body}
                 isSearchable={false}

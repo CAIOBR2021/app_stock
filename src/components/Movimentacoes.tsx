@@ -150,10 +150,6 @@ export function MovimentacaoForm({
     );
   }
 
-  useEffect(() => {
-    if (tipo !== 'entrada') setCustoEntrada(undefined);
-  }, [tipo]);
-
   return (
     <form onSubmit={submit}>
       <div className="mb-3" style={{ fontSize: '13.5px', color: 'var(--text-2)' }}>
@@ -175,7 +171,11 @@ export function MovimentacaoForm({
           <Select
             options={tipoOptions}
             value={tipoOptions.find((o) => o.value === tipo) || null}
-            onChange={(opt: any) => setTipo(opt?.value as TipoMov)}
+            onChange={(opt) => {
+              const novoTipo = opt?.value as TipoMov;
+              setTipo(novoTipo);
+              if (novoTipo !== 'entrada') setCustoEntrada(undefined);
+            }}
             styles={selectStyles}
             menuPortalTarget={document.body}
             isSearchable={false}
@@ -312,7 +312,7 @@ export function MovimentacaoEditForm({
   motivosDisponiveis?: string[];
 }) {
   const [quantidade, setQuantidade] = useState(movimentacao.quantidade);
-  const [motivoOption, setMotivoOption] = useState<any>(
+  const [motivoOption, setMotivoOption] = useState<{ value: string; label: string } | null>(
     movimentacao.motivo ? { value: movimentacao.motivo, label: movimentacao.motivo } : null,
   );
   const [showManageModal, setShowManageModal] = useState(false);
@@ -378,7 +378,7 @@ export function MovimentacaoEditForm({
             </div>
             <CreatableSelect
               isClearable options={motivosOptions} value={motivoOption}
-              onChange={(opt: any) => setMotivoOption(opt)}
+              onChange={(opt) => setMotivoOption(opt)}
               placeholder="Ex: Uso na obra, Requisição"
               formatCreateLabel={(i: string) => `Usar "${i}"`}
               styles={selectStyles} menuPortalTarget={document.body}
@@ -421,8 +421,8 @@ export function ConsultaMovimentacoes({
 }) {
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
-  const [categoriaOption, setCategoriaOption] = useState<any>(null);
-  const [obraOption, setObraOption] = useState<any>(null);
+  const [categoriaOption, setCategoriaOption] = useState<{ value: string; label: string } | null>(null);
+  const [obraOption, setObraOption] = useState<{ value: string; label: string } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(30);
   const [deleteId, setDeleteId] = useState<UUID | null>(null);
@@ -489,7 +489,14 @@ export function ConsultaMovimentacoes({
       .reduce((total, m) => total + m.quantidade * (Number(m.custoUnitarioHistorico) || 0), 0);
   }, [filteredMovs, filtroObra]);
 
-  useEffect(() => { setCurrentPage(1); }, [filteredMovs.length, itemsPerPage]);
+  // Volta para a página 1 quando o filtro ou o tamanho da página mudam
+  // (ajuste de estado durante o render, conforme https://react.dev/learn/you-might-not-need-an-effect)
+  const pageResetKey = `${filteredMovs.length}|${itemsPerPage}`;
+  const [prevPageResetKey, setPrevPageResetKey] = useState(pageResetKey);
+  if (pageResetKey !== prevPageResetKey) {
+    setPrevPageResetKey(pageResetKey);
+    setCurrentPage(1);
+  }
 
   const paginatedMovs = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -529,7 +536,7 @@ export function ConsultaMovimentacoes({
             <Select
               options={categoriasOptions}
               value={categoriaOption || categoriasOptions[0]}
-              onChange={(opt: any) => setCategoriaOption(opt?.value ? opt : null)}
+              onChange={(opt) => setCategoriaOption(opt?.value ? opt : null)}
               styles={selectStyles} menuPortalTarget={document.body}
               isSearchable={false} placeholder="Todas"
             />
@@ -539,7 +546,7 @@ export function ConsultaMovimentacoes({
             <Select
               options={obrasOptions}
               value={obraOption || obrasOptions[0]}
-              onChange={(opt: any) => setObraOption(opt?.value ? opt : null)}
+              onChange={(opt) => setObraOption(opt?.value ? opt : null)}
               styles={selectStyles} menuPortalTarget={document.body}
               isSearchable={false} placeholder="Todas"
             />
@@ -549,7 +556,7 @@ export function ConsultaMovimentacoes({
             <Select
               options={itemsPerPageOptions}
               value={itemsPerPageOptions.find((o) => o.value === itemsPerPage) || itemsPerPageOptions[0]}
-              onChange={(opt: any) => setItemsPerPage(opt?.value || 30)}
+              onChange={(opt) => setItemsPerPage(opt?.value || 30)}
               styles={selectStyles} menuPortalTarget={document.body}
               isSearchable={false}
             />
