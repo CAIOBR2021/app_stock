@@ -163,6 +163,20 @@ const IconMore = () => (
     <circle cx="19" cy="12" r="2" />
   </svg>
 );
+const IconSliders = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15">
+    <line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" />
+    <line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" />
+    <line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" />
+    <line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" />
+  </svg>
+);
+const IconChevronDown = ({ up }: { up?: boolean }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"
+    style={{ transform: up ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }}>
+    <polyline points="6 9 12 15 18 9" />
+  </svg>
+);
 
 // ── APP ───────────────────────────────────────────────────────────────────────
 
@@ -181,6 +195,8 @@ export default function App() {
 
   const [view, setView] = useState<'estoque' | 'movimentacoes' | 'rotas' | 'entradas_saidas' | 'nota_fiscal' | 'previsao'>('estoque');
   const [showMoreSheet, setShowMoreSheet] = useState(false);
+  // No mobile os filtros ficam recolhidos por padrão; no desktop são sempre visíveis
+  const [showFiltersMobile, setShowFiltersMobile] = useState(false);
   const [showScroll, setShowScroll] = useState(false);
   const [q, setQ] = useState('');
   const [categoriaFilter, setCategoriaFilter] = useState('');
@@ -886,6 +902,12 @@ export default function App() {
   const alertCountLabel =
     produtosAbaixoMinimo.length > 99 ? '99+' : String(produtosAbaixoMinimo.length);
 
+  const activeFilterCount =
+    (categoriaFilter ? 1 : 0) +
+    (localFilter ? 1 : 0) +
+    (mostrarAbaixoMin ? 1 : 0) +
+    (mostrarPrioritarios ? 1 : 0);
+
   const categorias = useMemo(
     () =>
       Array.from(new Set(allProdutos.map((p) => p.categoria || '').filter(Boolean))),
@@ -1157,27 +1179,46 @@ export default function App() {
                     />
                   </div>
                 </div>
-                <div className="col-12 col-md-4 col-lg-3">
+                <div className="col-12 d-lg-none">
+                  <button
+                    type="button"
+                    className="btn btn-ghost w-100 d-flex align-items-center justify-content-center gap-2"
+                    onClick={() => setShowFiltersMobile((v) => !v)}
+                  >
+                    <IconSliders /> Filtros
+                    {activeFilterCount > 0 && (
+                      <span style={{
+                        background: 'var(--primary)', color: '#fff', fontSize: '11px', fontWeight: 700,
+                        borderRadius: 999, minWidth: '18px', height: '18px', lineHeight: '18px',
+                        padding: '0 5px', textAlign: 'center',
+                      }}>
+                        {activeFilterCount}
+                      </span>
+                    )}
+                    <IconChevronDown up={showFiltersMobile} />
+                  </button>
+                </div>
+                <div className={`col-12 col-md-4 col-lg-3 ${showFiltersMobile ? '' : 'd-none d-lg-block'}`}>
                   <label className="form-label">Categoria</label>
                   <select className="form-select" value={categoriaFilter} onChange={(e) => { setCategoriaFilter(e.target.value); setPage(1); }}>
                     <option value="">Todas as categorias</option>
                     {categorias.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
-                <div className="col-12 col-md-4 col-lg-2">
+                <div className={`col-12 col-md-4 col-lg-2 ${showFiltersMobile ? '' : 'd-none d-lg-block'}`}>
                   <label className="form-label">Localização</label>
                   <select className="form-select" value={localFilter} onChange={(e) => { setLocalFilter(e.target.value); setPage(1); }}>
                     <option value="">Todos os locais</option>
                     {locaisArmazenamento.map((l) => <option key={l} value={l}>{l}</option>)}
                   </select>
                 </div>
-                <div className="col-12 col-md-4 col-lg-2">
+                <div className={`col-12 col-md-4 col-lg-2 ${showFiltersMobile ? '' : 'd-none d-lg-block'}`}>
                   <label className="form-label">Status</label>
-                  <div className="d-flex flex-column gap-1">
-                    <button className={`toggle-chip${mostrarAbaixoMin ? ' active-warning' : ''}`} onClick={() => { setMostrarAbaixoMin(!mostrarAbaixoMin); setPage(1); }}>
+                  <div className="d-flex flex-lg-column gap-2 gap-lg-1">
+                    <button className={`toggle-chip flex-fill flex-lg-grow-0 justify-content-center justify-content-lg-start${mostrarAbaixoMin ? ' active-warning' : ''}`} onClick={() => { setMostrarAbaixoMin(!mostrarAbaixoMin); setPage(1); }}>
                       <span className="dot" /> Abaixo do mín.
                     </button>
-                    <button className={`toggle-chip${mostrarPrioritarios ? ' active-danger' : ''}`} onClick={() => { setMostrarPrioritarios(!mostrarPrioritarios); setPage(1); }}>
+                    <button className={`toggle-chip flex-fill flex-lg-grow-0 justify-content-center justify-content-lg-start${mostrarPrioritarios ? ' active-danger' : ''}`} onClick={() => { setMostrarPrioritarios(!mostrarPrioritarios); setPage(1); }}>
                       <span className="dot" /> Prioritários
                     </button>
                   </div>

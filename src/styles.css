@@ -1454,6 +1454,11 @@ table.table tbody tr.row-danger:hover td {
   flex-wrap: wrap;
 }
 
+/* Sem indicadores (aviso/prioridade/valor), a faixa não ocupa espaço */
+.card-indicators:empty {
+  display: none;
+}
+
 .card-title-clamp {
   font-weight: 700;
   color: var(--text-1);
@@ -1702,6 +1707,51 @@ table.table tbody tr.row-danger:hover td {
 
   .es-search-row>div:last-child {
     width: 100% !important;
+  }
+}
+
+/* ── PRODUTO CARD compacto no mobile ─────────────────────── */
+@media (max-width: 991px) {
+  .product-card .card-body {
+    padding: 12px 14px !important;
+  }
+
+  .card-title-clamp {
+    font-size: 14.5px;
+    margin-top: 4px;
+  }
+
+  .card-indicators {
+    margin-bottom: 4px;
+  }
+
+  .product-card .card-info-grid {
+    margin: 6px 0 !important;
+    gap: 4px 10px;
+  }
+
+  .card-info-grid span {
+    font-size: 12.5px;
+  }
+}
+
+/* Barra de confirmação fixa acima da bottom-nav no mobile */
+@media (max-width: 991px) {
+
+  /* overflow:hidden no card quebraria o sticky do rodapé */
+  .es-card {
+    overflow: visible !important;
+  }
+
+  .es-footer {
+    position: sticky;
+    bottom: calc(var(--bottom-nav-height) + 8px);
+    z-index: 20;
+    padding: 14px 16px !important;
+    gap: 10px;
+    flex-wrap: wrap;
+    border-radius: 0 0 16px 16px;
+    box-shadow: 0 -6px 20px rgba(0, 0, 0, .08);
   }
 }
 

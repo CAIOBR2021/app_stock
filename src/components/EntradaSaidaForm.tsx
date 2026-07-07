@@ -246,7 +246,7 @@ export function EntradaSaidaForm({ produtos, onSubmit, perfilUsuario }: EntradaS
 
   return (
     <form onSubmit={handleSubmit}>
-      <div style={{
+      <div className="es-card" style={{
         background: 'var(--surface)',
         border: '1px solid var(--border)',
         borderRadius: '16px',
@@ -636,7 +636,7 @@ export function EntradaSaidaForm({ produtos, onSubmit, perfilUsuario }: EntradaS
         </div>
 
         {/* ── Footer Action Bar ── */}
-        <div style={{
+        <div className="es-footer" style={{
           padding: '16px 28px',
           display: 'flex',
           alignItems: 'center',
