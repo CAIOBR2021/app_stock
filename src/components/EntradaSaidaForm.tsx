@@ -317,7 +317,7 @@ export function EntradaSaidaForm({ produtos, onSubmit, perfilUsuario }: EntradaS
           )}
 
           {/* Fields Row */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 180px', gap: '12px' }}>
+          <div className="es-fields-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 180px', gap: '12px' }}>
             <div>
               <label style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-3)', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '.5px' }}>
                 Ordem de Compra
@@ -395,7 +395,7 @@ export function EntradaSaidaForm({ produtos, onSubmit, perfilUsuario }: EntradaS
         {/* ── Product Selection ── */}
         <div style={{ padding: '20px 28px 0' }}>
           {/* Search Bar */}
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
+          <div className="es-search-row" style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
             <div style={{ flex: 1, position: 'relative' }}>
               <span style={{
                 position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)',
@@ -485,6 +485,7 @@ export function EntradaSaidaForm({ produtos, onSubmit, perfilUsuario }: EntradaS
               return (
                 <div
                   key={p.id}
+                  className="es-item"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -548,6 +549,7 @@ export function EntradaSaidaForm({ produtos, onSubmit, perfilUsuario }: EntradaS
                   {/* Right: Inputs when selected */}
                   {isSelected && (
                     <div
+                      className="es-item-inputs"
                       style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}
                       onClick={e => e.stopPropagation()}
                     >

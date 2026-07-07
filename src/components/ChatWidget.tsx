@@ -14,6 +14,10 @@ const SUGGESTIONS = [
   { icon: '🔍', label: 'Ranking', text: 'Qual produto tem maior quantidade?' },
 ];
 
+// Altura da bottom-nav do mobile (64px) + margem: o FAB fica acima dela
+const NAV_CLEARANCE = 88;
+const MOBILE_QUERY = '(max-width: 991px)';
+
 export function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
@@ -31,7 +35,15 @@ export function ChatWidget() {
   const inputRef = useRef<HTMLInputElement>(null);
   const nextId = useRef(1);
 
-  const ORIGIN = { bottom: 24, right: 24 };
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia(MOBILE_QUERY).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(MOBILE_QUERY);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  const ORIGIN = { bottom: isMobile ? NAV_CLEARANCE : 24, right: 24 };
   const SNAP_RADIUS = 50;
   const FAB_SIZE = 56;
   const CHAT_W = 390;
@@ -40,16 +52,28 @@ export function ChatWidget() {
   const [pos, setPos] = useState({ ...ORIGIN });
   const dragRef = useRef<{ startX: number; startY: number; startRight: number; startBottom: number; dragged: boolean } | null>(null);
 
+  // Ao cruzar o breakpoint, volta o FAB para a origem correspondente
+  // (ajuste de estado durante o render, conforme https://react.dev/learn/you-might-not-need-an-effect)
+  const [prevIsMobile, setPrevIsMobile] = useState(isMobile);
+  if (prevIsMobile !== isMobile) {
+    setPrevIsMobile(isMobile);
+    setPos({ bottom: isMobile ? NAV_CLEARANCE : 24, right: 24 });
+  }
+
   const clampPos = (r: number, b: number) => {
     const w = open ? CHAT_W : FAB_SIZE;
     const h = open ? CHAT_H : FAB_SIZE;
+    // no mobile o FAB não pode invadir a bottom-nav
+    const minBottom = isMobile ? NAV_CLEARANCE - 16 : 0;
     return {
       right: Math.max(0, Math.min(window.innerWidth - w, r)),
-      bottom: Math.max(0, Math.min(window.innerHeight - h, b)),
+      bottom: Math.max(minBottom, Math.min(window.innerHeight - h, b)),
     };
   };
 
   const onPointerDown = (e: React.PointerEvent) => {
+    // chat aberto em tela cheia no mobile não é arrastável
+    if (open && isMobile) return;
     dragRef.current = { startX: e.clientX, startY: e.clientY, startRight: pos.right, startBottom: pos.bottom, dragged: false };
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   };
@@ -120,6 +144,7 @@ export function ChatWidget() {
       {/* ── FAB ── */}
       {!open && (
         <div
+          className="chat-fab"
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
@@ -172,14 +197,21 @@ export function ChatWidget() {
       {/* ── Chat Window ── */}
       {open && (
         <div style={{
-          position: 'fixed', bottom: `${pos.bottom}px`, right: `${pos.right}px`, zIndex: 9998,
-          width: '390px', maxWidth: 'calc(100vw - 32px)',
-          height: '560px', maxHeight: 'calc(100vh - 48px)',
-          borderRadius: '24px', overflow: 'hidden',
+          position: 'fixed', zIndex: 9998,
+          overflow: 'hidden',
           background: '#FAFAFA',
-          boxShadow: '0 25px 80px rgba(0,0,0,.18), 0 0 0 1px rgba(0,0,0,.06)',
           display: 'flex', flexDirection: 'column',
           animation: 'chatOpen 350ms cubic-bezier(.34,1.56,.64,1)',
+          // mobile: tela cheia (cobre a bottom-nav); desktop: janela flutuante
+          ...(isMobile
+            ? { inset: 0, width: '100%', height: '100dvh', borderRadius: 0 }
+            : {
+                bottom: `${pos.bottom}px`, right: `${pos.right}px`,
+                width: '390px', maxWidth: 'calc(100vw - 32px)',
+                height: '560px', maxHeight: 'calc(100vh - 48px)',
+                borderRadius: '24px',
+                boxShadow: '0 25px 80px rgba(0,0,0,.18), 0 0 0 1px rgba(0,0,0,.06)',
+              }),
         }}>
 
           {/* ── Header ── */}
@@ -191,7 +223,7 @@ export function ChatWidget() {
             padding: '0', flexShrink: 0,
             background: 'linear-gradient(160deg, #0f0a2e 0%, #1e1b4b 40%, #312e81 100%)',
             position: 'relative', overflow: 'hidden',
-            cursor: 'grab', touchAction: 'none',
+            cursor: isMobile ? 'default' : 'grab', touchAction: 'none',
           }}>
             {/* Subtle pattern overlay */}
             <div style={{

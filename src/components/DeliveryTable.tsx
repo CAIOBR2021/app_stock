@@ -104,6 +104,21 @@ export function DeliveryTable({
   const safePage = Math.min(page, Math.max(0, totalPages - 1));
   if (safePage !== page) setPage(safePage);
 
+  if (paginatedDeliveries.length === 0) {
+    return (
+      <div className="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <rect x="1" y="3" width="15" height="13" />
+          <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+          <circle cx="5.5" cy="18.5" r="2.5" />
+          <circle cx="18.5" cy="18.5" r="2.5" />
+        </svg>
+        <div className="empty-state-title">Nenhuma entrega para esta data</div>
+        <div className="empty-state-hint">Agende uma entrega no formulário ou altere a data do filtro.</div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ overflowX: 'auto' }}>
       <table className="table" style={{ marginBottom: 0 }}>
@@ -129,14 +144,7 @@ export function DeliveryTable({
         </thead>
 
         <tbody>
-          {paginatedDeliveries.length === 0 ? (
-            <tr>
-              <td colSpan={8} style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--text-3)', fontSize: '13.5px' }}>
-                Nenhuma entrega encontrada para os filtros atuais.
-              </td>
-            </tr>
-          ) : (
-            paginatedDeliveries.map(delivery => {
+          {paginatedDeliveries.map(delivery => {
               const delivered = isDelivered(delivery.status);
 
               return (
@@ -212,8 +220,7 @@ export function DeliveryTable({
                   </td>
                 </tr>
               );
-            })
-          )}
+            })}
         </tbody>
       </table>
 

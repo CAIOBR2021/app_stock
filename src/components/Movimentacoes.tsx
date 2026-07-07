@@ -239,8 +239,15 @@ export function MovsList({ movs, produtos }: { movs: Movimentacao[]; produtos: P
 
   if (movs.length === 0) {
     return (
-      <div style={{ textAlign: 'center', color: 'var(--text-3)', padding: '24px 0', fontSize: '13.5px' }}>
-        Nenhuma movimentação registrada ainda.
+      <div className="empty-state" style={{ padding: '24px 16px' }}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <polyline points="16 3 20 7 16 11" />
+          <line x1="4" y1="7" x2="20" y2="7" />
+          <polyline points="8 13 4 17 8 21" />
+          <line x1="20" y1="17" x2="4" y2="17" />
+        </svg>
+        <div className="empty-state-title">Nenhuma movimentação registrada ainda</div>
+        <div className="empty-state-hint">As entradas e saídas de estoque aparecerão aqui.</div>
       </div>
     );
   }
@@ -511,6 +518,30 @@ export function ConsultaMovimentacoes({
     setCategoriaOption(null); setObraOption(null);
   };
 
+  const formatDataCompetencia = (m: Movimentacao) =>
+    m.dataCompetencia
+      ? new Date(String(m.dataCompetencia).split('T')[0] + 'T12:00:00').toLocaleDateString('pt-BR')
+      : new Date(m.criadoEm).toLocaleDateString('pt-BR');
+
+  // Regras de edição/exclusão compartilhadas entre a tabela e os cards mobile
+  const getAcoesInfo = (m: Movimentacao) => {
+    const produtoCategoria = produtoMap.get(m.produtoId)?.categoria;
+    const bloqueadoPorPerfil = perfilUsuario === 'seguranca' && produtoCategoria !== 'EPI';
+    const bloqueadoPorTipo = m.tipo === 'ajuste' || m.tipo === 'saldo_inicial';
+    const disabled = bloqueadoPorTipo || bloqueadoPorPerfil;
+    const editTitle = bloqueadoPorTipo
+      ? 'Ajustes e Saldos Iniciais não são editáveis'
+      : bloqueadoPorPerfil
+      ? 'Sem permissão para editar esta movimentação'
+      : 'Editar';
+    const delTitle = bloqueadoPorTipo
+      ? 'Ajustes e Saldos Iniciais não podem ser excluídos'
+      : bloqueadoPorPerfil
+      ? 'Sem permissão para excluir esta movimentação'
+      : 'Excluir';
+    return { disabled, editTitle, delTitle };
+  };
+
   return (
     <div>
       {/* ── Título ── */}
@@ -589,13 +620,13 @@ export function ConsultaMovimentacoes({
         )}
       </div>
 
-      {/* ── Tabela ── */}
-      <div className="table-wrap">
+      {/* ── Tabela (desktop/tablet) ── */}
+      <div className="table-wrap d-none d-md-block">
         <table className="table">
           <thead>
             <tr>
               <th>Data/Hora</th>
-              <th>Produto</th>
+              <th style={{ minWidth: '220px' }}>Produto</th>
               <th>Tipo</th>
               <th>Quantidade</th>
               <th className="d-none d-md-table-cell">Obra / OC</th>
@@ -609,9 +640,7 @@ export function ConsultaMovimentacoes({
               <tr key={m.id}>
                 <td style={{ fontSize: '12.5px', color: 'var(--text-2)', whiteSpace: 'nowrap' }}>
                   <div style={{ fontWeight: 600, color: 'var(--text-1)' }}>
-                    {m.dataCompetencia
-                      ? new Date(String(m.dataCompetencia).split('T')[0] + 'T12:00:00').toLocaleDateString('pt-BR')
-                      : new Date(m.criadoEm).toLocaleDateString('pt-BR')}
+                    {formatDataCompetencia(m)}
                   </div>
                   <small style={{ fontSize: '10.5px', color: 'var(--text-3)' }} title="Data real em que o registro foi digitado no sistema">
                     Lançado: {new Date(m.criadoEm).toLocaleString('pt-BR')}
@@ -646,26 +675,13 @@ export function ConsultaMovimentacoes({
                 <td>
                   <div className="d-flex justify-content-end gap-1">
                     {(() => {
-                      const produtoCategoria = produtoMap.get(m.produtoId)?.categoria;
-                      const bloqueadoPorPerfil = perfilUsuario === 'seguranca' && produtoCategoria !== 'EPI';
-                      const bloqueadoPorTipo = m.tipo === 'ajuste' || m.tipo === 'saldo_inicial';
-                      const editDisabled = bloqueadoPorTipo || bloqueadoPorPerfil;
-                      const editTitle = bloqueadoPorTipo
-                        ? 'Ajustes e Saldos Iniciais não são editáveis'
-                        : bloqueadoPorPerfil
-                        ? 'Sem permissão para editar esta movimentação'
-                        : 'Editar';
-                      const delTitle = bloqueadoPorTipo
-                        ? 'Ajustes e Saldos Iniciais não podem ser excluídos'
-                        : bloqueadoPorPerfil
-                        ? 'Sem permissão para excluir esta movimentação'
-                        : 'Excluir';
+                      const { disabled, editTitle, delTitle } = getAcoesInfo(m);
                       return (
                         <>
                           <button
                             className="act-btn"
                             onClick={() => setEditId(m.id)}
-                            disabled={editDisabled}
+                            disabled={disabled}
                             title={editTitle}
                             style={{ color: 'var(--text-3)' }}
                           >
@@ -674,7 +690,7 @@ export function ConsultaMovimentacoes({
                           <button
                             className="act-btn del"
                             onClick={() => setDeleteId(m.id)}
-                            disabled={editDisabled}
+                            disabled={disabled}
                             title={delTitle}
                           >
                             <IconTrash />
@@ -688,13 +704,93 @@ export function ConsultaMovimentacoes({
             ))}
             {filteredMovs.length === 0 && (
               <tr>
-                <td colSpan={8} style={{ textAlign: 'center', padding: '48px 16px', color: 'var(--text-3)', fontSize: '13.5px' }}>
-                  Nenhuma movimentação encontrada para os filtros selecionados.
+                <td colSpan={8}>
+                  <div className="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <circle cx="11" cy="11" r="8" />
+                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                    <div className="empty-state-title">Nenhuma movimentação encontrada</div>
+                    <div className="empty-state-hint">Ajuste os filtros de data, categoria ou obra e tente novamente.</div>
+                  </div>
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* ── Cards (mobile) ── */}
+      <div className="d-md-none">
+        {filteredMovs.length === 0 ? (
+          <div className="card-modern" style={{ padding: 0 }}>
+            <div className="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <div className="empty-state-title">Nenhuma movimentação encontrada</div>
+              <div className="empty-state-hint">Ajuste os filtros de data, categoria ou obra e tente novamente.</div>
+            </div>
+          </div>
+        ) : (
+          paginatedMovs.map((m) => {
+            const { disabled, editTitle, delTitle } = getAcoesInfo(m);
+            return (
+              <div key={m.id} className="mov-card">
+                <div className="mov-card-top">
+                  <span className="badge" style={tipoBadgeStyle(m.tipo)}>
+                    {m.tipo.replace('_', ' ').toUpperCase()}
+                  </span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-3)' }}>
+                    {formatDataCompetencia(m)}
+                  </span>
+                </div>
+                <div className="mov-card-nome">{produtoMap.get(m.produtoId)?.nome ?? 'N/A'}</div>
+                <div className="mov-card-meta">
+                  <span>
+                    Qtd.: <strong style={{ color: 'var(--text-1)' }}>{m.quantidade}</strong>
+                  </span>
+                  {m.nomeObra && (
+                    <span className="badge" style={{ background: 'var(--surface-3)', color: 'var(--text-2)', border: '1px solid var(--border)' }} title="Obra">
+                      {m.nomeObra}
+                    </span>
+                  )}
+                  {m.ordemCompra && (
+                    <span className="badge" style={{ background: 'var(--primary-light)', color: 'var(--primary-dark)', border: '1px solid #FAD898' }} title="Ordem de Compra">
+                      {m.ordemCompra}
+                    </span>
+                  )}
+                  {m.motivo && <span>{m.motivo}</span>}
+                </div>
+                <div className="mov-card-footer">
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {m.operadorNome ?? '—'}
+                  </span>
+                  <div className="d-flex gap-1" style={{ flexShrink: 0 }}>
+                    <button
+                      className="act-btn"
+                      onClick={() => setEditId(m.id)}
+                      disabled={disabled}
+                      title={editTitle}
+                      style={{ color: 'var(--text-3)' }}
+                    >
+                      <IconEdit />
+                    </button>
+                    <button
+                      className="act-btn del"
+                      onClick={() => setDeleteId(m.id)}
+                      disabled={disabled}
+                      title={delTitle}
+                    >
+                      <IconTrash />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
 
       <div className="mt-3">

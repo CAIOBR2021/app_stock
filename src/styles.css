@@ -288,6 +288,8 @@ body {
 /* ── MAIN CONTENT ────────────────────────────────────────── */
 .main-content {
   flex: 1;
+  /* permite encolher abaixo da largura do conteúdo (tabelas com nowrap) */
+  min-width: 0;
   margin-left: var(--sidebar-w);
   display: flex;
   flex-direction: column;
@@ -687,6 +689,8 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
+  /* tabelas largas rolam dentro do card em vez de estourar a página */
+  overflow-x: auto;
   animation: fadeUp .4s .3s ease both;
   box-shadow: var(--shadow-sm);
   margin-bottom: 0;
@@ -1300,6 +1304,108 @@ table.table tbody tr.row-danger:hover td {
   font-weight: 700;
 }
 
+/* ── "MAIS" BOTTOM SHEET (mobile) ────────────────────────── */
+.more-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .45);
+  /* acima do FAB do chat (9999) */
+  z-index: 10000;
+  animation: sheetFade .2s ease both;
+}
+
+.more-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--surface);
+  border-radius: 16px 16px 0 0;
+  padding: 10px 16px 28px;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, .18);
+  animation: sheetUp .25s ease both;
+}
+
+.more-sheet-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border);
+  margin: 0 auto 14px;
+}
+
+.more-sheet-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 12px;
+  border: none;
+  background: none;
+  border-radius: 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-1);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.more-sheet-item:hover,
+.more-sheet-item.active {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+
+.more-sheet-item svg {
+  width: 18px;
+  height: 18px;
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+
+.more-sheet-item.active svg {
+  color: var(--primary-dark);
+}
+
+.more-sheet-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  color: var(--primary-dark);
+  background: var(--warning-light);
+  border: 1px solid var(--warning);
+  border-radius: 999px;
+  padding: 3px 8px;
+  line-height: 1;
+}
+
+/* Com o sheet aberto, o balão do chat some (ambos são filhos de .app-layout) */
+.more-sheet-backdrop~.chat-fab {
+  display: none;
+}
+
+@keyframes sheetUp {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes sheetFade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
 /* Mobile header */
 .mobile-header {
   display: none;
@@ -1441,6 +1547,12 @@ table.table tbody tr.row-danger:hover td {
 
 /* ── RESPONSIVE ──────────────────────────────────────────── */
 @media (max-width: 991px) {
+
+  /* sem a sidebar, o header mobile e o conteúdo empilham em coluna */
+  .app-layout {
+    flex-direction: column;
+  }
+
   .sidebar {
     display: none;
   }
@@ -1509,6 +1621,117 @@ table.table tbody tr.row-danger:hover td {
     width: 14px;
     height: 14px;
   }
+}
+
+/* ── MOV CARD (movimentações no mobile) ──────────────────── */
+.mov-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow-sm);
+}
+
+.mov-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.mov-card-nome {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-1);
+  line-height: 1.35;
+}
+
+.mov-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.mov-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+/* ── ENTRADA/SAÍDA: layout no mobile ─────────────────────── */
+@media (max-width: 576px) {
+  .es-item {
+    padding: 14px 16px !important;
+  }
+
+  .es-item-inputs {
+    width: 100%;
+    justify-content: flex-start !important;
+  }
+
+  .es-item-inputs>div {
+    flex: 1 1 130px;
+    width: auto !important;
+  }
+
+  /* OC / Obra / Competência empilham em vez de espremer */
+  .es-fields-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* busca ocupa a linha inteira; select de categoria vai para baixo */
+  .es-search-row {
+    flex-wrap: wrap;
+  }
+
+  .es-search-row>div:first-child {
+    flex: 1 1 100%;
+  }
+
+  .es-search-row>div:last-child {
+    width: 100% !important;
+  }
+}
+
+/* ── EMPTY STATE ─────────────────────────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 40px 16px;
+  text-align: center;
+}
+
+.empty-state svg {
+  width: 36px;
+  height: 36px;
+  color: var(--text-3);
+  opacity: .5;
+  margin-bottom: 8px;
+}
+
+.empty-state-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.empty-state-hint {
+  font-size: 12.5px;
+  color: var(--text-3);
 }
 
 /* ── DELIVERY TABLE STATUS BADGE ─────────────────────────── */

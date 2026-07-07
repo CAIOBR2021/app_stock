@@ -156,6 +156,13 @@ const IconError = () => (
     <line x1="9" y1="9" x2="15" y2="15" />
   </svg>
 );
+const IconMore = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" width="16" height="16">
+    <circle cx="5" cy="12" r="2" />
+    <circle cx="12" cy="12" r="2" />
+    <circle cx="19" cy="12" r="2" />
+  </svg>
+);
 
 // ── APP ───────────────────────────────────────────────────────────────────────
 
@@ -173,6 +180,7 @@ export default function App() {
   const [mutating, setMutating] = useState(false);
 
   const [view, setView] = useState<'estoque' | 'movimentacoes' | 'rotas' | 'entradas_saidas' | 'nota_fiscal' | 'previsao'>('estoque');
+  const [showMoreSheet, setShowMoreSheet] = useState(false);
   const [showScroll, setShowScroll] = useState(false);
   const [q, setQ] = useState('');
   const [categoriaFilter, setCategoriaFilter] = useState('');
@@ -875,6 +883,8 @@ export default function App() {
       ),
     [allProdutos],
   );
+  const alertCountLabel =
+    produtosAbaixoMinimo.length > 99 ? '99+' : String(produtosAbaixoMinimo.length);
 
   const categorias = useMemo(
     () =>
@@ -1078,7 +1088,7 @@ export default function App() {
             </span>
             {produtosAbaixoMinimo.length > 0 && (
               <span className="notif-count" style={{ top: '-2px', right: '-2px' }}>
-                {produtosAbaixoMinimo.length}
+                {alertCountLabel}
               </span>
             )}
           </div>
@@ -1120,7 +1130,7 @@ export default function App() {
                 <IconBell active={produtosAbaixoMinimo.length > 0} />
               </span>
               {produtosAbaixoMinimo.length > 0 && (
-                <span className="notif-count">{produtosAbaixoMinimo.length}</span>
+                <span className="notif-count">{alertCountLabel}</span>
               )}
             </div>
 
@@ -1369,15 +1379,44 @@ export default function App() {
             { id: 'movimentacoes', label: 'Movs', Icon: IconClipboard },
             { id: 'entradas_saidas', label: 'Fluxo', Icon: IconArrowLeftRight },
             { id: 'rotas', label: 'Rotas', Icon: IconTruck },
-            { id: 'nota_fiscal', label: 'NF', Icon: IconScan },
-            { id: 'previsao', label: 'Previsão', Icon: IconTrendingUp },
           ] as const
         ).map(({ id, label, Icon }) => (
-          <button key={id} className={`bottom-nav-item ${view === id ? 'active' : ''}`} onClick={() => { setView(id); scrollTop(); }}>
+          <button key={id} className={`bottom-nav-item ${view === id ? 'active' : ''}`} onClick={() => { setView(id); setShowMoreSheet(false); scrollTop(); }}>
             <Icon /><span>{label}</span>
           </button>
         ))}
+        <button
+          className={`bottom-nav-item ${view === 'nota_fiscal' || view === 'previsao' ? 'active' : ''}`}
+          onClick={() => setShowMoreSheet((v) => !v)}
+        >
+          <IconMore /><span>Mais</span>
+        </button>
       </nav>
+
+      {/* ── SHEET "MAIS" (mobile) ── */}
+      {showMoreSheet && (
+        <div className="more-sheet-backdrop" onClick={() => setShowMoreSheet(false)}>
+          <div className="more-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="more-sheet-handle" />
+            {(
+              [
+                { id: 'nota_fiscal', label: 'Leitura de Documento', Icon: IconScan },
+                { id: 'previsao', label: 'Previsão de Consumo', Icon: IconTrendingUp },
+              ] as const
+            ).map(({ id, label, Icon }) => (
+              <button
+                key={id}
+                className={`more-sheet-item ${view === id ? 'active' : ''}`}
+                onClick={() => { setView(id); setShowMoreSheet(false); scrollTop(); }}
+              >
+                <Icon />
+                <span style={{ flex: 1, textAlign: 'left' }}>{label}</span>
+                <span className="more-sheet-badge">Novo</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {showScroll && (
         <button className="btn-scroll-top" onClick={scrollTop}><IconArrowUp /></button>
