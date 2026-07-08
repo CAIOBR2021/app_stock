@@ -44,7 +44,11 @@
       "Bash(npx -y -p typescript@5.8 tsc -b)",
       "Bash(git fetch *)",
       "Bash(curl -s --max-time 15 \"https://app-stock.vercel.app\")",
-      "Bash(curl -s --max-time 15 \"https://appstock.vercel.app\")"
+      "Bash(curl -s --max-time 15 \"https://appstock.vercel.app\")",
+      "Bash(curl -s --max-time 60 -X POST \"https://small-lanae-caiobezerra-b22ba187.koyeb.app/api/chat/visitante\" -H \"Content-Type: application/json\" -d '{\"mensagens\":[{\"role\":\"user\",\"text\":\"Olá, quantos sacos de argamassa temos?\"}]}')",
+      "Bash(curl -s --max-time 30 \"https://small-lanae-caiobezerra-b22ba187.koyeb.app/api/solicitacoes\")",
+      "Bash(curl -s --max-time 30 -X POST \"https://small-lanae-caiobezerra-b22ba187.koyeb.app/api/solicitacoes\" -H \"Content-Type: application/json\" -d '{\"nomeSolicitante\":\"Teste Diagnostico\",\"itemId\":\"00000000-0000-0000-0000-000000000000\",\"quantidade\":1}')",
+      "Bash(node \"C:\\\\Users\\\\USER\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--DADOS-Desktop-Controle-de-estoque-ESTOQUE-FRONT-END-VERCEL-main\\\\50aa4e8d-e714-450b-b6d1-c75731f0a890\\\\scratchpad\\\\testchat.js\")"
     ]
   }
 }
