@@ -59,10 +59,12 @@ const IconTruck = () => (
   </svg>
 );
 const IconArrowLeftRight = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-    <polyline points="12 4 12 14" />
-    <polyline points="8 8 12 4 16 8" />
-    <path d="M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2" />
+  /* setas opostas verticais: entrada ↓ e saída ↑ */
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
+    <polyline points="3 16 7 20 11 16" />
+    <line x1="7" y1="20" x2="7" y2="4" />
+    <polyline points="21 8 17 4 13 8" />
+    <line x1="17" y1="4" x2="17" y2="20" />
   </svg>
 );
 const IconScan = () => (

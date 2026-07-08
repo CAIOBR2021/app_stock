@@ -41,7 +41,10 @@
       "Bash(grep -v '//')",
       "Bash(node --check server.js)",
       "Bash(node --check services/visitanteChatService.js)",
-      "Bash(npx -y -p typescript@5.8 tsc -b)"
+      "Bash(npx -y -p typescript@5.8 tsc -b)",
+      "Bash(git fetch *)",
+      "Bash(curl -s --max-time 15 \"https://app-stock.vercel.app\")",
+      "Bash(curl -s --max-time 15 \"https://appstock.vercel.app\")"
     ]
   }
 }
