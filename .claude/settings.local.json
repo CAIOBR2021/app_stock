@@ -38,7 +38,10 @@
       "Bash(awk '/^D:/{file=$0} /no-explicit-any/{sub\\(/.*\\\\\\\\/, \"\", file\\); print file, $1}')",
       "Bash(awk '/^D:/{file=$0} /no-explicit-any/{n=split\\(file,a,\"\\\\\\\\\"\\); print a[n], $1}')",
       "Bash(awk '/^D:/{file=$0} /warning/{n=split\\(file,a,\"\\\\\\\\\"\\); print a[n], $1}')",
-      "Bash(grep -v '//')"
+      "Bash(grep -v '//')",
+      "Bash(node --check server.js)",
+      "Bash(node --check services/visitanteChatService.js)",
+      "Bash(npx -y -p typescript@5.8 tsc -b)"
     ]
   }
 }

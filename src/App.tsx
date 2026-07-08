@@ -7,6 +7,8 @@ import { EntradaSaidaForm } from './components/EntradaSaidaForm';
 import { NotaFiscalReader } from './components/NotaFiscalReader';
 import { PrevisaoConsumo } from './components/PrevisaoConsumo';
 import { ChatWidget } from './components/ChatWidget';
+import { VisitanteChat } from './components/VisitanteChat';
+import { Solicitacoes, useSolicitacoesPendentes } from './components/Solicitacoes';
 import './styles.css';
 
 import type { Produto, Movimentacao, Entrega, EntregaPayload, LoteMovimentacaoDados } from './types';
@@ -78,6 +80,13 @@ const IconTrendingUp = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
     <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
     <polyline points="17 6 23 6 23 12" />
+  </svg>
+);
+const IconInbox = () => (
+  /* caixa de entrada de solicitações */
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+    <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
+    <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
   </svg>
 );
 const IconBell = ({ active }: { active?: boolean }) => (
@@ -193,7 +202,7 @@ export default function App() {
   // Ligado durante mutações demoradas (lote, edição de entrega) para exibir o spinner
   const [mutating, setMutating] = useState(false);
 
-  const [view, setView] = useState<'estoque' | 'movimentacoes' | 'rotas' | 'entradas_saidas' | 'nota_fiscal' | 'previsao'>('estoque');
+  const [view, setView] = useState<'estoque' | 'movimentacoes' | 'rotas' | 'entradas_saidas' | 'nota_fiscal' | 'previsao' | 'solicitacoes'>('estoque');
   const [showMoreSheet, setShowMoreSheet] = useState(false);
   // No mobile os filtros ficam recolhidos por padrão; no desktop são sempre visíveis
   const [showFiltersMobile, setShowFiltersMobile] = useState(false);
@@ -224,6 +233,8 @@ export default function App() {
     safeLocalStorageSet('perfilOperador', perfil);
     setShowIdentModal(false);
     setShowEditarNome(false);
+    // A página de solicitações é exclusiva do almoxarifado
+    if (perfil !== 'almoxarifado') setView((v) => (v === 'solicitacoes' ? 'estoque' : v));
   }, []);
 
   const canEditarProduto = useCallback((produto: { categoria?: string | null }) => {
@@ -263,18 +274,23 @@ export default function App() {
 
   const queryClient = useQueryClient();
 
+  // Visitante tem acesso somente via chat: nenhuma listagem é carregada.
+  const isVisitante = perfilUsuario === 'visitante';
+
   // Primeira página: carrega rápido e serve de placeholder enquanto a lista
   // completa (10k itens) chega. Só é usada no boot, por isso nunca "envelhece".
   const primeiraPaginaQuery = useQuery({
     queryKey: ['produtos-primeira-pagina'],
     queryFn: () => apiFetch<Produto[]>(`/produtos?_page=1&_limit=${ITEMS_PER_PAGE}`),
     staleTime: Infinity,
+    enabled: !isVisitante,
   });
 
   const produtosQuery = useQuery({
     queryKey: ['produtos'],
     queryFn: () => apiFetch<Produto[]>('/produtos?_limit=10000'),
     placeholderData: primeiraPaginaQuery.data,
+    enabled: !isVisitante,
   });
   // useMemo mantém a referência estável enquanto data é undefined (memos abaixo dependem delas)
   const allProdutos = useMemo(() => produtosQuery.data ?? [], [produtosQuery.data]);
@@ -282,14 +298,20 @@ export default function App() {
   const movsQuery = useQuery({
     queryKey: ['movimentacoes'],
     queryFn: () => apiFetch<Movimentacao[]>('/movimentacoes'),
+    enabled: !isVisitante,
   });
   const movs = useMemo(() => movsQuery.data ?? [], [movsQuery.data]);
 
   const entregasQuery = useQuery({
     queryKey: ['entregas'],
     queryFn: async () => (await apiFetch<Entrega[]>('/entregas')).map(normalizeEntrega),
+    enabled: !isVisitante,
   });
   const entregas = useMemo(() => entregasQuery.data ?? [], [entregasQuery.data]);
+
+  // Badge do menu: quantidade de solicitações de material pendentes (só almoxarifado)
+  const solicitacoesPendentesQuery = useSolicitacoesPendentes(perfilUsuario === 'almoxarifado');
+  const solicitacoesPendentesCount = solicitacoesPendentesQuery.data?.length ?? 0;
 
   // Estados derivados, com a mesma semântica dos antigos useStates:
   // loading    → nada de produtos na tela ainda (nem o placeholder), ou mutação em curso
@@ -979,6 +1001,69 @@ export default function App() {
   const handleToggleSort = () =>
     setSortOrder((cur) => (cur === null ? 'asc' : cur === 'asc' ? 'desc' : null));
 
+  // ── VISITANTE: acesso exclusivamente via chat (somente leitura + solicitação) ──
+
+  if (isVisitante) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: 'var(--surface-2)' }}>
+        <header style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '12px 20px', background: '#1e1b2e', flexShrink: 0,
+        }}>
+          <img src={meuLogo} alt="Logo" style={{ height: '34px' }} />
+          <button
+            type="button"
+            onClick={() => setShowEditarNome(true)}
+            title="Alterar identificação"
+            style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+            }}
+          >
+            <span style={{ textAlign: 'right' }}>
+              <span style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>
+                {nomeUsuario || 'Identificar-me'}
+              </span>
+              <span style={{ display: 'block', fontSize: '11px', color: 'rgba(255,255,255,.5)' }}>Visitante</span>
+            </span>
+            <span style={{
+              width: '36px', height: '36px', borderRadius: '50%',
+              background: '#F5A623', color: '#fff', border: '2px solid #C47D0E',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: 700, fontSize: '13px', flexShrink: 0,
+            }}>
+              {(nomeUsuario.trim().charAt(0) || '?').toUpperCase()}
+            </span>
+          </button>
+        </header>
+
+        <div style={{
+          flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column',
+          width: '100%', maxWidth: '860px', margin: '0 auto', padding: '16px',
+        }}>
+          <VisitanteChat />
+        </div>
+
+        {showIdentModal && (
+          <IdentificacaoModal
+            initialValue={nomeUsuario}
+            initialPerfil={perfilUsuario}
+            onConfirm={salvarNomeOperador}
+          />
+        )}
+        {showEditarNome && (
+          <IdentificacaoModal
+            initialValue={nomeUsuario}
+            initialPerfil={perfilUsuario}
+            onConfirm={salvarNomeOperador}
+            onClose={() => setShowEditarNome(false)}
+          />
+        )}
+        <ToastContainer position="top-right" autoClose={3000} theme="colored" />
+      </div>
+    );
+  }
+
   // ── ERROR STATE ──────────────────────────────────────────────────────────
 
   if (error) {
@@ -1009,9 +1094,12 @@ export default function App() {
               { id: 'movimentacoes', label: 'Movimentações', Icon: IconClipboard },
               { id: 'rotas', label: 'Rotas & Entregas', Icon: IconTruck },
               { id: 'entradas_saidas', label: 'Entrada / Saída', Icon: IconArrowLeftRight },
+              ...(perfilUsuario === 'almoxarifado'
+                ? [{ id: 'solicitacoes', label: 'Solicitações em Andamento', Icon: IconInbox }]
+                : []),
               { id: 'nota_fiscal', label: 'Leitura de Documento', Icon: IconScan },
               { id: 'previsao', label: 'Previsão de Consumo', Icon: IconTrendingUp },
-            ] as const
+            ] as { id: typeof view; label: string; Icon: () => JSX.Element }[]
           ).map(({ id, label, Icon }) => (
             <button
               key={id}
@@ -1019,6 +1107,11 @@ export default function App() {
               onClick={() => { setView(id); scrollTop(); }}
             >
               <Icon /> {label}
+              {id === 'solicitacoes' && solicitacoesPendentesCount > 0 && (
+                <span style={{ fontSize: '10px', fontWeight: 700, background: 'var(--danger)', color: '#fff', minWidth: '18px', height: '18px', lineHeight: '18px', padding: '0 5px', borderRadius: 999, marginLeft: 'auto', textAlign: 'center' }}>
+                  {solicitacoesPendentesCount > 99 ? '99+' : solicitacoesPendentesCount}
+                </span>
+              )}
               {(id === 'nota_fiscal' || id === 'previsao') && (
                 <span style={{ fontSize: '9px', fontWeight: 700, background: '#1e1b2e', color: '#f59e0b', border: '1px solid #f59e0b', padding: '3px 8px', borderRadius: 999, marginLeft: 'auto', letterSpacing: '.5px', textIndent: '.5px', textTransform: 'uppercase', lineHeight: 1, whiteSpace: 'nowrap' }}>
                   Novo
@@ -1141,6 +1234,7 @@ export default function App() {
               {view === 'entradas_saidas' && 'Lançamento de Entradas e Saídas'}
               {view === 'nota_fiscal' && 'Leitura de Documento'}
               {view === 'previsao' && 'Previsão de Consumo e Reposição'}
+              {view === 'solicitacoes' && 'Solicitações em Andamento'}
             </h1>
             <div className="page-date-subtitle">
               {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
@@ -1406,6 +1500,13 @@ export default function App() {
             <PrevisaoConsumo produtos={allProdutos} movimentacoes={movs} />
           </div>
         )}
+
+        {/* ── SOLICITAÇÕES EM ANDAMENTO (almoxarifado) ── */}
+        {view === 'solicitacoes' && perfilUsuario === 'almoxarifado' && (
+          <div className="content-area animate-fade-in">
+            <Solicitacoes nomeUsuario={nomeUsuario} />
+          </div>
+        )}
         <div style={{ marginTop: 'auto', padding: '20px 0', borderTop: '1px solid #E5E7EB', display: 'flex', justifyContent: 'center', alignItems: 'baseline', gap: '8px', width: '100%', textAlign: 'center' }}>
           <span style={{ fontSize: '10px', color: '#9B97B2', letterSpacing: '0.5px', textTransform: 'uppercase', fontWeight: 500 }}>Desenvolvido por</span>
           <span style={{ fontSize: '13px', fontWeight: 600, color: '#1e1b2e', letterSpacing: '0.2px' }}>Caio Vinícius de Carvalho Bezerra</span>
@@ -1427,10 +1528,16 @@ export default function App() {
           </button>
         ))}
         <button
-          className={`bottom-nav-item ${view === 'nota_fiscal' || view === 'previsao' ? 'active' : ''}`}
+          className={`bottom-nav-item ${view === 'nota_fiscal' || view === 'previsao' || view === 'solicitacoes' ? 'active' : ''}`}
           onClick={() => setShowMoreSheet((v) => !v)}
+          style={{ position: 'relative' }}
         >
           <IconMore /><span>Mais</span>
+          {perfilUsuario === 'almoxarifado' && solicitacoesPendentesCount > 0 && (
+            <span className="notif-count" style={{ top: '2px', right: '14px' }}>
+              {solicitacoesPendentesCount > 99 ? '99+' : solicitacoesPendentesCount}
+            </span>
+          )}
         </button>
       </nav>
 
@@ -1441,9 +1548,12 @@ export default function App() {
             <div className="more-sheet-handle" />
             {(
               [
+                ...(perfilUsuario === 'almoxarifado'
+                  ? [{ id: 'solicitacoes', label: 'Solicitações em Andamento', Icon: IconInbox }]
+                  : []),
                 { id: 'nota_fiscal', label: 'Leitura de Documento', Icon: IconScan },
                 { id: 'previsao', label: 'Previsão de Consumo', Icon: IconTrendingUp },
-              ] as const
+              ] as { id: typeof view; label: string; Icon: () => JSX.Element }[]
             ).map(({ id, label, Icon }) => (
               <button
                 key={id}
@@ -1452,7 +1562,15 @@ export default function App() {
               >
                 <Icon />
                 <span style={{ flex: 1, textAlign: 'left' }}>{label}</span>
-                <span className="more-sheet-badge">Novo</span>
+                {id === 'solicitacoes' ? (
+                  solicitacoesPendentesCount > 0 && (
+                    <span className="more-sheet-badge" style={{ background: 'var(--danger)', color: '#fff', border: 'none' }}>
+                      {solicitacoesPendentesCount > 99 ? '99+' : solicitacoesPendentesCount}
+                    </span>
+                  )
+                ) : (
+                  <span className="more-sheet-badge">Novo</span>
+                )}
               </button>
             ))}
           </div>

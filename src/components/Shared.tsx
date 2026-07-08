@@ -238,8 +238,14 @@ interface PerfilOption {
 
 const PERFIL_OPTIONS: PerfilOption[] = [
   { value: 'almoxarifado', label: 'Almoxarifado', locked: true },
-  { value: 'seguranca', label: 'Segurança do Trabalho', locked: false },
+  { value: 'seguranca', label: 'Segurança do Trabalho', locked: true },
+  { value: 'visitante', label: 'Visitante (consulta via chat)', locked: false },
 ];
+
+/** Perfis com cadeado: exigem senha verificada no backend antes de entrar. */
+const PERFIS_COM_SENHA = new Set(
+  PERFIL_OPTIONS.filter(o => o.locked).map(o => o.value),
+);
 
 const DARK_BG = '#1A1A2E';
 const DARK_BORDER = 'rgba(255,255,255,.14)';
@@ -322,7 +328,7 @@ export function IdentificacaoModal({
   const [senhaVerificada, setSenhaVerificada] = useState(false);
   const [senhaFocused, setSenhaFocused] = useState(false);
 
-  const precisaSenha = perfil === 'almoxarifado' && !senhaVerificada;
+  const precisaSenha = PERFIS_COM_SENHA.has(perfil) && !senhaVerificada;
   const valido = nome.trim().length >= 2 && perfil !== '' && (!precisaSenha || senha.length >= 4);
 
   // ESC só fecha quando NÃO é obrigatório
@@ -334,14 +340,14 @@ export function IdentificacaoModal({
 
   const submit = async () => {
     if (!valido || verificando) return;
-    if (perfil === 'almoxarifado' && !senhaVerificada) {
+    if (PERFIS_COM_SENHA.has(perfil) && !senhaVerificada) {
       setVerificando(true);
       setSenhaErro('');
       try {
         const res = await fetch(`${API_URL}/auth/verify-password`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password: senha }),
+          body: JSON.stringify({ password: senha, perfil }),
         });
         if (!res.ok) {
           setSenhaErro('Senha incorreta.');
@@ -524,7 +530,7 @@ export function IdentificacaoModal({
                     transition: 'border-color .2s ease, box-shadow .2s ease',
                     boxShadow: senhaErro ? '0 0 0 3px rgba(255,107,107,.15)' : senhaFocused ? '0 0 0 3px rgba(245,166,35,.15)' : 'none',
                   }}
-                  placeholder="Senha de administrador"
+                  placeholder={perfil === 'almoxarifado' ? 'Senha de administrador' : 'Senha de acesso'}
                   value={senha}
                   maxLength={100}
                   onFocus={() => setSenhaFocused(true)}

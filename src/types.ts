@@ -56,6 +56,26 @@ export interface Entrega {
     status: string;
 }
 
+export type SolicitacaoStatus = 'pendente' | 'aprovada' | 'recusada';
+
+/** Solicitação de material criada pelo visitante via chat com a IA. */
+export interface Solicitacao {
+  id: UUID;
+  nomeSolicitante: string;
+  itemId: UUID;
+  quantidade: number;
+  unidadeMedida?: string;
+  status: SolicitacaoStatus;
+  motivoRecusa?: string;
+  criadoEm: string;
+  respondidoEm?: string;
+  respondidoPor?: string;
+  // Campos derivados do JOIN com produtos
+  itemNome?: string;
+  itemUnidade?: string;
+  saldoAtual?: number;
+}
+
 /** Payload enviado pelo formulário de entregas (DeliveryForm). */
 export interface EntregaPayload {
   localArmazenagem: string;
