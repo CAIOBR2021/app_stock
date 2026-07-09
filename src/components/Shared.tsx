@@ -642,7 +642,8 @@ export function Paginacao({
   };
 
   return (
-    <nav style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px', width: '100%', marginTop: '12px' }}>
+    // paddingRight reserva a faixa do botão flutuante "voltar ao topo" (fixed, right: 30px)
+    <nav style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px', width: '100%', marginTop: '12px', paddingRight: '76px' }}>
       {/* Info */}
       <span style={{ fontSize: '12.5px', color: 'var(--text-3)', fontWeight: 500 }}>
         Exibindo{' '}
