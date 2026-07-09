@@ -503,8 +503,11 @@ export default function App() {
 
   const deleteMovMutation = useMutation({
     mutationFn: (id: UUID) =>
-      apiFetch<{ produtoAtualizado: Produto }>(`/movimentacoes/${id}`, { method: 'DELETE' }),
-    onSuccess: async ({ produtoAtualizado }, id) => {
+      apiFetch<{ produtoAtualizado: Produto; solicitacaoReaberta?: boolean }>(
+        `/movimentacoes/${id}`,
+        { method: 'DELETE' },
+      ),
+    onSuccess: async ({ produtoAtualizado, solicitacaoReaberta }, id) => {
       queryClient.setQueryData<Movimentacao[]>(['movimentacoes'], (prev = []) =>
         prev.filter((m) => m.id !== id),
       );
@@ -512,6 +515,10 @@ export default function App() {
         prev.map((p) => (p.id === produtoAtualizado.id ? produtoAtualizado : p)),
       );
       await invalidateEntregas();
+      if (solicitacaoReaberta) {
+        await queryClient.invalidateQueries({ queryKey: ['solicitacoes'] });
+        toast.info('A solicitação vinculada a esta saída voltou para "Solicitações em Andamento".');
+      }
     },
     onError: (err) =>
       toast.error(errorMessage(err, 'Não conseguimos remover a movimentação. Tente novamente em instantes.')),

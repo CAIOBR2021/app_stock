@@ -48,7 +48,13 @@
       "Bash(curl -s --max-time 60 -X POST \"https://small-lanae-caiobezerra-b22ba187.koyeb.app/api/chat/visitante\" -H \"Content-Type: application/json\" -d '{\"mensagens\":[{\"role\":\"user\",\"text\":\"Olá, quantos sacos de argamassa temos?\"}]}')",
       "Bash(curl -s --max-time 30 \"https://small-lanae-caiobezerra-b22ba187.koyeb.app/api/solicitacoes\")",
       "Bash(curl -s --max-time 30 -X POST \"https://small-lanae-caiobezerra-b22ba187.koyeb.app/api/solicitacoes\" -H \"Content-Type: application/json\" -d '{\"nomeSolicitante\":\"Teste Diagnostico\",\"itemId\":\"00000000-0000-0000-0000-000000000000\",\"quantidade\":1}')",
-      "Bash(node \"C:\\\\Users\\\\USER\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--DADOS-Desktop-Controle-de-estoque-ESTOQUE-FRONT-END-VERCEL-main\\\\50aa4e8d-e714-450b-b6d1-c75731f0a890\\\\scratchpad\\\\testchat.js\")"
+      "Bash(node \"C:\\\\Users\\\\USER\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--DADOS-Desktop-Controle-de-estoque-ESTOQUE-FRONT-END-VERCEL-main\\\\50aa4e8d-e714-450b-b6d1-c75731f0a890\\\\scratchpad\\\\testchat.js\")",
+      "Bash(awk '/if \\\\\\(isVisitante\\\\\\)/,0' src/App.tsx)",
+      "Bash(curl -s -o /dev/null -w '%{http_code}' --max-time 20 https://small-lanae-caiobezerra-b22ba187.koyeb.app/api/produtos?_limit=1)",
+      "Bash(curl -s -o /dev/null -w '%{http_code}' --max-time 20 https://small-lanae-caiobezerra-b22ba187.koyeb.app/api/movimentacoes?_limit=1)",
+      "Bash(curl -s -o /dev/null -w '%{http_code}' --max-time 20 https://small-lanae-caiobezerra-b22ba187.koyeb.app/api/entregas?_limit=1)",
+      "Bash(curl -s -o /dev/null -w '%{http_code}' --max-time 60 -X POST https://small-lanae-caiobezerra-b22ba187.koyeb.app/api/chat -H 'Content-Type: application/json' -d '{\"pergunta\":\"resumo do estoque em uma frase\"}')",
+      "Bash(curl -s -o /dev/null -w '%{http_code}' --max-time 20 -X POST https://small-lanae-caiobezerra-b22ba187.koyeb.app/api/auth/verify-password -H 'Content-Type: application/json' -d '{\"password\":\"senha-errada-teste\"}')"
     ]
   }
 }
