@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { API_URL } from '../constants';
+import { useChatViewportLock } from '../hooks';
 
 interface Message {
   id: number;
@@ -35,8 +36,18 @@ export function VisitanteChat() {
   const inputRef = useRef<HTMLInputElement>(null);
   const nextId = useRef(1);
 
+  // Chat ocupa a tela toda: trava a página para o teclado não a empurrar
+  useChatViewportLock(true);
+
+  // Rola SOMENTE o contêiner de mensagens (scrollIntoView rolaria a página
+  // inteira junto, empurrando o layout para fora da tela no mobile)
+  const rolarParaFim = (suave = true) => {
+    const el = messagesEndRef.current?.parentElement;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: suave ? 'smooth' : 'auto' });
+  };
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    rolarParaFim();
   }, [messages]);
 
   const sendMessage = async (text: string) => {
@@ -248,7 +259,7 @@ export function VisitanteChat() {
             onFocus={() => {
               setInputFocused(true);
               // teclado virtual abrindo: mantém a conversa visível após a animação
-              setTimeout(() => messagesEndRef.current?.scrollIntoView({ block: 'end' }), 300);
+              setTimeout(() => rolarParaFim(false), 300);
             }}
             onBlur={() => setInputFocused(false)}
             placeholder="Pergunte sobre o estoque ou solicite um material..."

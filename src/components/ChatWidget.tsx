@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { API_URL } from '../constants';
+import { useChatViewportLock } from '../hooks';
 
 interface Message {
   id: number;
@@ -95,22 +96,23 @@ export function ChatWidget() {
     } else if (!open) setOpen(true);
   };
 
+  // Rola SOMENTE o contêiner de mensagens (scrollIntoView rolaria a página
+  // inteira junto, empurrando o layout para fora da tela no mobile)
+  const rolarParaFim = (suave = true) => {
+    const el = messagesEndRef.current?.parentElement;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: suave ? 'smooth' : 'auto' });
+  };
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    rolarParaFim();
   }, [messages]);
 
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 100);
   }, [open]);
 
-  // Chat em tela cheia no mobile: trava o scroll da página atrás dele para o
-  // teclado não "empurrar" o layout de fundo
-  useEffect(() => {
-    if (!(open && isMobile)) return;
-    const anterior = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = anterior; };
-  }, [open, isMobile]);
+  // Chat em tela cheia no mobile: trava a página para o teclado não a empurrar
+  useChatViewportLock(open && isMobile);
 
   const closeChat = () => {
     setOpen(false);
@@ -472,7 +474,7 @@ export function ChatWidget() {
                 onFocus={() => {
                   setInputFocused(true);
                   // teclado virtual abrindo: mantém a conversa visível após a animação
-                  setTimeout(() => messagesEndRef.current?.scrollIntoView({ block: 'end' }), 300);
+                  setTimeout(() => rolarParaFim(false), 300);
                 }}
                 onBlur={() => setInputFocused(false)}
                 placeholder="Digite sua pergunta..."
