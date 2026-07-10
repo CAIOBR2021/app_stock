@@ -81,7 +81,10 @@
       "Bash(node --check services/buscaLocalService.js)",
       "Bash(node \"C:\\\\Users\\\\USER\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--DADOS-Desktop-Controle-de-estoque-ESTOQUE-FRONT-END-VERCEL-main\\\\12cda0bf-534c-447f-956d-c2a8a70522cf\\\\scratchpad\\\\test-cascata.js\")",
       "WebSearch",
-      "WebFetch(domain:ai.google.dev)"
+      "WebFetch(domain:ai.google.dev)",
+      "Bash(ls src/hooks*)",
+      "Bash(cat src/hooks.ts)",
+      "Bash(cat src/hooks/index.ts)"
     ]
   }
 }

@@ -124,6 +124,7 @@ export function VisitanteChat() {
       <div style={{
         flex: 1, overflowY: 'auto', padding: '18px 16px 8px',
         display: 'flex', flexDirection: 'column', gap: '12px',
+        overscrollBehavior: 'contain',
       }}>
         {messages.map((msg) => (
           <div key={msg.id} style={{
@@ -240,10 +241,15 @@ export function VisitanteChat() {
         }}>
           <input
             ref={inputRef}
+            className="chat-input"
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            onFocus={() => setInputFocused(true)}
+            onFocus={() => {
+              setInputFocused(true);
+              // teclado virtual abrindo: mantém a conversa visível após a animação
+              setTimeout(() => messagesEndRef.current?.scrollIntoView({ block: 'end' }), 300);
+            }}
             onBlur={() => setInputFocused(false)}
             placeholder="Pergunte sobre o estoque ou solicite um material..."
             disabled={loading}

@@ -103,6 +103,15 @@ export function ChatWidget() {
     if (open) setTimeout(() => inputRef.current?.focus(), 100);
   }, [open]);
 
+  // Chat em tela cheia no mobile: trava o scroll da página atrás dele para o
+  // teclado não "empurrar" o layout de fundo
+  useEffect(() => {
+    if (!(open && isMobile)) return;
+    const anterior = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = anterior; };
+  }, [open, isMobile]);
+
   const closeChat = () => {
     setOpen(false);
     setFabHovered(false);
@@ -204,7 +213,7 @@ export function ChatWidget() {
           animation: 'chatOpen 350ms cubic-bezier(.34,1.56,.64,1)',
           // mobile: tela cheia (cobre a bottom-nav); desktop: janela flutuante
           ...(isMobile
-            ? { inset: 0, width: '100%', height: '100dvh', borderRadius: 0 }
+            ? { inset: 0, width: '100%', height: 'var(--app-dvh, 100dvh)', borderRadius: 0 }
             : {
                 bottom: `${pos.bottom}px`, right: `${pos.right}px`,
                 width: '390px', maxWidth: 'calc(100vw - 32px)',
@@ -300,6 +309,7 @@ export function ChatWidget() {
             flex: 1, overflowY: 'auto', padding: '16px 14px 8px',
             display: 'flex', flexDirection: 'column', gap: '12px',
             background: '#FAFAFA',
+            overscrollBehavior: 'contain',
           }}>
             {messages.map((msg) => (
               <div key={msg.id} style={{
@@ -455,10 +465,15 @@ export function ChatWidget() {
             }}>
               <input
                 ref={inputRef}
+                className="chat-input"
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                onFocus={() => setInputFocused(true)}
+                onFocus={() => {
+                  setInputFocused(true);
+                  // teclado virtual abrindo: mantém a conversa visível após a animação
+                  setTimeout(() => messagesEndRef.current?.scrollIntoView({ block: 'end' }), 300);
+                }}
                 onBlur={() => setInputFocused(false)}
                 placeholder="Digite sua pergunta..."
                 disabled={loading}

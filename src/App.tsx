@@ -15,7 +15,7 @@ import type { Produto, Movimentacao, Entrega, EntregaPayload, LoteMovimentacaoDa
 import { PING_URL, ITEMS_PER_PAGE } from './constants';
 import { apiFetch, errorMessage } from './utils/api';
 import { isDelivered, normalizeEntrega, formatPhoneNumber } from './utils';
-import { useDebounce } from './hooks';
+import { useDebounce, useAppViewportHeight } from './hooks';
 import { ModalComponent, Paginacao, IdentificacaoModal } from './components/Shared';
 import { safeLocalStorageGet, safeLocalStorageSet } from './utils/storage';
 import {
@@ -192,6 +192,8 @@ const IconChevronDown = ({ up }: { up?: boolean }) => (
 // ── APP ───────────────────────────────────────────────────────────────────────
 
 export default function App() {
+  useAppViewportHeight();
+
   const [editingEntrega, setEditingEntrega] = useState<Entrega | null>(null);
 
   const [entregaToDeleteId, setEntregaToDeleteId] = useState<string | null>(null);
@@ -1014,7 +1016,7 @@ export default function App() {
 
   if (isVisitante) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: 'var(--surface-2)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', height: 'var(--app-dvh, 100dvh)', background: 'var(--surface-2)' }}>
         <header style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           padding: '12px 20px', background: '#1e1b2e', flexShrink: 0,

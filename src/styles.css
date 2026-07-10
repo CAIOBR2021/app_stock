@@ -1553,6 +1553,12 @@ table.table tbody tr.row-danger:hover td {
 /* ── RESPONSIVE ──────────────────────────────────────────── */
 @media (max-width: 991px) {
 
+  /* Inputs de chat com fonte >= 16px: abaixo disso o iOS dá zoom automático
+     na página ao focar, deformando o layout (!important vence o style inline) */
+  .chat-input {
+    font-size: 16px !important;
+  }
+
   /* sem a sidebar, o header mobile e o conteúdo empilham em coluna */
   .app-layout {
     flex-direction: column;
