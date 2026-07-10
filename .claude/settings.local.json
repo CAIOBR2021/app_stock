@@ -79,7 +79,9 @@
       "Bash(curl -s -m 60 https://small-lanae-caiobezerra-b22ba187.koyeb.app/api/produtos -o 'C:\\\\Users\\\\USER\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--DADOS-Desktop-Controle-de-estoque-ESTOQUE-FRONT-END-VERCEL-main\\\\12cda0bf-534c-447f-956d-c2a8a70522cf\\\\scratchpad/produtos.json')",
       "Bash(node -e 'const p=require\\(process.argv[1]\\); const linhas=p.map\\(\\(x,i\\)=>'\\\\''#'\\\\''+\\(i+1\\)+'\\\\''|'\\\\''+x.nome+'\\\\''|'\\\\''+x.quantidade+'\\\\''|'\\\\''+x.unidade+'\\\\''|'\\\\''+\\(x.categoria??'\\\\''-'\\\\''\\)+'\\\\''|'\\\\''+\\(x.localarmazenamento??'\\\\''-'\\\\''\\)\\).join\\('\\\\''\\\\n'\\\\''\\); console.log\\('\\\\''produtos:'\\\\'', p.length, '\\\\''| chars:'\\\\'', linhas.length, '\\\\''| ~tokens por mensagem:'\\\\'', Math.round\\(linhas.length/3.5\\)\\);' 'C:\\\\Users\\\\USER\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--DADOS-Desktop-Controle-de-estoque-ESTOQUE-FRONT-END-VERCEL-main\\\\12cda0bf-534c-447f-956d-c2a8a70522cf\\\\scratchpad\\\\produtos.json')",
       "Bash(node --check services/buscaLocalService.js)",
-      "Bash(node \"C:\\\\Users\\\\USER\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--DADOS-Desktop-Controle-de-estoque-ESTOQUE-FRONT-END-VERCEL-main\\\\12cda0bf-534c-447f-956d-c2a8a70522cf\\\\scratchpad\\\\test-cascata.js\")"
+      "Bash(node \"C:\\\\Users\\\\USER\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--DADOS-Desktop-Controle-de-estoque-ESTOQUE-FRONT-END-VERCEL-main\\\\12cda0bf-534c-447f-956d-c2a8a70522cf\\\\scratchpad\\\\test-cascata.js\")",
+      "WebSearch",
+      "WebFetch(domain:ai.google.dev)"
     ]
   }
 }
