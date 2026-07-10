@@ -54,7 +54,32 @@
       "Bash(curl -s -o /dev/null -w '%{http_code}' --max-time 20 https://small-lanae-caiobezerra-b22ba187.koyeb.app/api/movimentacoes?_limit=1)",
       "Bash(curl -s -o /dev/null -w '%{http_code}' --max-time 20 https://small-lanae-caiobezerra-b22ba187.koyeb.app/api/entregas?_limit=1)",
       "Bash(curl -s -o /dev/null -w '%{http_code}' --max-time 60 -X POST https://small-lanae-caiobezerra-b22ba187.koyeb.app/api/chat -H 'Content-Type: application/json' -d '{\"pergunta\":\"resumo do estoque em uma frase\"}')",
-      "Bash(curl -s -o /dev/null -w '%{http_code}' --max-time 20 -X POST https://small-lanae-caiobezerra-b22ba187.koyeb.app/api/auth/verify-password -H 'Content-Type: application/json' -d '{\"password\":\"senha-errada-teste\"}')"
+      "Bash(curl -s -o /dev/null -w '%{http_code}' --max-time 20 -X POST https://small-lanae-caiobezerra-b22ba187.koyeb.app/api/auth/verify-password -H 'Content-Type: application/json' -d '{\"password\":\"senha-errada-teste\"}')",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{time_total}s\" https://app-stock-back.onrender.com/ping)",
+      "Bash(curl -s -w \"\\\\nHTTP:%{http_code} TIME:%{time_total}s\" -X POST https://app-stock-back.onrender.com/api/chat/visitante -H \"Content-Type: application/json\" -d '{\"mensagens\":[{\"role\":\"assistant\",\"text\":\"Olá! Sou O Almoxarife.\"},{\"role\":\"user\",\"text\":\"Quantos sacos de cimento temos em estoque?\"}]}')",
+      "Bash(curl -s -w \"\\\\nHTTP:%{http_code} TIME:%{time_total}s\" -X POST https://app-stock-back.onrender.com/api/chat -H \"Content-Type: application/json\" -d '{\"pergunta\":\"Quais materiais estão abaixo do mínimo?\"}')",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{time_total}s\" https://small-lanae-caiobezerra-b22ba187.koyeb.app/ping)",
+      "Bash(curl -s -w \"\\\\nHTTP:%{http_code} TIME:%{time_total}s\" -X POST https://small-lanae-caiobezerra-b22ba187.koyeb.app/api/chat -H \"Content-Type: application/json\" -d '{\"pergunta\":\"Quais materiais estão abaixo do mínimo?\"}')",
+      "Bash(curl -s -w \"\\\\nHTTP:%{http_code} TIME:%{time_total}s\" -X POST https://small-lanae-caiobezerra-b22ba187.koyeb.app/api/chat/visitante -H \"Content-Type: application/json\" -d '{\"mensagens\":[{\"role\":\"assistant\",\"text\":\"Olá! Sou O Almoxarife.\"},{\"role\":\"user\",\"text\":\"Quantos sacos de cimento temos em estoque?\"}]}')",
+      "Bash(curl -s -m 20 https://app-stock.vercel.app/)",
+      "Bash(curl -s -m 20 https://estoque-front-end-vercel.vercel.app/)",
+      "Bash(curl -s -m 30 \"https://estoque-front-end-vercel.vercel.app/assets/index-a9683556.js\")",
+      "Bash(curl -s -m 30 \"https://estoque-front-end-vercel.vercel.app/assets/index-a9683556.js\" -o /tmp/bundle.js)",
+      "Read(//tmp/**)",
+      "Bash(curl -s -w \"\\\\nHTTP:%{http_code} TIME:%{time_total}s\" -m 90 -X POST https://estoque-back-end.onrender.com/api/chat -H \"Content-Type: application/json\" -d '{\"pergunta\":\"teste\"}')",
+      "Bash(curl -s -o /dev/null -w \"PREFLIGHT:%{http_code}\\\\n\" -m 30 -X OPTIONS https://small-lanae-caiobezerra-b22ba187.koyeb.app/api/chat/visitante -H \"Origin: https://app-stock-koyeb.vercel.app\" -H \"Access-Control-Request-Method: POST\" -H \"Access-Control-Request-Headers: content-type\")",
+      "Bash(curl -s -D - -o /dev/null -m 60 -X POST https://small-lanae-caiobezerra-b22ba187.koyeb.app/api/chat/visitante -H \"Origin: https://app-stock-koyeb.vercel.app\" -H \"Content-Type: application/json\" -d '{\"mensagens\":[{\"role\":\"user\",\"text\":\"onde fica a argamassa?\"}]}')",
+      "Bash(curl -s -m 90 -X POST https://small-lanae-caiobezerra-b22ba187.koyeb.app/api/chat/visitante -H \"Content-Type: application/json\" -d '{\"mensagens\":[{\"role\":\"user\",\"text\":\"tem cimento?\"}]}')",
+      "Bash(node --check services/gemini.js)",
+      "Bash(node --check services/chatbotService.js)",
+      "Bash(node -e \"const g = require\\('./services/gemini'\\); console.log\\(typeof g.gerarConteudo, typeof g.GeminiIndisponivelError\\); process.env.GEMINI_API_KEY=''; g.gerarConteudo\\('x',{}\\).catch\\(e => console.log\\('erro amigável:', e.name, '->', e.message\\)\\);\")",
+      "Bash(node \"C:\\\\Users\\\\USER\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--DADOS-Desktop-Controle-de-estoque-ESTOQUE-FRONT-END-VERCEL-main\\\\12cda0bf-534c-447f-956d-c2a8a70522cf\\\\scratchpad\\\\test-gemini.js\")",
+      "Bash(curl -s -m 60 https://small-lanae-caiobezerra-b22ba187.koyeb.app/api/produtos -o /tmp/produtos.json)",
+      "Bash(node -e \"const p=require\\('/tmp/produtos.json'\\); const linhas=p.map\\(\\(x,i\\)=>'#'+\\(i+1\\)+'|'+x.nome+'|'+x.quantidade+'|'+x.unidade+'|'+\\(x.categoria??'-'\\)+'|'+\\(x.localarmazenamento??'-'\\)\\).join\\('\\\\n'\\); console.log\\('produtos:', p.length, '| chars do prompt de estoque:', linhas.length, '| ~tokens:', Math.round\\(linhas.length/3.5\\)\\);\")",
+      "Bash(curl -s -m 60 https://small-lanae-caiobezerra-b22ba187.koyeb.app/api/produtos -o 'C:\\\\Users\\\\USER\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--DADOS-Desktop-Controle-de-estoque-ESTOQUE-FRONT-END-VERCEL-main\\\\12cda0bf-534c-447f-956d-c2a8a70522cf\\\\scratchpad/produtos.json')",
+      "Bash(node -e 'const p=require\\(process.argv[1]\\); const linhas=p.map\\(\\(x,i\\)=>'\\\\''#'\\\\''+\\(i+1\\)+'\\\\''|'\\\\''+x.nome+'\\\\''|'\\\\''+x.quantidade+'\\\\''|'\\\\''+x.unidade+'\\\\''|'\\\\''+\\(x.categoria??'\\\\''-'\\\\''\\)+'\\\\''|'\\\\''+\\(x.localarmazenamento??'\\\\''-'\\\\''\\)\\).join\\('\\\\''\\\\n'\\\\''\\); console.log\\('\\\\''produtos:'\\\\'', p.length, '\\\\''| chars:'\\\\'', linhas.length, '\\\\''| ~tokens por mensagem:'\\\\'', Math.round\\(linhas.length/3.5\\)\\);' 'C:\\\\Users\\\\USER\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--DADOS-Desktop-Controle-de-estoque-ESTOQUE-FRONT-END-VERCEL-main\\\\12cda0bf-534c-447f-956d-c2a8a70522cf\\\\scratchpad\\\\produtos.json')",
+      "Bash(node --check services/buscaLocalService.js)",
+      "Bash(node \"C:\\\\Users\\\\USER\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--DADOS-Desktop-Controle-de-estoque-ESTOQUE-FRONT-END-VERCEL-main\\\\12cda0bf-534c-447f-956d-c2a8a70522cf\\\\scratchpad\\\\test-cascata.js\")"
     ]
   }
 }
