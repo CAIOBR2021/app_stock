@@ -30,7 +30,7 @@ export interface GerarPdfResult {
 
 const TIPO_LABELS: Record<TipoRelatorio, string> = {
   completo:     'Estoque Completo',
-  critico:      'Abaixo do Mínimo (Crítico)',
+  critico:      'Abaixo do Estoque Mínimo',
   prioritarios: 'Prioritários',
 };
 
@@ -322,7 +322,7 @@ export function gerarPdfEstoque(
     startY: y,
     margin: { left: ML, right: MR },
     tableWidth: CW,
-    head: [['SKU', 'Produto', 'Categoria', 'Estoque\nAtual', 'Nível\nCrítico', 'Qtd.\nNecessária', '%', 'Status']],
+    head: [['SKU', 'Produto', 'Categoria', 'Estoque\nAtual', 'Estoque\nMínimo', 'Qtd.\nNecessária', '%', 'Status']],
     body: tableBody,
     headStyles: {
       fillColor: C.navy, textColor: C.white,
@@ -444,7 +444,7 @@ function buildResumo(
       `Recomenda-se revisão periódica até ${dataValidade}.`,
 
     critico:
-      `Este relatório identifica ${total} item(ns) abaixo do nível crítico de operação${scope}. ` +
+      `Este relatório identifica ${total} item(ns) abaixo do estoque mínimo${scope}. ` +
       (urgentes > 0
         ? `${urgentes} item(ns) com estoque zerado requerem compra emergencial. `
         : '') +
