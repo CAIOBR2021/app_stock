@@ -30,6 +30,9 @@
   --success-light: #EBFBEE;
 
   --sidebar-w: 240px;
+  /* trilho fino que fica na borda quando a sidebar não está fixada */
+  --sidebar-rail-w: 16px;
+  --sidebar-ease: 260ms cubic-bezier(.4, 0, .2, 1);
   --radius: 10px;
   --radius-lg: 14px;
 
@@ -93,10 +96,12 @@ body {
 .ident-input-dark::placeholder { color: rgba(255, 255, 255, .4); }
 
 .sidebar-logo-area {
-  padding: 18px 20px 16px;
+  padding: 18px 52px 16px 20px;
+  /* reserva o canto direito para o botão de pin */
   border-bottom: 1px solid rgba(255,255,255,0.08);
   display: flex;
   align-items: center;
+  position: relative;
 }
 
 /* Logo icon block */
@@ -118,6 +123,7 @@ body {
 .sidebar-logo {
   height: 48px;
   width: auto;
+  max-width: 100%;
 }
 
 .sidebar-logo-name {
@@ -283,6 +289,137 @@ body {
 .user-role {
   color: rgba(255, 255, 255, .4);
   font-size: 11px;
+}
+
+/* ── SIDEBAR: PIN / AUTO-HIDE ────────────────────────────── */
+
+/* Botão de pin — sutil por padrão, com hitbox de 34px para facilitar o clique */
+.sidebar-pin-btn {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  opacity: .2;
+  cursor: pointer;
+  z-index: 2;
+  transition: opacity var(--transition), background var(--transition), color var(--transition);
+}
+
+/* Ganha presença quando o mouse está na sidebar, e destaque total no próprio botão */
+.sidebar:hover .sidebar-pin-btn {
+  opacity: .45;
+}
+
+.sidebar-pin-btn:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, .08);
+}
+
+.sidebar-pin-btn:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Fixada: o pino fica reto e na cor de destaque */
+.app-layout.sidebar-pinned .sidebar-pin-btn {
+  color: var(--primary);
+  opacity: .5;
+}
+
+.app-layout.sidebar-pinned .sidebar:hover .sidebar-pin-btn,
+.app-layout.sidebar-pinned .sidebar-pin-btn:hover {
+  opacity: 1;
+}
+
+.sidebar-pin-icon {
+  transition: transform 220ms cubic-bezier(.4, 0, .2, 1);
+}
+
+/* Solta: o pino aparece inclinado, metáfora de "não fixado" */
+.app-layout:not(.sidebar-pinned) .sidebar-pin-icon {
+  transform: rotate(45deg);
+}
+
+/* Trilho/gatilho na borda esquerda — só existe no desktop e sem pin */
+.sidebar-hover-zone {
+  display: none;
+}
+
+@media (min-width: 992px) {
+  .sidebar {
+    transition: transform var(--sidebar-ease), box-shadow var(--sidebar-ease);
+    will-change: transform;
+  }
+
+  .main-content {
+    transition: margin-left var(--sidebar-ease);
+  }
+
+  /* ── Estado padrão (não fixada): recolhida, libera a largura para os produtos ── */
+  .app-layout:not(.sidebar-pinned) .sidebar {
+    transform: translateX(-100%);
+    box-shadow: none;
+  }
+
+  .app-layout:not(.sidebar-pinned) .main-content {
+    margin-left: var(--sidebar-rail-w);
+  }
+
+  .app-layout:not(.sidebar-pinned) .sidebar-hover-zone {
+    display: block;
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: var(--sidebar-rail-w);
+    z-index: 99;
+  }
+
+  /* Marca visual discreta indicando que há um menu ali */
+  .app-layout:not(.sidebar-pinned) .sidebar-hover-zone::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 50%;
+    width: 3px;
+    height: 48px;
+    margin-top: -24px;
+    border-radius: 999px;
+    background: rgba(26, 26, 46, .18);
+    transition: background var(--sidebar-ease), height var(--sidebar-ease), margin-top var(--sidebar-ease);
+  }
+
+  .app-layout:not(.sidebar-pinned) .sidebar-hover-zone:hover::after {
+    background: var(--primary);
+    height: 72px;
+    margin-top: -36px;
+  }
+
+  /* ── Abre por cima do conteúdo no hover (ou via teclado, com focus-within) ── */
+  .app-layout:not(.sidebar-pinned) .sidebar-hover-zone:hover + .sidebar,
+  .app-layout:not(.sidebar-pinned) .sidebar:hover,
+  .app-layout:not(.sidebar-pinned) .sidebar:focus-within {
+    transform: translateX(0);
+    box-shadow: var(--shadow-lg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .sidebar,
+  .main-content,
+  .sidebar-pin-icon {
+    transition: none;
+  }
 }
 
 /* ── MAIN CONTENT ────────────────────────────────────────── */

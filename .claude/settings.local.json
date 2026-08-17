@@ -84,7 +84,8 @@
       "WebFetch(domain:ai.google.dev)",
       "Bash(ls src/hooks*)",
       "Bash(cat src/hooks.ts)",
-      "Bash(cat src/hooks/index.ts)"
+      "Bash(cat src/hooks/index.ts)",
+      "PowerShell(npx eslint src/App.tsx 2>&1)"
     ]
   }
 }

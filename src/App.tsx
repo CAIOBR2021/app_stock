@@ -208,6 +208,17 @@ export default function App() {
 
   const [view, setView] = useState<'estoque' | 'movimentacoes' | 'rotas' | 'entradas_saidas' | 'nota_fiscal' | 'previsao' | 'solicitacoes'>('estoque');
   const [showMoreSheet, setShowMoreSheet] = useState(false);
+  // Sidebar fixada (pinned): quando falso, ela fica recolhida e só aparece no hover,
+  // liberando a largura da tela para a listagem de produtos.
+  const [sidebarPinned, setSidebarPinned] = useState<boolean>(
+    () => safeLocalStorageGet<boolean>('sidebarPinned', false)
+  );
+  const toggleSidebarPin = useCallback(() => {
+    setSidebarPinned((prev) => {
+      safeLocalStorageSet('sidebarPinned', !prev);
+      return !prev;
+    });
+  }, []);
   // No mobile os filtros ficam recolhidos por padrão; no desktop são sempre visíveis
   const [showFiltersMobile, setShowFiltersMobile] = useState(false);
   const [showScroll, setShowScroll] = useState(false);
@@ -1092,11 +1103,28 @@ export default function App() {
   // ── RENDER ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="app-layout">
+    <div className={`app-layout ${sidebarPinned ? 'sidebar-pinned' : ''}`}>
+      {/* Faixa invisível na borda esquerda: dispara a abertura da sidebar no hover
+          quando ela não está fixada (o pareamento CSS é `.sidebar-hover-zone:hover + .sidebar`) */}
+      <div className="sidebar-hover-zone" aria-hidden="true" />
+
       {/* ── SIDEBAR ── */}
       <aside className="sidebar">
         <div className="sidebar-logo-area">
           <img src={meuLogo} alt="Logo" className="sidebar-logo" />
+          <button
+            type="button"
+            className="sidebar-pin-btn"
+            onClick={toggleSidebarPin}
+            aria-pressed={sidebarPinned}
+            aria-label={sidebarPinned ? 'Desafixar menu lateral' : 'Fixar menu lateral'}
+            title={sidebarPinned ? 'Desafixar menu (libera espaço para os produtos)' : 'Fixar menu lateral'}
+          >
+            <svg className="sidebar-pin-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="17" x2="12" y2="22" />
+              <path d="M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6z" />
+            </svg>
+          </button>
         </div>
         <nav className="sidebar-nav">
           {(
