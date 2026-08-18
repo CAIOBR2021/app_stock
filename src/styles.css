@@ -404,10 +404,18 @@ body {
     margin-top: -36px;
   }
 
-  /* ── Abre por cima do conteúdo no hover (ou via teclado, com focus-within) ── */
+  /* ── Abre por cima do conteúdo no hover ── */
   .app-layout:not(.sidebar-pinned) .sidebar-hover-zone:hover + .sidebar,
-  .app-layout:not(.sidebar-pinned) .sidebar:hover,
-  .app-layout:not(.sidebar-pinned) .sidebar:focus-within {
+  .app-layout:not(.sidebar-pinned) .sidebar:hover {
+    transform: translateX(0);
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* Navegação por teclado mantém a sidebar aberta. Regra separada (e com
+     :focus-visible em vez de :focus-within) para que o foco deixado por um
+     clique de mouse — como o do botão de pin ao desafixar — não impeça o
+     fechamento quando o mouse sai. */
+  .app-layout:not(.sidebar-pinned) .sidebar:has(:focus-visible) {
     transform: translateX(0);
     box-shadow: var(--shadow-lg);
   }

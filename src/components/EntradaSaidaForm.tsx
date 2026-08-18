@@ -3,6 +3,7 @@ import Select from 'react-select';
 import type { StylesConfig } from 'react-select';
 import type { Produto } from '../types';
 import { isUnidadeInteira, sanitizeQuantidade } from '../constants';
+import { isCategoriaEPI } from '../utils';
 
 // ── REACT-SELECT STYLES ───────────────────────────────────────────────────────
 
@@ -149,7 +150,7 @@ export function EntradaSaidaForm({ produtos, onSubmit, perfilUsuario }: EntradaS
   const produtosDisponiveis = useMemo(() => {
     const tokens = busca.trim().toLowerCase().split(/\s+/).filter(Boolean);
     return produtos.filter(p => {
-      if (perfilUsuario === 'seguranca' && p.categoria !== 'EPI') return false;
+      if (perfilUsuario === 'seguranca' && !isCategoriaEPI(p.categoria)) return false;
       const searchableText = [p.nome, p.sku, p.categoria ?? '', p.descricao ?? '', p.localArmazenamento ?? '', p.fornecedor ?? ''].join(' ').toLowerCase();
       return (
         (tokens.length === 0 || tokens.every(token => searchableText.includes(token))) &&

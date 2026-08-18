@@ -5,6 +5,7 @@ import type { StylesConfig } from 'react-select';
 import type { Movimentacao, Produto, UUID, TipoMov } from '../types';
 import { ModalComponent, GerenciarHistoricoModal, Paginacao } from './Shared';
 import { safeLocalStorageGet, safeLocalStorageSet } from '../utils/storage';
+import { isCategoriaEPI } from '../utils';
 
 // ── REACT-SELECT STYLES ───────────────────────────────────────────────────────
 
@@ -526,7 +527,7 @@ export function ConsultaMovimentacoes({
   // Regras de edição/exclusão compartilhadas entre a tabela e os cards mobile
   const getAcoesInfo = (m: Movimentacao) => {
     const produtoCategoria = produtoMap.get(m.produtoId)?.categoria;
-    const bloqueadoPorPerfil = perfilUsuario === 'seguranca' && produtoCategoria !== 'EPI';
+    const bloqueadoPorPerfil = perfilUsuario === 'seguranca' && !isCategoriaEPI(produtoCategoria);
     const bloqueadoPorTipo = m.tipo === 'ajuste' || m.tipo === 'saldo_inicial';
     const disabled = bloqueadoPorTipo || bloqueadoPorPerfil;
     const editTitle = bloqueadoPorTipo

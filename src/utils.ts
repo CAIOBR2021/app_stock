@@ -19,6 +19,26 @@ export const normalizeEntrega = (e: RawEntrega): Entrega => {
   } as Entrega;
 };
 
+// ── VISIBILIDADE POR CATEGORIA ───────────────────────────────────────────────
+// Itens de EPI são exclusivos do perfil Segurança do Trabalho: ninguém mais os
+// enxerga em listagens, filtros, movimentações ou relatórios em PDF.
+
+/** Categoria de acesso restrito. */
+export const CATEGORIA_RESTRITA = 'EPI';
+
+/** Compara a categoria com 'EPI' ignorando caixa e espaços em volta. */
+export const isCategoriaEPI = (categoria?: string | null): boolean =>
+  (categoria ?? '').trim().toUpperCase() === CATEGORIA_RESTRITA;
+
+/** Único perfil autorizado a enxergar itens de EPI. */
+export const podeVerEPI = (perfil?: string | null): boolean => perfil === 'seguranca';
+
+/** Remove os itens de EPI da lista quando o perfil não tem permissão de vê-los. */
+export const filtrarVisiveisPorPerfil = <T extends { categoria?: string | null }>(
+  itens: T[],
+  perfil?: string | null,
+): T[] => (podeVerEPI(perfil) ? itens : itens.filter((i) => !isCategoriaEPI(i.categoria)));
+
 export const formatPhoneNumber = (value: string) => {
   if (!value) return "";
   const v = value.replace(/\D/g, ''); 

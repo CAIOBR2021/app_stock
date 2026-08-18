@@ -14,7 +14,7 @@ import './styles.css';
 import type { Produto, Movimentacao, Entrega, EntregaPayload, LoteMovimentacaoDados } from './types';
 import { PING_URL, ITEMS_PER_PAGE } from './constants';
 import { apiFetch, errorMessage } from './utils/api';
-import { isDelivered, normalizeEntrega, formatPhoneNumber } from './utils';
+import { isDelivered, normalizeEntrega, formatPhoneNumber, isCategoriaEPI, podeVerEPI, filtrarVisiveisPorPerfil } from './utils';
 import { useDebounce, useAppViewportHeight } from './hooks';
 import { ModalComponent, Paginacao, IdentificacaoModal } from './components/Shared';
 import { safeLocalStorageGet, safeLocalStorageSet } from './utils/storage';
@@ -213,7 +213,11 @@ export default function App() {
   const [sidebarPinned, setSidebarPinned] = useState<boolean>(
     () => safeLocalStorageGet<boolean>('sidebarPinned', false)
   );
-  const toggleSidebarPin = useCallback(() => {
+  const toggleSidebarPin = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    // Clique de mouse (detail > 0) deixa o botão focado; sem tirar o foco a
+    // sidebar continuaria aberta depois do mouseleave. No teclado (detail === 0)
+    // o foco é preservado de propósito.
+    if (e.detail > 0) e.currentTarget.blur();
     setSidebarPinned((prev) => {
       safeLocalStorageSet('sidebarPinned', !prev);
       return !prev;
@@ -253,7 +257,7 @@ export default function App() {
   }, []);
 
   const canEditarProduto = useCallback((produto: { categoria?: string | null }) => {
-    if (perfilUsuario === 'seguranca') return produto.categoria === 'EPI';
+    if (perfilUsuario === 'seguranca') return isCategoriaEPI(produto.categoria);
     return true; // almoxarifado ou sem perfil → acesso total
   }, [perfilUsuario]);
 
@@ -310,12 +314,29 @@ export default function App() {
   // useMemo mantém a referência estável enquanto data é undefined (memos abaixo dependem delas)
   const allProdutos = useMemo(() => produtosQuery.data ?? [], [produtosQuery.data]);
 
+  // Fonte única da regra de visibilidade: itens de EPI só existem, do ponto de
+  // vista da interface, para o perfil Segurança do Trabalho. Todo o resto da
+  // tela (listagem, filtros, métricas, formulários e PDFs) consome esta lista.
+  const produtosVisiveis = useMemo(
+    () => filtrarVisiveisPorPerfil(allProdutos, perfilUsuario),
+    [allProdutos, perfilUsuario],
+  );
+
   const movsQuery = useQuery({
     queryKey: ['movimentacoes'],
     queryFn: () => apiFetch<Movimentacao[]>('/movimentacoes'),
     enabled: !isVisitante,
   });
   const movs = useMemo(() => movsQuery.data ?? [], [movsQuery.data]);
+
+  // Movimentações de itens de EPI acompanham a mesma restrição dos produtos.
+  const movsVisiveis = useMemo(() => {
+    if (podeVerEPI(perfilUsuario)) return movs;
+    const idsRestritos = new Set(
+      allProdutos.filter((p) => isCategoriaEPI(p.categoria)).map((p) => p.id),
+    );
+    return movs.filter((m) => !idsRestritos.has(m.produtoId));
+  }, [movs, allProdutos, perfilUsuario]);
 
   const entregasQuery = useQuery({
     queryKey: ['entregas'],
@@ -938,10 +959,10 @@ export default function App() {
 
   const produtosAbaixoMinimo = useMemo(
     () =>
-      allProdutos.filter(
+      produtosVisiveis.filter(
         (p) => p.estoqueMinimo != null && p.quantidade <= p.estoqueMinimo,
       ),
-    [allProdutos],
+    [produtosVisiveis],
   );
   const alertCountLabel =
     produtosAbaixoMinimo.length > 99 ? '99+' : String(produtosAbaixoMinimo.length);
@@ -952,22 +973,39 @@ export default function App() {
     (mostrarAbaixoMin ? 1 : 0) +
     (mostrarPrioritarios ? 1 : 0);
 
+  // Sem produtos de EPI visíveis, a categoria 'EPI' também some das listas de
+  // opções (filtro do estoque, filtro do relatório e formulário de produto).
   const categorias = useMemo(
     () =>
-      Array.from(new Set(allProdutos.map((p) => p.categoria || '').filter(Boolean))),
-    [allProdutos],
+      Array.from(new Set(produtosVisiveis.map((p) => p.categoria || '').filter(Boolean))),
+    [produtosVisiveis],
   );
 
   const locaisArmazenamento = useMemo(
     () =>
       Array.from(
-        new Set(allProdutos.map((p) => p.localArmazenamento || '').filter(Boolean)),
+        new Set(produtosVisiveis.map((p) => p.localArmazenamento || '').filter(Boolean)),
       ),
-    [allProdutos],
+    [produtosVisiveis],
   );
 
+  // Entregas de itens de EPI seguem a mesma restrição: escondidas para quem não
+  // é Segurança do Trabalho, tanto pelo id do produto quanto pelo nome do item
+  // (entregas antigas nem sempre têm produtoId preenchido).
+  const entregasVisiveis = useMemo(() => {
+    if (podeVerEPI(perfilUsuario)) return entregas;
+    const restritos = allProdutos.filter((p) => isCategoriaEPI(p.categoria));
+    const idsRestritos = new Set(restritos.map((p) => p.id));
+    const nomesRestritos = new Set(restritos.map((p) => p.nome.trim().toLowerCase()));
+    return entregas.filter(
+      (e) =>
+        !idsRestritos.has(e.produtoId) &&
+        !nomesRestritos.has((e.itemNome ?? '').trim().toLowerCase()),
+    );
+  }, [entregas, allProdutos, perfilUsuario]);
+
   const filteredDeliveries = useMemo(() => {
-    let data = entregas;
+    let data = entregasVisiveis;
     if (rotaDateFilter)
       data = data.filter(
         (d) =>
@@ -978,7 +1016,7 @@ export default function App() {
         new Date(a.dataHoraSolicitacao).getTime() -
         new Date(b.dataHoraSolicitacao).getTime(),
     );
-  }, [entregas, rotaDateFilter]);
+  }, [entregasVisiveis, rotaDateFilter]);
 
   // ── CORRIGIDO: handleSelectAllEntregas após filteredDeliveries ────────────
   const handleSelectAllEntregas = useCallback(
@@ -988,7 +1026,7 @@ export default function App() {
   );
 
   // Enquanto a lista completa carrega, allProdutos contém a primeira página (placeholderData)
-  const fonteDados = allProdutos;
+  const fonteDados = produtosVisiveis;
 
   const filteredProdutos = useMemo(() => {
     let result = fonteDados.filter((p) => {
@@ -1295,7 +1333,7 @@ export default function App() {
         {/* ── ESTOQUE ── */}
         {view === 'estoque' && (
           <div className="content-area animate-fade-in">
-            {!loadingAll && <MetricCards allProdutos={allProdutos} />}
+            {!loadingAll && <MetricCards allProdutos={produtosVisiveis} />}
 
             <div className="card-modern">
               <div className="row gy-3 align-items-end">
@@ -1362,11 +1400,11 @@ export default function App() {
 
               <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div className="d-flex align-items-center gap-3">
-                  <ValorTotalEstoque allProdutos={allProdutos} />
+                  <ValorTotalEstoque allProdutos={produtosVisiveis} />
                 </div>
                 <div className="d-flex gap-2">
-                  <Relatorios produtos={allProdutos} />
-                  <BotaoNovoProduto onCreate={addProduto} categorias={categorias} locais={locaisArmazenamento} allProdutos={allProdutos} />
+                  <Relatorios produtos={produtosVisiveis} perfilUsuario={perfilUsuario} />
+                  <BotaoNovoProduto onCreate={addProduto} categorias={categorias} locais={locaisArmazenamento} allProdutos={produtosVisiveis} />
                 </div>
               </div>
             </div>
@@ -1387,7 +1425,7 @@ export default function App() {
                 locais={locaisArmazenamento}
                 sortOrder={sortOrder}
                 onToggleSort={handleToggleSort}
-                allProdutos={allProdutos}
+                allProdutos={produtosVisiveis}
                 canEdit={canEditarProduto}
               />
             )}
@@ -1408,7 +1446,7 @@ export default function App() {
                 Últimas Movimentações
               </div>
               <div className="card-modern" style={{ padding: '12px 16px' }}>
-                <MovsList movs={movs.slice(0, 5)} produtos={allProdutos} />
+                <MovsList movs={movsVisiveis.slice(0, 5)} produtos={produtosVisiveis} />
               </div>
             </div>
           </div>
@@ -1417,7 +1455,7 @@ export default function App() {
         {/* ── MOVIMENTAÇÕES ── */}
         {view === 'movimentacoes' && (
           <div className="content-area card-modern animate-fade-in">
-            <ConsultaMovimentacoes movs={movs} produtos={allProdutos} onDelete={deleteMov} onEdit={updateMov} perfilUsuario={perfilUsuario} />
+            <ConsultaMovimentacoes movs={movsVisiveis} produtos={produtosVisiveis} onDelete={deleteMov} onEdit={updateMov} perfilUsuario={perfilUsuario} />
           </div>
         )}
 
@@ -1428,7 +1466,7 @@ export default function App() {
               <div className="col-lg-4">
                 <DeliveryForm
                   onSave={handleSaveDelivery}
-                  produtosDisponiveis={allProdutos}
+                  produtosDisponiveis={produtosVisiveis}
                   deliveryToEdit={editingEntrega}
                   onCancelEdit={() => setEditingEntrega(null)}
                   historicoEntregas={entregas}
@@ -1516,7 +1554,7 @@ export default function App() {
         {/* ── ENTRADAS/SAÍDAS ── */}
         {view === 'entradas_saidas' && (
           <div className="content-area animate-fade-in">
-            <EntradaSaidaForm produtos={allProdutos} onSubmit={handleEntradaSaidaSubmit} perfilUsuario={perfilUsuario} />
+            <EntradaSaidaForm produtos={produtosVisiveis} onSubmit={handleEntradaSaidaSubmit} perfilUsuario={perfilUsuario} />
           </div>
         )}
 
@@ -1524,7 +1562,7 @@ export default function App() {
         {view === 'nota_fiscal' && (
           <div className="content-area animate-fade-in">
             <NotaFiscalReader
-              produtos={allProdutos}
+              produtos={produtosVisiveis}
               perfilUsuario={perfilUsuario}
               onImportar={(dados) => {
                 handleEntradaSaidaSubmit(dados);
@@ -1536,7 +1574,7 @@ export default function App() {
         {/* ── PREVISÃO DE CONSUMO ── */}
         {view === 'previsao' && (
           <div className="content-area animate-fade-in">
-            <PrevisaoConsumo produtos={allProdutos} movimentacoes={movs} />
+            <PrevisaoConsumo produtos={produtosVisiveis} movimentacoes={movsVisiveis} />
           </div>
         )}
 

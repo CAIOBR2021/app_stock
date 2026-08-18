@@ -429,7 +429,7 @@ export function ValorTotalEstoque({ allProdutos }: { allProdutos: Produto[] }) {
 
 // ── RELATÓRIOS ────────────────────────────────────────────────────────────────
 
-export function Relatorios({ produtos }: { produtos: Produto[] }) {
+export function Relatorios({ produtos, perfilUsuario }: { produtos: Produto[]; perfilUsuario?: string }) {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalInfo, setModalInfo] = useState<{
@@ -452,7 +452,7 @@ export function Relatorios({ produtos }: { produtos: Produto[] }) {
   const handleGerar = (filtros: RelatorioFiltros) => {
     setLoading(true);
     try {
-      const result = gerarPdfEstoque(produtos, filtros);
+      const result = gerarPdfEstoque(produtos, filtros, perfilUsuario);
       if (!result.ok) {
         setModalInfo({
           show: true,

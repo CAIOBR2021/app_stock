@@ -9,6 +9,7 @@
 
 import type { Produto } from '../types';
 import { sanitizePdfString } from './pdf';
+import { filtrarVisiveisPorPerfil } from '../utils';
 
 // ── TIPOS PÚBLICOS ────────────────────────────────────────────────────────────
 
@@ -117,16 +118,21 @@ export function aplicarFiltros(
 /**
  * Gera e faz download de um PDF de estoque com base nos filtros fornecidos.
  *
+ * O `perfil` é aplicado antes de qualquer filtro do modal: itens de EPI nunca
+ * entram no PDF de quem não é Segurança do Trabalho, mesmo que a lista recebida
+ * venha sem restrição.
+ *
  * @example
- * const result = gerarPdfEstoque(allProdutos, { tipo: 'critico', categoria: 'Ferragens' });
+ * const result = gerarPdfEstoque(produtos, { tipo: 'critico', categoria: 'Ferragens' }, perfilUsuario);
  * if (!result.ok) toast.error(result.mensagem);
  */
 export function gerarPdfEstoque(
   todos: Produto[],
   filtros: RelatorioFiltros,
+  perfil?: string | null,
 ): GerarPdfResult {
   // ── 1. Filtrar ────────────────────────────────────────────────────────────
-  const lista = aplicarFiltros(todos, filtros);
+  const lista = aplicarFiltros(filtrarVisiveisPorPerfil(todos, perfil), filtros);
 
   if (lista.length === 0) {
     const scope = filtros.categoria ? `na categoria "${filtros.categoria}"` : '';

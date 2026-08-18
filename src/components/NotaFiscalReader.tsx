@@ -1,6 +1,7 @@
 import React, { useState, useRef, useMemo } from 'react';
 import type { Produto } from '../types';
 import { API_URL, isUnidadeInteira } from '../constants';
+import { isCategoriaEPI } from '../utils';
 
 // ── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -231,7 +232,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 
 export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFiscalReaderProps) {
   const produtosPermitidos = perfilUsuario === 'seguranca'
-    ? produtos.filter(p => p.categoria === 'EPI')
+    ? produtos.filter(p => isCategoriaEPI(p.categoria))
     : produtos;
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
