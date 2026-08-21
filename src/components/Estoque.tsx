@@ -1313,6 +1313,7 @@ export function ProdutosTable({
   const [editingId, setEditingId] = useState<UUID | null>(null);
   const [movProdId, setMovProdId] = useState<UUID | null>(null);
   const [deleteId, setDeleteId] = useState<UUID | null>(null);
+  const [valorHoverId, setValorHoverId] = useState<UUID | null>(null);
 
   const produtoParaEditar = useMemo(
     () => produtos.find((p) => p.id === editingId),
@@ -1397,8 +1398,42 @@ export function ProdutosTable({
                         </span>
                       )}
                       {p.valorUnitario != null && p.valorUnitario > 0 && (
-                        <span className="ms-2" title="Valor registrado">
-                          <IconTag />
+                        <span
+                          className="ms-2"
+                          style={{ whiteSpace: 'nowrap' }}
+                          onMouseEnter={() => setValorHoverId(p.id)}
+                          onMouseLeave={() =>
+                            setValorHoverId((cur) =>
+                              cur === p.id ? null : cur,
+                            )
+                          }
+                        >
+                          {valorHoverId === p.id && (
+                            <span
+                              className="me-2"
+                              style={{
+                                fontSize: '11.5px',
+                                color: 'var(--text-3)',
+                                fontWeight: 400,
+                              }}
+                            >
+                              Unitário: R${' '}
+                              {Number(p.valorUnitario).toLocaleString('pt-BR', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}{' '}
+                              / Total: R${' '}
+                              {(
+                                Number(p.valorUnitario) * p.quantidade
+                              ).toLocaleString('pt-BR', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                            </span>
+                          )}
+                          <span title="Valor registrado">
+                            <IconTag />
+                          </span>
                         </span>
                       )}
                     </td>

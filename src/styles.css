@@ -419,6 +419,16 @@ body {
     transform: translateX(0);
     box-shadow: var(--shadow-lg);
   }
+
+  /* ── O conteúdo acompanha a abertura ──
+     Enquanto a sidebar está aberta no hover, o main recua para a largura dela
+     em vez de ficar coberto: a tabela reflui e nenhuma coluna some atrás do
+     menu. `~` funciona porque .main-content é irmão posterior da .sidebar. */
+  .app-layout:not(.sidebar-pinned) .sidebar-hover-zone:hover ~ .main-content,
+  .app-layout:not(.sidebar-pinned) .sidebar:hover ~ .main-content,
+  .app-layout:not(.sidebar-pinned) .sidebar:has(:focus-visible) ~ .main-content {
+    margin-left: var(--sidebar-w);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
