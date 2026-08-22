@@ -66,6 +66,12 @@ const selectStyles: StylesConfig = {
   indicatorSeparator: () => ({ display: 'none' }),
 };
 
+const formatBRL = (valor: number) =>
+  Number(valor).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  });
+
 // ── SVG ICONS ─────────────────────────────────────────────────────────────────
 
 const IconEye = () => (
@@ -1313,32 +1319,6 @@ export function ProdutosTable({
   const [editingId, setEditingId] = useState<UUID | null>(null);
   const [movProdId, setMovProdId] = useState<UUID | null>(null);
   const [deleteId, setDeleteId] = useState<UUID | null>(null);
-  const [valorHoverId, setValorHoverId] = useState<UUID | null>(null);
-  const valorHoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const abrirValorHover = useCallback((id: UUID) => {
-    if (valorHoverTimer.current) {
-      clearTimeout(valorHoverTimer.current);
-      valorHoverTimer.current = null;
-    }
-    setValorHoverId(id);
-  }, []);
-
-  // Pequeno atraso antes de fechar para o mouse não perder o foco por acidente
-  const fecharValorHover = useCallback((id: UUID) => {
-    if (valorHoverTimer.current) clearTimeout(valorHoverTimer.current);
-    valorHoverTimer.current = setTimeout(() => {
-      valorHoverTimer.current = null;
-      setValorHoverId((cur) => (cur === id ? null : cur));
-    }, 400);
-  }, []);
-
-  useEffect(
-    () => () => {
-      if (valorHoverTimer.current) clearTimeout(valorHoverTimer.current);
-    },
-    [],
-  );
 
   const produtoParaEditar = useMemo(
     () => produtos.find((p) => p.id === editingId),
@@ -1423,48 +1403,26 @@ export function ProdutosTable({
                         </span>
                       )}
                       {p.valorUnitario != null && p.valorUnitario > 0 && (
-                        <span
-                          style={{
-                            whiteSpace: 'nowrap',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            cursor: 'default',
-                            // Hitbox ampliada: padding invisível compensado
-                            // por margem negativa para não deslocar o layout
-                            padding: '10px 12px',
-                            margin: '-10px -12px',
-                            marginLeft: 'calc(0.5rem - 12px)',
-                          }}
-                          onMouseEnter={() => abrirValorHover(p.id)}
-                          onMouseLeave={() => fecharValorHover(p.id)}
-                        >
-                          {valorHoverId === p.id && (
-                            <span
-                              className="me-2"
-                              style={{
-                                fontSize: '11.5px',
-                                color: 'var(--text-3)',
-                                fontWeight: 400,
-                              }}
-                            >
-                              Unitário: R${' '}
-                              {Number(p.valorUnitario).toLocaleString('pt-BR', {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}{' '}
-                              / Total: R${' '}
-                              {(
-                                Number(p.valorUnitario) * p.quantidade
-                              ).toLocaleString('pt-BR', {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}
-                            </span>
-                          )}
-                          <span title="Valor registrado">
+                        <>
+                          <span className="ms-2" title="Valor registrado">
                             <IconTag />
                           </span>
-                        </span>
+                          <span
+                            style={{
+                              display: 'block',
+                              fontSize: '11.5px',
+                              color: 'var(--text-3)',
+                              fontWeight: 400,
+                              marginTop: '3px',
+                            }}
+                          >
+                            {formatBRL(p.valorUnitario)} un{' · '}
+                            <span style={{ color: 'var(--text-2)' }}>
+                              {formatBRL(p.valorUnitario * p.quantidade)}
+                            </span>{' '}
+                            total
+                          </span>
+                        </>
                       )}
                     </td>
                     <td>
