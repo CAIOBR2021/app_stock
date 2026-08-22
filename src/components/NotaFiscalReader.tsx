@@ -5,6 +5,8 @@ import { isCategoriaEPI } from '../utils';
 
 // ── TYPES ────────────────────────────────────────────────────────────────────
 
+type ModoLeitura = 'entrada' | 'saida';
+
 interface ItemExtraido {
   nome: string;
   quantidade: number;
@@ -12,6 +14,10 @@ interface ItemExtraido {
   valorUnitario: number;
   produtoIdMatch?: string;
   confianca: number;
+  // Saída: o documento marcou o item como "não dar baixa" (ver saidaMaterialService).
+  naoDarBaixa?: boolean;
+  // Item entra no lote? Nasce false para os itens "não dar baixa".
+  incluir: boolean;
   // Conversão de unidade
   quantidadeOriginal?: number;
   unidadeOriginal?: string;
@@ -23,7 +29,7 @@ interface NotaFiscalReaderProps {
   produtos: Produto[];
   perfilUsuario?: string;
   onImportar: (dados: {
-    tipo: 'entrada';
+    tipo: ModoLeitura;
     ordemCompra: string;
     nomeObra: string;
     itens: { produtoId: string; quantidade: number; valorUnitario: number }[];
@@ -239,19 +245,43 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [modo, setModo] = useState<ModoLeitura>('entrada');
+  const isSaida = modo === 'saida';
+
   const [itensExtraidos, setItensExtraidos] = useState<ItemExtraido[]>([]);
   const [numeroNF, setNumeroNF] = useState('');
   const [ordemCompra, setOrdemCompra] = useState('');
   const [nomeObra, setNomeObra] = useState('');
   const [dataCompetencia, setDataCompetencia] = useState(hojeISO());
+  const [totalConferencia, setTotalConferencia] = useState<number | null>(null);
 
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const itensVinculados = useMemo(
-    () => itensExtraidos.filter(i => i.produtoIdMatch),
+    () => itensExtraidos.filter(i => i.produtoIdMatch && i.incluir),
     [itensExtraidos],
   );
+  const itensSemVinculo = useMemo(
+    () => itensExtraidos.filter(i => !i.produtoIdMatch && i.incluir).length,
+    [itensExtraidos],
+  );
+  const itensIgnorados = useMemo(
+    () => itensExtraidos.filter(i => !i.incluir).length,
+    [itensExtraidos],
+  );
+
+  // Conferência da saída: o documento informa a quantidade geral somada; se ela
+  // não bater com o que a IA extraiu, algum item veio errado ou faltando.
+  const somaExtraida = useMemo(
+    () => itensExtraidos.reduce((acc, i) => acc + (i.quantidadeOriginal ?? i.quantidade), 0),
+    [itensExtraidos],
+  );
+  const divergenciaConferencia =
+    isSaida && totalConferencia !== null && Math.abs(somaExtraida - totalConferencia) > 0.001;
+
+  // Na saída a obra é obrigatória: ela é o destino físico registrado na baixa.
+  const importDesabilitado = itensVinculados.length === 0 || (isSaida && !nomeObra.trim());
 
   const currentStep = itensExtraidos.length > 0 ? 3 : file ? 2 : 1;
 
@@ -268,6 +298,7 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
     setFile(f);
     setError(null);
     setItensExtraidos([]);
+    setTotalConferencia(null);
 
     if (f.type.startsWith('image/')) {
       const reader = new FileReader();
@@ -293,7 +324,8 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
       const base64 = await fileToBase64(file);
       const mimeType = file.type || 'image/jpeg';
 
-      const response = await fetch(`${API_URL}/nota-fiscal/ler`, {
+      const endpoint = isSaida ? '/saida-material/ler' : '/nota-fiscal/ler';
+      const response = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageBase64: base64, mimeType }),
@@ -302,14 +334,30 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
       const data = await response.json();
       if (!response.ok) throw new Error();
 
-      if (data.numeroNF) setNumeroNF(data.numeroNF);
-      if (data.ordemCompra) setOrdemCompra(data.ordemCompra);
-      if (data.nomeObra) setNomeObra(data.nomeObra);
-      if (data.dataEmissao) setDataCompetencia(data.dataEmissao);
+      if (isSaida) {
+        // Cabeçalho do documento de saída: obra de destino e data da baixa.
+        if (data.obraDestino) setNomeObra(data.obraDestino);
+        if (data.dataSaida) setDataCompetencia(data.dataSaida);
+        setTotalConferencia(
+          typeof data.totalConferencia === 'number' ? data.totalConferencia : null,
+        );
+      } else {
+        if (data.numeroNF) setNumeroNF(data.numeroNF);
+        if (data.ordemCompra) setOrdemCompra(data.ordemCompra);
+        if (data.nomeObra) setNomeObra(data.nomeObra);
+        if (data.dataEmissao) setDataCompetencia(data.dataEmissao);
+      }
 
-      type ItemNF = { nome: string; quantidade?: number | string; unidade?: string; valorUnitario?: number | string };
+      type ItemNF = {
+        nome: string;
+        quantidade?: number | string;
+        unidade?: string;
+        valorUnitario?: number | string;
+        naoDarBaixa?: boolean;
+      };
       const extraidos: ItemExtraido[] = (data.itens || []).map((item: ItemNF) => {
         const match = findBestMatch(item.nome, produtosPermitidos);
+        const naoDarBaixa = item.naoDarBaixa === true;
         let parsed: ItemExtraido = {
           nome: item.nome,
           quantidade: Number(item.quantidade) || 0,
@@ -317,6 +365,8 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
           valorUnitario: Number(item.valorUnitario) || 0,
           produtoIdMatch: match?.id || undefined,
           confianca: match ? 1 : 0,
+          naoDarBaixa,
+          incluir: !naoDarBaixa,
         };
         if (match) parsed = aplicarConversao(parsed, match);
         return parsed;
@@ -365,6 +415,23 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
     );
   };
 
+  const handleToggleIncluir = (index: number) => {
+    setItensExtraidos(prev =>
+      prev.map((item, i) => i === index ? { ...item, incluir: !item.incluir } : item),
+    );
+  };
+
+  const limparEstado = () => {
+    setFile(null);
+    setPreview(null);
+    setItensExtraidos([]);
+    setNumeroNF('');
+    setOrdemCompra('');
+    setNomeObra('');
+    setTotalConferencia(null);
+    setDataCompetencia(hojeISO());
+  };
+
   const handleImportar = () => {
     const itensParaImportar = itensVinculados.map(item => ({
       produtoId: item.produtoIdMatch!,
@@ -373,31 +440,25 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
     }));
 
     onImportar({
-      tipo: 'entrada',
-      ordemCompra: ordemCompra || (numeroNF ? `NF-${numeroNF}` : ''),
+      tipo: modo,
+      ordemCompra: isSaida ? '' : (ordemCompra || (numeroNF ? `NF-${numeroNF}` : '')),
       nomeObra,
       itens: itensParaImportar,
       dataCompetencia,
     });
 
-    setFile(null);
-    setPreview(null);
-    setItensExtraidos([]);
-    setNumeroNF('');
-    setOrdemCompra('');
-    setNomeObra('');
-    setDataCompetencia(hojeISO());
+    limparEstado();
   };
 
   const handleReset = () => {
-    setFile(null);
-    setPreview(null);
-    setItensExtraidos([]);
-    setNumeroNF('');
-    setOrdemCompra('');
-    setNomeObra('');
+    limparEstado();
     setError(null);
-    setDataCompetencia(hojeISO());
+  };
+
+  const handleTrocarModo = (novoModo: ModoLeitura) => {
+    if (novoModo === modo) return;
+    setModo(novoModo);
+    handleReset();
   };
 
   return (
@@ -433,6 +494,43 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
             </button>
           )}
         </div>
+
+        {/* ── Alternador Entrada / Saída ── */}
+        <div style={{
+          display: 'inline-flex', gap: '4px', marginTop: '18px',
+          padding: '4px', background: 'var(--surface-2)',
+          border: '1px solid var(--border)', borderRadius: '10px',
+        }}>
+          {([
+            { id: 'entrada' as const, label: 'Entrada', hint: 'Nota fiscal, ordem de compra' },
+            { id: 'saida' as const, label: 'Saída', hint: 'Saída semanal, romaneio' },
+          ]).map(opt => {
+            const ativo = modo === opt.id;
+            return (
+              <button
+                key={opt.id}
+                onClick={() => handleTrocarModo(opt.id)}
+                title={opt.hint}
+                style={{
+                  border: 'none', cursor: 'pointer',
+                  padding: '8px 20px', borderRadius: '7px',
+                  fontSize: '13px', fontWeight: 700,
+                  background: ativo ? '#fff' : 'transparent',
+                  color: ativo ? 'var(--text-1)' : 'var(--text-3)',
+                  boxShadow: ativo ? 'var(--shadow-sm)' : 'none',
+                  transition: 'all 180ms',
+                }}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+        <p style={{ margin: '8px 0 0', fontSize: '12px', color: 'var(--text-3)' }}>
+          {isSaida
+            ? 'Lê documentos de saída semanal: obra de destino, data da baixa, materiais e quantidades.'
+            : 'Lê notas fiscais e ordens de compra: fornecedor, itens, quantidades e valores.'}
+        </p>
       </div>
 
       {/* ── Step Indicator ── */}
@@ -609,7 +707,9 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
                         Pronto para analisar
                       </p>
                       <p style={{ fontSize: '13px', color: 'var(--text-3)', margin: '0 0 28px', maxWidth: '280px' }}>
-                        Irá extrair número da ordem de compra, itens, quantidades e valores unitários.
+                        {isSaida
+                          ? 'Irá extrair a obra de destino, a data da saída, os materiais e as quantidades.'
+                          : 'Irá extrair número da ordem de compra, itens, quantidades e valores unitários.'}
                       </p>
                       <div style={{ display: 'flex', gap: '12px' }}>
                         <button className="btn btn-secondary" onClick={handleReset} style={{ height: '44px', padding: '0 20px', borderRadius: '10px' }}>
@@ -640,27 +740,105 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
       {/* ── Step 3: Results ── */}
       {itensExtraidos.length > 0 && (
         <>
-          {/* NF Info Cards */}
-          <div className="row g-3" style={{ marginBottom: '20px' }}>
-            {[
-              { label: 'Documento', value: numeroNF, color: '#1971C2', bg: '#EBF4FF', border: '#BFD7FF' },
-              { label: 'Ordem de Compra', value: ordemCompra, color: '#166534', bg: '#F0FDF4', border: '#BBF7D0' },
-            ].filter(c => c.value).map((card, idx) => (
-              <div className="col-6 col-lg-3" key={idx}>
-                <div style={{
-                  background: card.bg, border: `1.5px solid ${card.border}`,
-                  borderRadius: 'var(--radius)', padding: '14px 18px',
-                }}>
-                  <div style={{ fontSize: '10.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: card.color, opacity: 0.7, marginBottom: '4px' }}>
-                    {card.label}
-                  </div>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: card.color, wordBreak: 'break-all' }}>
-                    {card.value}
-                  </div>
+          {/* Cabeçalho da saída — editável, porque obra e data definem a baixa */}
+          {isSaida ? (
+            <div className="card-modern" style={{ padding: 0, overflow: 'hidden', marginBottom: '20px' }}>
+              <div style={{
+                padding: '12px 20px',
+                background: 'var(--surface-2)',
+                borderBottom: '1px solid var(--border)',
+                fontSize: '12px', fontWeight: 700, color: 'var(--text-3)',
+                textTransform: 'uppercase', letterSpacing: '.6px',
+              }}>
+                Dados da Saída
+              </div>
+              <div style={{ padding: '18px 20px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                <div style={{ flex: '1 1 320px', minWidth: '220px' }}>
+                  <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: '5px', display: 'block' }}>
+                    Obra de destino
+                  </label>
+                  <input
+                    type="text"
+                    value={nomeObra}
+                    onChange={e => setNomeObra(e.target.value)}
+                    placeholder="Ex.: PRO ATIVO - JOSELITA"
+                    style={{
+                      width: '100%', height: '40px',
+                      border: `1.5px solid ${nomeObra ? 'var(--border)' : 'var(--danger)'}`,
+                      borderRadius: '8px', padding: '0 12px',
+                      fontSize: '13.5px', fontWeight: 600, outline: 'none',
+                    }}
+                  />
+                </div>
+                <div style={{ flex: '0 1 200px', minWidth: '160px' }}>
+                  <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: '5px', display: 'block' }}>
+                    Data da saída
+                  </label>
+                  <input
+                    type="date"
+                    value={dataCompetencia}
+                    onChange={e => setDataCompetencia(e.target.value)}
+                    style={{
+                      width: '100%', height: '40px',
+                      border: '1.5px solid var(--border)', borderRadius: '8px',
+                      padding: '0 12px', fontSize: '13.5px', fontWeight: 600,
+                      fontFamily: '"DM Mono", monospace', outline: 'none',
+                    }}
+                  />
                 </div>
               </div>
-            ))}
-          </div>
+              {!nomeObra && (
+                <div style={{
+                  padding: '10px 20px', background: '#FEE2E2', borderTop: '1px solid #FECACA',
+                  fontSize: '12.5px', color: '#991B1B', display: 'flex', alignItems: 'center', gap: '8px',
+                }}>
+                  <IconAlert /> Não identificamos a obra de destino no documento — preencha antes de importar.
+                </div>
+              )}
+              {dataCompetencia < hojeISO() && (
+                <div style={{
+                  padding: '10px 20px', background: '#EBF4FF', borderTop: '1px solid #BFD7FF',
+                  fontSize: '12.5px', color: '#1971C2', display: 'flex', alignItems: 'center', gap: '8px',
+                }}>
+                  <IconAlert /> Saída retroativa: o sistema vai conferir o saldo de cada produto <strong>na data informada</strong>, não o saldo de hoje.
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="row g-3" style={{ marginBottom: '20px' }}>
+              {[
+                { label: 'Documento', value: numeroNF, color: '#1971C2', bg: '#EBF4FF', border: '#BFD7FF' },
+                { label: 'Ordem de Compra', value: ordemCompra, color: '#166534', bg: '#F0FDF4', border: '#BBF7D0' },
+              ].filter(c => c.value).map((card, idx) => (
+                <div className="col-6 col-lg-3" key={idx}>
+                  <div style={{
+                    background: card.bg, border: `1.5px solid ${card.border}`,
+                    borderRadius: 'var(--radius)', padding: '14px 18px',
+                  }}>
+                    <div style={{ fontSize: '10.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: card.color, opacity: 0.7, marginBottom: '4px' }}>
+                      {card.label}
+                    </div>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: card.color, wordBreak: 'break-all' }}>
+                      {card.value}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Conferência contra o total impresso no documento */}
+          {divergenciaConferencia && (
+            <div style={{
+              marginBottom: '20px', padding: '14px 18px',
+              background: '#FEF3DC', border: '1px solid #FAD898',
+              borderRadius: 'var(--radius)', fontSize: '13px', color: '#9A5A00',
+              display: 'flex', alignItems: 'center', gap: '10px',
+            }}>
+              <IconAlert />
+              Conferência: o documento informa {totalConferencia} unidade(s) no total, mas foram extraídas {somaExtraida}. Revise os itens antes de importar.
+            </div>
+          )}
 
           {/* Summary Bar */}
           <div className="card-modern" style={{ padding: '14px 20px', marginBottom: '20px' }}>
@@ -678,12 +856,20 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <div style={{
                     width: '8px', height: '8px', borderRadius: '50%',
-                    background: itensExtraidos.length - itensVinculados.length > 0 ? 'var(--danger)' : 'var(--border)',
+                    background: itensSemVinculo > 0 ? 'var(--danger)' : 'var(--border)',
                   }} />
                   <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-1)' }}>
-                    {itensExtraidos.length - itensVinculados.length} sem vínculo
+                    {itensSemVinculo} sem vínculo
                   </span>
                 </div>
+                {itensIgnorados > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#9A5A00' }} />
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-1)' }}>
+                      {itensIgnorados} ignorado(s)
+                    </span>
+                  </div>
+                )}
                 <span style={{ fontSize: '12px', color: 'var(--text-3)' }}>
                   {itensExtraidos.length} itens extraídos no total
                 </span>
@@ -695,7 +881,7 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
                 <div style={{
                   height: '100%', borderRadius: '999px',
                   background: 'var(--success)',
-                  width: `${(itensVinculados.length / itensExtraidos.length) * 100}%`,
+                  width: `${(itensVinculados.length / Math.max(itensExtraidos.length - itensIgnorados, 1)) * 100}%`,
                   transition: 'width 0.3s',
                 }} />
               </div>
@@ -720,8 +906,9 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
                 <div key={idx} style={{
                   padding: '16px 20px',
                   borderBottom: idx < itensExtraidos.length - 1 ? '1px solid var(--border)' : 'none',
-                  background: item.produtoIdMatch ? 'rgba(47,158,68,.02)' : 'transparent',
-                  transition: 'background 200ms',
+                  background: item.produtoIdMatch && item.incluir ? 'rgba(47,158,68,.02)' : 'transparent',
+                  opacity: item.incluir ? 1 : 0.55,
+                  transition: 'background 200ms, opacity 200ms',
                 }}>
                   {/* Linha 1: Nome do item + botão remover */}
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '12px' }}>
@@ -736,13 +923,40 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
                         }} />
                         <span style={{
                           fontWeight: 600, fontSize: '13.5px', color: 'var(--text-1)',
+                          textDecoration: item.incluir ? 'none' : 'line-through',
                         }}>
                           {item.nome}
                         </span>
+                        {item.naoDarBaixa && (
+                          <span style={{
+                            fontSize: '10px', fontWeight: 700, color: '#9A5A00',
+                            background: '#FEF3DC', border: '1px solid #FAD898',
+                            padding: '2px 8px', borderRadius: '6px', flexShrink: 0,
+                            textTransform: 'uppercase', letterSpacing: '.3px',
+                          }}>
+                            Não dar baixa
+                          </span>
+                        )}
                       </div>
                       <div style={{ fontSize: '11.5px', color: 'var(--text-3)', marginTop: '4px', paddingLeft: '15px' }}>
-                        {item.quantidade} {item.unidade} · R$ {item.valorUnitario.toFixed(2)}
+                        {item.quantidade} {item.unidade}
+                        {!isSaida && ` · R$ ${item.valorUnitario.toFixed(2)}`}
                       </div>
+                      {item.naoDarBaixa && (
+                        <label style={{
+                          marginTop: '6px', marginLeft: '15px', display: 'inline-flex',
+                          alignItems: 'center', gap: '6px', cursor: 'pointer',
+                          fontSize: '11.5px', color: 'var(--text-3)', fontWeight: 600,
+                        }}>
+                          <input
+                            type="checkbox"
+                            checked={item.incluir}
+                            onChange={() => handleToggleIncluir(idx)}
+                            style={{ cursor: 'pointer', width: '14px', height: '14px' }}
+                          />
+                          Dar baixa mesmo assim
+                        </label>
+                      )}
                       {item.conversaoAplicada && (
                         <div style={{
                           marginTop: '6px', paddingLeft: '15px', display: 'flex', alignItems: 'center', gap: '6px',
@@ -850,8 +1064,8 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
                       />
                     </div>
 
-                    {/* Valor Unitário */}
-                    <div style={{ flex: '0 0 130px' }}>
+                    {/* Valor Unitário — só na entrada; na saída o custo vem do estoque */}
+                    <div style={{ flex: '0 0 130px', display: isSaida ? 'none' : 'block' }}>
                       <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: '4px', display: 'block' }}>
                         Valor Unit.
                       </label>
@@ -885,7 +1099,7 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
           </div>
 
           {/* Warning for unlinked items */}
-          {itensExtraidos.some(i => !i.produtoIdMatch) && (
+          {itensSemVinculo > 0 && (
             <div style={{
               marginTop: '16px', padding: '14px 18px',
               background: '#FEF3DC', border: '1px solid #FAD898',
@@ -893,7 +1107,7 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
               display: 'flex', alignItems: 'center', gap: '10px',
             }}>
               <IconAlert />
-              {itensExtraidos.filter(i => !i.produtoIdMatch).length} item(ns) sem vínculo — vincule a um produto cadastrado ou remova para importar.
+              {itensSemVinculo} item(ns) sem vínculo — vincule a um produto cadastrado ou remova para importar.
             </div>
           )}
 
@@ -906,18 +1120,18 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
             <button
               className="btn d-flex align-items-center gap-2"
               onClick={handleImportar}
-              disabled={itensVinculados.length === 0}
+              disabled={importDesabilitado}
               style={{
                 height: '48px', padding: '0 32px', fontSize: '15px', fontWeight: 700,
                 borderRadius: '12px', background: 'var(--success)', border: 'none',
                 color: '#fff',
-                opacity: itensVinculados.length === 0 ? 0.4 : 1,
-                cursor: itensVinculados.length === 0 ? 'not-allowed' : 'pointer',
-                boxShadow: itensVinculados.length > 0 ? '0 4px 14px rgba(47,158,68,.25)' : 'none',
+                opacity: importDesabilitado ? 0.4 : 1,
+                cursor: importDesabilitado ? 'not-allowed' : 'pointer',
+                boxShadow: importDesabilitado ? 'none' : '0 4px 14px rgba(47,158,68,.25)',
               }}
             >
               <IconCheck />
-              Importar {itensVinculados.length} item(ns) como Entrada
+              Importar {itensVinculados.length} item(ns) como {isSaida ? 'Saída' : 'Entrada'}
             </button>
           </div>
         </>

@@ -91,7 +91,13 @@
       "PowerShell(Get-ChildItem -Recurse \"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_FRONT_END_VERCEL-main\\\\src\" -File | Select-Object -ExpandProperty FullName | ForEach-Object { $_.Replace\\(\"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_FRONT_END_VERCEL-main\\\\\",\"\"\\) })",
       "PowerShell(node --check \"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_BACK_END-main\\\\server.js\")",
       "PowerShell(git -C \"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_BACK_END-main\" status --short)",
-      "PowerShell(git -C \"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_BACK_END-main\" log --oneline -3)"
+      "PowerShell(git -C \"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_BACK_END-main\" log --oneline -3)",
+      "PowerShell(python --version)",
+      "PowerShell(python -c \"import pypdf; print\\('pypdf ok'\\)\" 2>&1)",
+      "PowerShell(python -c \"import fitz; print\\('fitz ok'\\)\" 2>&1)",
+      "PowerShell(python -c \"import pdfplumber; print\\('pdfplumber ok'\\)\" 2>&1)",
+      "PowerShell(python $s \"D:\\\\DADOS\\\\Desktop\\\\Nova pasta \\(9\\)\\\\SAIDAS 14-08 A 20-08\\\\Sa�da de Material - PRO ATIVO - JOSELITA.pdf\")",
+      "PowerShell(python $s \"D:\\\\DADOS\\\\Desktop\\\\Nova pasta \\(9\\)\\\\SAIDAS 14-08 A 20-08\\\\Sa�da de Material - SAIDA SEMANAL PROJETO.pdf\")"
     ]
   }
 }
