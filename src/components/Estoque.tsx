@@ -578,6 +578,7 @@ export function ProdutoForm({
       ? { value: produto.categoria, label: produto.categoria }
       : null,
   );
+  const [erroCategoria, setErroCategoria] = useState(false);
   const [localOption, setLocalOption] = useState<SelectOption | null>(
     produto?.localArmazenamento
       ? { value: produto.localArmazenamento, label: produto.localArmazenamento }
@@ -727,11 +728,16 @@ export function ProdutoForm({
     e.preventDefault();
     const nomeVal = nomeOption?.value?.trim() || '';
     if (!nomeVal) return;
+    const categoriaVal = categoriaOption?.value?.trim() || '';
+    if (!categoriaVal) {
+      setErroCategoria(true);
+      return;
+    }
     const validConversoes = conversoes.filter(c => c.unidade.trim() && c.fator > 0);
     const baseData = {
       nome: nomeVal,
       descricao: descricao.trim(),
-      categoria: categoriaOption?.value || undefined,
+      categoria: categoriaVal,
       unidade,
       estoqueMinimo,
       localArmazenamento: localOption?.value || undefined,
@@ -795,17 +801,32 @@ export function ProdutoForm({
             />
           </div>
           <div className="col-12 col-md-6">
-            <FieldLabel label="Categoria" field="categorias" onManage={openManageModal} />
+            <FieldLabel label="Categoria *" field="categorias" onManage={openManageModal} />
             <CreatableSelect
               isClearable
               options={categoriasOptions}
               value={categoriaOption}
-              onChange={(opt) => setCategoriaOption(opt)}
+              onChange={(opt) => {
+                setCategoriaOption(opt);
+                if (opt?.value) setErroCategoria(false);
+              }}
               placeholder="Ex: Ferragens"
               formatCreateLabel={(i: string) => `Usar "${i}"`}
               styles={selectStyles}
               menuPortalTarget={document.body}
             />
+            {erroCategoria && (
+              <small
+                style={{
+                  color: 'var(--danger)',
+                  fontSize: 11.5,
+                  display: 'block',
+                  marginTop: 4,
+                }}
+              >
+                Selecione ou crie uma categoria para salvar.
+              </small>
+            )}
           </div>
           <div className="col-12 col-md-6">
             <FieldLabel label="Local de Armazenamento" field="locais" onManage={openManageModal} />
