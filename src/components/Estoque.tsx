@@ -1314,6 +1314,31 @@ export function ProdutosTable({
   const [movProdId, setMovProdId] = useState<UUID | null>(null);
   const [deleteId, setDeleteId] = useState<UUID | null>(null);
   const [valorHoverId, setValorHoverId] = useState<UUID | null>(null);
+  const valorHoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const abrirValorHover = useCallback((id: UUID) => {
+    if (valorHoverTimer.current) {
+      clearTimeout(valorHoverTimer.current);
+      valorHoverTimer.current = null;
+    }
+    setValorHoverId(id);
+  }, []);
+
+  // Pequeno atraso antes de fechar para o mouse não perder o foco por acidente
+  const fecharValorHover = useCallback((id: UUID) => {
+    if (valorHoverTimer.current) clearTimeout(valorHoverTimer.current);
+    valorHoverTimer.current = setTimeout(() => {
+      valorHoverTimer.current = null;
+      setValorHoverId((cur) => (cur === id ? null : cur));
+    }, 400);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (valorHoverTimer.current) clearTimeout(valorHoverTimer.current);
+    },
+    [],
+  );
 
   const produtoParaEditar = useMemo(
     () => produtos.find((p) => p.id === editingId),
@@ -1399,14 +1424,19 @@ export function ProdutosTable({
                       )}
                       {p.valorUnitario != null && p.valorUnitario > 0 && (
                         <span
-                          className="ms-2"
-                          style={{ whiteSpace: 'nowrap' }}
-                          onMouseEnter={() => setValorHoverId(p.id)}
-                          onMouseLeave={() =>
-                            setValorHoverId((cur) =>
-                              cur === p.id ? null : cur,
-                            )
-                          }
+                          style={{
+                            whiteSpace: 'nowrap',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            cursor: 'default',
+                            // Hitbox ampliada: padding invisível compensado
+                            // por margem negativa para não deslocar o layout
+                            padding: '10px 12px',
+                            margin: '-10px -12px',
+                            marginLeft: 'calc(0.5rem - 12px)',
+                          }}
+                          onMouseEnter={() => abrirValorHover(p.id)}
+                          onMouseLeave={() => fecharValorHover(p.id)}
                         >
                           {valorHoverId === p.id && (
                             <span
