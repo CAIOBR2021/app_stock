@@ -88,7 +88,10 @@
       "PowerShell(npx eslint src/App.tsx 2>&1)",
       "PowerShell(npx eslint src/App.tsx src/utils.ts src/components/Estoque.tsx src/components/Movimentacoes.tsx src/components/EntradaSaidaForm.tsx src/components/NotaFiscalReader.tsx src/utils/Gerarpdfestoque.tsx 2>&1)",
       "PowerShell($f=\"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_BACK_END-main\\\\server.js\"; \\(Get-Content $f | Measure-Object -Line\\).Lines; Get-ChildItem \"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_BACK_END-main\\\\services\")",
-      "PowerShell(Get-ChildItem -Recurse \"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_FRONT_END_VERCEL-main\\\\src\" -File | Select-Object -ExpandProperty FullName | ForEach-Object { $_.Replace\\(\"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_FRONT_END_VERCEL-main\\\\\",\"\"\\) })"
+      "PowerShell(Get-ChildItem -Recurse \"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_FRONT_END_VERCEL-main\\\\src\" -File | Select-Object -ExpandProperty FullName | ForEach-Object { $_.Replace\\(\"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_FRONT_END_VERCEL-main\\\\\",\"\"\\) })",
+      "PowerShell(node --check \"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_BACK_END-main\\\\server.js\")",
+      "PowerShell(git -C \"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_BACK_END-main\" status --short)",
+      "PowerShell(git -C \"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_BACK_END-main\" log --oneline -3)"
     ]
   }
 }
