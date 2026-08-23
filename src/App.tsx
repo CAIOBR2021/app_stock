@@ -31,6 +31,28 @@ import 'react-toastify/dist/ReactToastify.css';
 
 type UUID = string;
 
+/**
+ * Reordena a lista de movimentações do cache espelhando o ORDER BY da API
+ * (`COALESCE(data_competencia, criadoem::DATE) DESC, criadoem DESC`).
+ *
+ * As mutações escrevem direto no cache em vez de refazer a busca, então sem
+ * isto uma movimentação editada ficaria na posição antiga — e uma criada com
+ * data retroativa iria para o topo — até o próximo refresh. As datas são ISO,
+ * logo a comparação lexicográfica já é cronológica.
+ */
+const ordenarMovs = (lista: Movimentacao[]): Movimentacao[] => {
+  const competencia = (m: Movimentacao) => (m.dataCompetencia || m.criadoEm || '').slice(0, 10);
+  return [...lista].sort((a, b) => {
+    const da = competencia(a);
+    const db = competencia(b);
+    if (da !== db) return da < db ? 1 : -1;
+    const ca = a.criadoEm || '';
+    const cb = b.criadoEm || '';
+    if (ca === cb) return 0;
+    return ca < cb ? 1 : -1;
+  });
+};
+
 // ── SVG ICONS ─────────────────────────────────────────────────────────────────
 
 const IconBox = () => (
@@ -465,7 +487,9 @@ export default function App() {
         },
       }),
     onSuccess: ({ movimentacao, produto }) => {
-      queryClient.setQueryData<Movimentacao[]>(['movimentacoes'], (prev = []) => [movimentacao, ...prev]);
+      queryClient.setQueryData<Movimentacao[]>(['movimentacoes'], (prev = []) =>
+        ordenarMovs([movimentacao, ...prev]),
+      );
       queryClient.setQueryData<Produto[]>(['produtos'], (prev = []) =>
         prev.map((p) => (p.id === produto.id ? produto : p)),
       );
@@ -522,7 +546,7 @@ export default function App() {
       ),
     onSuccess: async ({ movimentacaoAtualizada, produtoAtualizado }, { id }) => {
       queryClient.setQueryData<Movimentacao[]>(['movimentacoes'], (prev = []) =>
-        prev.map((m) => (m.id === id ? movimentacaoAtualizada : m)),
+        ordenarMovs(prev.map((m) => (m.id === id ? movimentacaoAtualizada : m))),
       );
       queryClient.setQueryData<Produto[]>(['produtos'], (prev = []) =>
         prev.map((p) => (p.id === produtoAtualizado.id ? produtoAtualizado : p)),
@@ -532,7 +556,7 @@ export default function App() {
     onError: (err) =>
       toast.error(errorMessage(err, 'Não conseguimos salvar a alteração da movimentação. Tente novamente em instantes.')),
   });
-  const updateMov = (id: UUID, patch: { quantidade: number; motivo?: string }) =>
+  const updateMov = (id: UUID, patch: { quantidade: number; motivo?: string; dataCompetencia?: string }) =>
     updateMovMutation.mutate({ id, patch });
 
   const deleteMovMutation = useMutation({
