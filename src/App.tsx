@@ -32,6 +32,28 @@ import 'react-toastify/dist/ReactToastify.css';
 type UUID = string;
 
 /**
+ * Ordenação da listagem de estoque. `null` = ordem natural, como veio da API.
+ * Guarda o campo além da direção porque há mais de um critério: o cabeçalho
+ * "Nome" da tabela e o seletor "Ordenar por" escrevem neste mesmo estado.
+ */
+type Ordenacao = { campo: 'nome' | 'valorEstoque'; direcao: 'asc' | 'desc' } | null;
+
+/** Valor imobilizado no item. Produto sem preço cadastrado vale 0. */
+const valorEmEstoque = (p: Produto) => (p.valorUnitario ?? 0) * (p.quantidade ?? 0);
+
+/**
+ * Comparador da listagem. Empates caem no nome: sem isso a ordem entre os
+ * produtos sem preço — que são muitos — mudaria a cada renderização.
+ */
+const compararProdutos = (a: Produto, b: Produto, { campo, direcao }: NonNullable<Ordenacao>) => {
+  const sinal = direcao === 'asc' ? 1 : -1;
+  if (campo === 'nome') return a.nome.localeCompare(b.nome) * sinal;
+
+  const diferenca = valorEmEstoque(a) - valorEmEstoque(b);
+  return diferenca !== 0 ? diferenca * sinal : a.nome.localeCompare(b.nome);
+};
+
+/**
  * Reordena a lista de movimentações do cache espelhando o ORDER BY da API
  * (`COALESCE(data_competencia, criadoem::DATE) DESC, criadoem DESC`).
  *
@@ -251,7 +273,7 @@ export default function App() {
   const [q, setQ] = useState('');
   const [categoriaFilter, setCategoriaFilter] = useState('');
   const [localFilter, setLocalFilter] = useState('');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null);
+  const [ordenacao, setOrdenacao] = useState<Ordenacao>(null);
   const [mostrarAbaixoMin, setMostrarAbaixoMin] = useState(false);
   const [mostrarPrioritarios, setMostrarPrioritarios] = useState(false);
   const [page, setPage] = useState(1);
@@ -991,11 +1013,14 @@ export default function App() {
   const alertCountLabel =
     produtosAbaixoMinimo.length > 99 ? '99+' : String(produtosAbaixoMinimo.length);
 
+  // Conta também a ordenação: no mobile ela mora dentro do painel recolhível,
+  // e sem o aviso no botão a lista mudaria de ordem sem nada na tela explicando.
   const activeFilterCount =
     (categoriaFilter ? 1 : 0) +
     (localFilter ? 1 : 0) +
     (mostrarAbaixoMin ? 1 : 0) +
-    (mostrarPrioritarios ? 1 : 0);
+    (mostrarPrioritarios ? 1 : 0) +
+    (ordenacao ? 1 : 0);
 
   // Sem produtos de EPI visíveis, a categoria 'EPI' também some das listas de
   // opções (filtro do estoque, filtro do relatório e formulário de produto).
@@ -1069,12 +1094,11 @@ export default function App() {
       );
     });
 
-    if (sortOrder)
-      result = [...result].sort((a, b) =>
-        sortOrder === 'asc' ? a.nome.localeCompare(b.nome) : b.nome.localeCompare(a.nome),
-      );
+    // Ordena o conjunto filtrado inteiro, antes de fatiar a página: "os mais
+    // caros" precisa valer para o estoque todo, não só para a página aberta.
+    if (ordenacao) result = [...result].sort((a, b) => compararProdutos(a, b, ordenacao));
     return result;
-  }, [fonteDados, debouncedQ, categoriaFilter, localFilter, mostrarAbaixoMin, mostrarPrioritarios, sortOrder]);
+  }, [fonteDados, debouncedQ, categoriaFilter, localFilter, mostrarAbaixoMin, mostrarPrioritarios, ordenacao]);
 
   const paginatedProdutos = useMemo(() => {
     const start = (page - 1) * ITEMS_PER_PAGE;
@@ -1082,8 +1106,34 @@ export default function App() {
   }, [filteredProdutos, page]);
 
   const scrollTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
-  const handleToggleSort = () =>
-    setSortOrder((cur) => (cur === null ? 'asc' : cur === 'asc' ? 'desc' : null));
+
+  // Cabeçalho "Nome": cicla asc → desc → sem ordenação. Se o critério ativo for
+  // outro, o primeiro clique traz a ordenação de volta para o nome.
+  const handleToggleSort = () => {
+    setOrdenacao((cur) => {
+      if (cur?.campo !== 'nome') return { campo: 'nome', direcao: 'asc' };
+      return cur.direcao === 'asc' ? { campo: 'nome', direcao: 'desc' } : null;
+    });
+    setPage(1);
+  };
+
+  // Seletor "Ordenar por": os filtros ao lado já resetam a página, este também.
+  const handleOrdenacaoChange = (valor: string) => {
+    const opcoes: Record<string, Ordenacao> = {
+      '': null,
+      'nome-asc': { campo: 'nome', direcao: 'asc' },
+      'nome-desc': { campo: 'nome', direcao: 'desc' },
+      'valor-desc': { campo: 'valorEstoque', direcao: 'desc' },
+      'valor-asc': { campo: 'valorEstoque', direcao: 'asc' },
+    };
+    setOrdenacao(opcoes[valor] ?? null);
+    setPage(1);
+  };
+
+  // Valor do <select>, derivado do estado — os dois controles nunca dessincronizam.
+  const ordenacaoSelecionada = ordenacao
+    ? `${ordenacao.campo === 'nome' ? 'nome' : 'valor'}-${ordenacao.direcao}`
+    : '';
 
   // ── VISITANTE: acesso exclusivamente via chat (somente leitura + solicitação) ──
 
@@ -1408,6 +1458,20 @@ export default function App() {
                   </select>
                 </div>
                 <div className={`col-12 col-md-4 col-lg-2 ${showFiltersMobile ? '' : 'd-none d-lg-block'}`}>
+                  <label className="form-label">Ordenar por</label>
+                  <select
+                    className="form-select"
+                    value={ordenacaoSelecionada}
+                    onChange={(e) => handleOrdenacaoChange(e.target.value)}
+                  >
+                    <option value="">Padrão</option>
+                    <option value="valor-desc">Maior valor em estoque</option>
+                    <option value="valor-asc">Menor valor em estoque</option>
+                    <option value="nome-asc">Nome (A–Z)</option>
+                    <option value="nome-desc">Nome (Z–A)</option>
+                  </select>
+                </div>
+                <div className={`col-12 col-md-4 col-lg-2 ${showFiltersMobile ? '' : 'd-none d-lg-block'}`}>
                   <label className="form-label">Status</label>
                   <div className="d-flex flex-lg-column gap-2 gap-lg-1">
                     <button className={`toggle-chip flex-fill flex-lg-grow-0 justify-content-center justify-content-lg-start${mostrarAbaixoMin ? ' active-warning' : ''}`} onClick={() => { setMostrarAbaixoMin(!mostrarAbaixoMin); setPage(1); }}>
@@ -1447,7 +1511,7 @@ export default function App() {
                 onTogglePrioritario={(id) => togglePrioritario(id)}
                 categorias={categorias}
                 locais={locaisArmazenamento}
-                sortOrder={sortOrder}
+                sortOrder={ordenacao?.campo === 'nome' ? ordenacao.direcao : null}
                 onToggleSort={handleToggleSort}
                 allProdutos={produtosVisiveis}
                 canEdit={canEditarProduto}
