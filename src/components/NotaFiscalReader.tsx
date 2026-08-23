@@ -280,8 +280,12 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
   const divergenciaConferencia =
     isSaida && totalConferencia !== null && Math.abs(somaExtraida - totalConferencia) > 0.001;
 
+  // O backend recusa data de competência futura; barra antes de gastar a chamada.
+  const dataFutura = dataCompetencia > hojeISO();
+
   // Na saída a obra é obrigatória: ela é o destino físico registrado na baixa.
-  const importDesabilitado = itensVinculados.length === 0 || (isSaida && !nomeObra.trim());
+  const importDesabilitado =
+    itensVinculados.length === 0 || dataFutura || (isSaida && !nomeObra.trim());
 
   const currentStep = itensExtraidos.length > 0 ? 3 : file ? 2 : 1;
 
@@ -741,74 +745,106 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
       {itensExtraidos.length > 0 && (
         <>
           {/* Cabeçalho da saída — editável, porque obra e data definem a baixa */}
-          {isSaida ? (
-            <div className="card-modern" style={{ padding: 0, overflow: 'hidden', marginBottom: '20px' }}>
-              <div style={{
-                padding: '12px 20px',
-                background: 'var(--surface-2)',
-                borderBottom: '1px solid var(--border)',
-                fontSize: '12px', fontWeight: 700, color: 'var(--text-3)',
-                textTransform: 'uppercase', letterSpacing: '.6px',
-              }}>
-                Dados da Saída
+          {/* Cabeçalho editável — a data lida pela IA precisa ficar visível antes
+              de virar movimentação, nos dois modos. */}
+          <div className="card-modern" style={{ padding: 0, overflow: 'hidden', marginBottom: '20px' }}>
+            <div style={{
+              padding: '12px 20px',
+              background: 'var(--surface-2)',
+              borderBottom: '1px solid var(--border)',
+              fontSize: '12px', fontWeight: 700, color: 'var(--text-3)',
+              textTransform: 'uppercase', letterSpacing: '.6px',
+            }}>
+              {isSaida ? 'Dados da Saída' : 'Dados da Entrada'}
+            </div>
+            <div style={{ padding: '18px 20px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+              <div style={{ flex: '1 1 320px', minWidth: '220px' }}>
+                <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: '5px', display: 'block' }}>
+                  {isSaida ? 'Obra de destino' : 'Obra'}
+                </label>
+                <input
+                  type="text"
+                  value={nomeObra}
+                  onChange={e => setNomeObra(e.target.value)}
+                  placeholder={isSaida ? 'Ex.: PRO ATIVO - JOSELITA' : 'Opcional'}
+                  style={{
+                    width: '100%', height: '40px',
+                    border: `1.5px solid ${!isSaida || nomeObra ? 'var(--border)' : 'var(--danger)'}`,
+                    borderRadius: '8px', padding: '0 12px',
+                    fontSize: '13.5px', fontWeight: 600, outline: 'none',
+                  }}
+                />
               </div>
-              <div style={{ padding: '18px 20px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-                <div style={{ flex: '1 1 320px', minWidth: '220px' }}>
+              {!isSaida && (
+                <div style={{ flex: '0 1 200px', minWidth: '160px' }}>
                   <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: '5px', display: 'block' }}>
-                    Obra de destino
+                    Ordem de compra
                   </label>
                   <input
                     type="text"
-                    value={nomeObra}
-                    onChange={e => setNomeObra(e.target.value)}
-                    placeholder="Ex.: PRO ATIVO - JOSELITA"
-                    style={{
-                      width: '100%', height: '40px',
-                      border: `1.5px solid ${nomeObra ? 'var(--border)' : 'var(--danger)'}`,
-                      borderRadius: '8px', padding: '0 12px',
-                      fontSize: '13.5px', fontWeight: 600, outline: 'none',
-                    }}
-                  />
-                </div>
-                <div style={{ flex: '0 1 200px', minWidth: '160px' }}>
-                  <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: '5px', display: 'block' }}>
-                    Data da saída
-                  </label>
-                  <input
-                    type="date"
-                    value={dataCompetencia}
-                    onChange={e => setDataCompetencia(e.target.value)}
+                    value={ordemCompra}
+                    onChange={e => setOrdemCompra(e.target.value)}
+                    placeholder="Opcional"
                     style={{
                       width: '100%', height: '40px',
                       border: '1.5px solid var(--border)', borderRadius: '8px',
-                      padding: '0 12px', fontSize: '13.5px', fontWeight: 600,
-                      fontFamily: '"DM Mono", monospace', outline: 'none',
+                      padding: '0 12px', fontSize: '13.5px', fontWeight: 600, outline: 'none',
                     }}
                   />
                 </div>
+              )}
+              <div style={{ flex: '0 1 200px', minWidth: '160px' }}>
+                <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.4px', marginBottom: '5px', display: 'block' }}>
+                  {isSaida ? 'Data da saída' : 'Data de competência'}
+                </label>
+                <input
+                  type="date"
+                  value={dataCompetencia}
+                  max={hojeISO()}
+                  onChange={e => setDataCompetencia(e.target.value)}
+                  style={{
+                    width: '100%', height: '40px',
+                    border: `1.5px solid ${dataFutura ? 'var(--danger)' : 'var(--border)'}`,
+                    borderRadius: '8px',
+                    padding: '0 12px', fontSize: '13.5px', fontWeight: 600,
+                    fontFamily: '"DM Mono", monospace', outline: 'none',
+                  }}
+                />
               </div>
-              {!nomeObra && (
-                <div style={{
-                  padding: '10px 20px', background: '#FEE2E2', borderTop: '1px solid #FECACA',
-                  fontSize: '12.5px', color: '#991B1B', display: 'flex', alignItems: 'center', gap: '8px',
-                }}>
-                  <IconAlert /> Não identificamos a obra de destino no documento — preencha antes de importar.
-                </div>
-              )}
-              {dataCompetencia < hojeISO() && (
-                <div style={{
-                  padding: '10px 20px', background: '#EBF4FF', borderTop: '1px solid #BFD7FF',
-                  fontSize: '12.5px', color: '#1971C2', display: 'flex', alignItems: 'center', gap: '8px',
-                }}>
-                  <IconAlert /> Saída retroativa: o sistema vai conferir o saldo de cada produto <strong>na data informada</strong>, não o saldo de hoje.
-                </div>
-              )}
             </div>
-          ) : (
+            {isSaida && !nomeObra && (
+              <div style={{
+                padding: '10px 20px', background: '#FEE2E2', borderTop: '1px solid #FECACA',
+                fontSize: '12.5px', color: '#991B1B', display: 'flex', alignItems: 'center', gap: '8px',
+              }}>
+                <IconAlert /> Não identificamos a obra de destino no documento — preencha antes de importar.
+              </div>
+            )}
+            {dataFutura && (
+              <div style={{
+                padding: '10px 20px', background: '#FEE2E2', borderTop: '1px solid #FECACA',
+                fontSize: '12.5px', color: '#991B1B', display: 'flex', alignItems: 'center', gap: '8px',
+              }}>
+                <IconAlert /> Data no futuro — corrija antes de importar. O saldo é atualizado no ato do lançamento, então uma data futura tira o registro dos relatórios por período.
+              </div>
+            )}
+            {!dataFutura && dataCompetencia < hojeISO() && (
+              <div style={{
+                padding: '10px 20px', background: '#EBF4FF', borderTop: '1px solid #BFD7FF',
+                fontSize: '12.5px', color: '#1971C2', display: 'flex', alignItems: 'center', gap: '8px',
+              }}>
+                <IconAlert />
+                {isSaida
+                  ? <span>Saída retroativa: o sistema vai conferir o saldo de cada produto <strong>na data informada</strong>, não o saldo de hoje.</span>
+                  : <span>Entrada retroativa: será registrada com a data acima, e não com a data de hoje.</span>}
+              </div>
+            )}
+          </div>
+
+          {!isSaida && numeroNF && (
             <div className="row g-3" style={{ marginBottom: '20px' }}>
               {[
                 { label: 'Documento', value: numeroNF, color: '#1971C2', bg: '#EBF4FF', border: '#BFD7FF' },
-                { label: 'Ordem de Compra', value: ordemCompra, color: '#166534', bg: '#F0FDF4', border: '#BBF7D0' },
               ].filter(c => c.value).map((card, idx) => (
                 <div className="col-6 col-lg-3" key={idx}>
                   <div style={{

@@ -97,7 +97,9 @@
       "PowerShell(python -c \"import fitz; print\\('fitz ok'\\)\" 2>&1)",
       "PowerShell(python -c \"import pdfplumber; print\\('pdfplumber ok'\\)\" 2>&1)",
       "PowerShell(python $s \"D:\\\\DADOS\\\\Desktop\\\\Nova pasta \\(9\\)\\\\SAIDAS 14-08 A 20-08\\\\Sa�da de Material - PRO ATIVO - JOSELITA.pdf\")",
-      "PowerShell(python $s \"D:\\\\DADOS\\\\Desktop\\\\Nova pasta \\(9\\)\\\\SAIDAS 14-08 A 20-08\\\\Sa�da de Material - SAIDA SEMANAL PROJETO.pdf\")"
+      "PowerShell(python $s \"D:\\\\DADOS\\\\Desktop\\\\Nova pasta \\(9\\)\\\\SAIDAS 14-08 A 20-08\\\\Sa�da de Material - SAIDA SEMANAL PROJETO.pdf\")",
+      "PowerShell(node \"C:\\\\Users\\\\USER\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--DADOS-Desktop-Controle-de-estoque-ESTOQUE-FRONT-END-VERCEL-main\\\\2b8981cd-376b-446a-9bd6-060902537ee0\\\\scratchpad\\\\futuras.js\")",
+      "PowerShell(node \"C:\\\\Users\\\\USER\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--DADOS-Desktop-Controle-de-estoque-ESTOQUE-FRONT-END-VERCEL-main\\\\2b8981cd-376b-446a-9bd6-060902537ee0\\\\scratchpad\\\\detalhe.js\")"
     ]
   }
 }

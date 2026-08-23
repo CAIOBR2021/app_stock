@@ -515,7 +515,7 @@ export default function App() {
   };
 
   const updateMovMutation = useMutation({
-    mutationFn: ({ id, patch }: { id: UUID; patch: { quantidade: number; motivo?: string } }) =>
+    mutationFn: ({ id, patch }: { id: UUID; patch: { quantidade: number; motivo?: string; dataCompetencia?: string } }) =>
       apiFetch<{ movimentacaoAtualizada: Movimentacao; produtoAtualizado: Produto }>(
         `/movimentacoes/${id}`,
         { method: 'PATCH', body: patch },

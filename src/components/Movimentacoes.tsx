@@ -7,6 +7,12 @@ import { ModalComponent, GerenciarHistoricoModal, Paginacao } from './Shared';
 import { safeLocalStorageGet, safeLocalStorageSet } from '../utils/storage';
 import { isCategoriaEPI } from '../utils';
 
+const hojeISO = () => {
+  const d = new Date();
+  const offset = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - offset).toISOString().split('T')[0];
+};
+
 // ── REACT-SELECT STYLES ───────────────────────────────────────────────────────
 
 const selectStyles: StylesConfig = {
@@ -316,7 +322,7 @@ export function MovimentacaoEditForm({
   movimentacao: Movimentacao;
   produto?: Produto;
   onCancel: () => void;
-  onSave: (patch: { quantidade: number; motivo?: string }) => void;
+  onSave: (patch: { quantidade: number; motivo?: string; dataCompetencia?: string }) => void;
   motivosDisponiveis?: string[];
 }) {
   const [quantidade, setQuantidade] = useState(movimentacao.quantidade);
@@ -324,6 +330,12 @@ export function MovimentacaoEditForm({
     movimentacao.motivo ? { value: movimentacao.motivo, label: movimentacao.motivo } : null,
   );
   const [showManageModal, setShowManageModal] = useState(false);
+
+  // A API devolve a data como ISO; o input type=date só aceita YYYY-MM-DD.
+  const dataOriginal = (movimentacao.dataCompetencia || movimentacao.criadoEm || '').slice(0, 10);
+  const [dataCompetencia, setDataCompetencia] = useState(dataOriginal);
+  const hoje = hojeISO();
+  const dataFutura = dataCompetencia > hoje;
 
   // ── localStorage CORRIGIDO ────────────────────────────────────────────────
   const [hiddenMotivos, setHiddenMotivos] = useState<string[]>(() =>
@@ -342,8 +354,13 @@ export function MovimentacaoEditForm({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (quantidade <= 0) return;
-    onSave({ quantidade, motivo: motivoOption?.value?.trim() || undefined });
+    if (quantidade <= 0 || dataFutura) return;
+    onSave({
+      quantidade,
+      motivo: motivoOption?.value?.trim() || undefined,
+      // Só envia a data quando ela mudou, para não reescrever o campo à toa.
+      dataCompetencia: dataCompetencia !== dataOriginal ? dataCompetencia : undefined,
+    });
   }
 
   return (
@@ -394,11 +411,32 @@ export function MovimentacaoEditForm({
           </div>
         </div>
 
+        <div className="row g-3 mt-0">
+          <div className="col-md-6">
+            <label className="form-label">Data de competência</label>
+            <input
+              type="date" className="form-control"
+              value={dataCompetencia}
+              max={hoje}
+              onChange={(e) => setDataCompetencia(e.target.value)}
+            />
+            {dataFutura ? (
+              <div className="form-text" style={{ color: 'var(--danger)' }}>
+                Data no futuro. Informe uma data até hoje.
+              </div>
+            ) : dataCompetencia !== dataOriginal ? (
+              <div className="form-text">
+                A data de lançamento no sistema não muda — só a competência.
+              </div>
+            ) : null}
+          </div>
+        </div>
+
         <div className="d-flex justify-content-end gap-2 mt-4">
           <button type="button" className="btn btn-secondary" onClick={onCancel}>
             Cancelar
           </button>
-          <button type="submit" className="btn btn-primary">
+          <button type="submit" className="btn btn-primary" disabled={dataFutura}>
             <IconCheck /> Salvar Alterações
           </button>
         </div>
@@ -424,7 +462,7 @@ export function ConsultaMovimentacoes({
   movs: Movimentacao[];
   produtos: Produto[];
   onDelete: (id: UUID) => void;
-  onEdit: (id: UUID, patch: { quantidade: number; motivo?: string }) => void;
+  onEdit: (id: UUID, patch: { quantidade: number; motivo?: string; dataCompetencia?: string }) => void;
   perfilUsuario?: string;
 }) {
   const [dataInicio, setDataInicio] = useState('');
