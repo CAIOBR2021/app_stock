@@ -53,13 +53,13 @@ const deliveredStatusStyle = {
   display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px',
   borderRadius: '999px', fontSize: '11px', fontWeight: 700, letterSpacing: '.3px',
   cursor: 'pointer', userSelect: 'none',
-  background: 'var(--success-light)', color: 'var(--success)', border: '1px solid #A3E6B5',
+  background: 'var(--success-light)', color: 'var(--success)', border: '1px solid var(--success-border)',
 } as const;
 const pendingStatusStyle = {
   display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px',
   borderRadius: '999px', fontSize: '11px', fontWeight: 700, letterSpacing: '.3px',
   cursor: 'pointer', userSelect: 'none',
-  background: 'var(--warning-light)', color: 'var(--primary-dark)', border: '1px solid #FAD898',
+  background: 'var(--warning-light)', color: 'var(--primary-dark)', border: '1px solid var(--primary-border)',
 } as const;
 
 // ── TYPES ─────────────────────────────────────────────────────────────────────
@@ -230,7 +230,7 @@ export function DeliveryTable({
             className="btn btn-sm"
             disabled={page === 0}
             onClick={() => setPage(p => p - 1)}
-            style={{ fontSize: '12px', padding: '4px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface-1)', color: 'var(--text-2)' }}
+            style={{ fontSize: '12px', padding: '4px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-2)' }}
           >
             Anterior
           </button>
@@ -241,7 +241,7 @@ export function DeliveryTable({
             className="btn btn-sm"
             disabled={page >= totalPages - 1}
             onClick={() => setPage(p => p + 1)}
-            style={{ fontSize: '12px', padding: '4px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface-1)', color: 'var(--text-2)' }}
+            style={{ fontSize: '12px', padding: '4px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-2)' }}
           >
             Próxima
           </button>

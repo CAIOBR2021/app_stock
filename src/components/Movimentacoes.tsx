@@ -18,7 +18,7 @@ const hojeISO = () => {
 const selectStyles: StylesConfig = {
   control: (base, state) => ({
     ...base,
-    backgroundColor: state.isDisabled ? 'var(--surface-2)' : '#fff',
+    backgroundColor: state.isDisabled ? 'var(--surface-2)' : 'var(--surface)',
     borderColor: state.isFocused ? 'var(--primary)' : 'var(--border)',
     borderWidth: '1.5px',
     minHeight: '38px',
@@ -30,24 +30,28 @@ const selectStyles: StylesConfig = {
   }),
   placeholder: (base) => ({ ...base, color: 'var(--text-3)', fontSize: '13.5px' }),
   singleValue: (base) => ({ ...base, color: 'var(--text-1)', fontSize: '13.5px' }),
+  // O react-select embute um cinza escuro no texto digitado; sem isto, no
+  // modo noturno a busca some contra o fundo.
+  input: (base) => ({ ...base, color: 'var(--text-1)' }),
   option: (base, state) => ({
     ...base,
     backgroundColor: state.isSelected
       ? 'var(--primary)'
       : state.isFocused
       ? 'var(--primary-light)'
-      : '#fff',
-    color: state.isSelected ? '#fff' : 'var(--text-1)',
+      : 'var(--surface)',
+    color: state.isSelected ? 'var(--on-primary)' : 'var(--text-1)',
     fontSize: '13.5px',
     fontFamily: 'DM Sans, sans-serif',
     cursor: 'pointer',
   }),
   menu: (base) => ({
     ...base,
+    backgroundColor: 'var(--surface)',
     zIndex: 9999,
     borderRadius: '8px',
     border: '1px solid var(--border)',
-    boxShadow: '0 4px 12px rgba(0,0,0,.08)',
+    boxShadow: 'var(--shadow-md)',
   }),
   menuPortal: (base) => ({ ...base, zIndex: 9999 }),
   indicatorSeparator: () => ({ display: 'none' }),
@@ -121,7 +125,7 @@ const tipoBadgeStyle = (tipo: string): React.CSSProperties => {
   if (tipo === 'saida')
     return { background: 'var(--danger-light)', color: 'var(--danger)' };
   if (tipo === 'saldo_inicial')
-    return { background: '#E5E0FA', color: '#6741D9' };
+    return { background: 'var(--violet-light)', color: 'var(--violet)' };
   return { background: 'var(--warning-light)', color: 'var(--primary-dark)' };
 };
 
@@ -640,19 +644,19 @@ export function ConsultaMovimentacoes({
 
         {/* Custo da obra */}
         {filtroObra && (
-          <div style={{ marginTop: '16px', padding: '16px 20px', background: '#EBF4FF', border: '1px solid #BFD7FF', borderRadius: 'var(--radius)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ marginTop: '16px', padding: '16px 20px', background: 'var(--info-light)', border: '1px solid var(--info-border)', borderRadius: 'var(--radius)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ color: '#1971C2' }}><IconBuilding /></span>
+              <span style={{ color: 'var(--info)' }}><IconBuilding /></span>
               <div>
-                <div style={{ fontSize: '14px', fontWeight: 700, color: '#1971C2' }}>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--info)' }}>
                   Custo em Materiais: {filtroObra}
                 </div>
-                <div style={{ fontSize: '11.5px', color: '#4A90D9' }}>
+                <div style={{ fontSize: '11.5px', color: 'var(--text-2)' }}>
                   Total das saídas enviadas para a obra no período
                 </div>
               </div>
             </div>
-            <div style={{ fontSize: '22px', fontWeight: 700, color: '#1971C2', fontFamily: 'DM Mono, monospace' }}>
+            <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--info)', fontFamily: 'DM Mono, monospace' }}>
               R$ {custoTotalObra.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
           </div>
@@ -699,7 +703,7 @@ export function ConsultaMovimentacoes({
                     </span>
                   )}
                   {m.ordemCompra && (
-                    <span className="badge" style={{ background: 'var(--primary-light)', color: 'var(--primary-dark)', border: '1px solid #FAD898' }} title="Ordem de Compra">
+                    <span className="badge" style={{ background: 'var(--primary-light)', color: 'var(--primary-dark)', border: '1px solid var(--primary-border)' }} title="Ordem de Compra">
                       {m.ordemCompra}
                     </span>
                   )}
@@ -796,7 +800,7 @@ export function ConsultaMovimentacoes({
                     </span>
                   )}
                   {m.ordemCompra && (
-                    <span className="badge" style={{ background: 'var(--primary-light)', color: 'var(--primary-dark)', border: '1px solid #FAD898' }} title="Ordem de Compra">
+                    <span className="badge" style={{ background: 'var(--primary-light)', color: 'var(--primary-dark)', border: '1px solid var(--primary-border)' }} title="Ordem de Compra">
                       {m.ordemCompra}
                     </span>
                   )}

@@ -91,7 +91,7 @@ interface DeliveryFormProps {
 const selectStyles: StylesConfig = {
   control: (base, state) => ({
     ...base,
-    backgroundColor: state.isDisabled ? 'var(--surface-2)' : '#fff',
+    backgroundColor: state.isDisabled ? 'var(--surface-2)' : 'var(--surface)',
     borderColor: state.isFocused ? 'var(--primary)' : 'var(--border)',
     borderWidth: '1.5px',
     minHeight: '38px',
@@ -103,15 +103,18 @@ const selectStyles: StylesConfig = {
   }),
   placeholder: base => ({ ...base, color: 'var(--text-3)', fontSize: '13.5px' }),
   singleValue: base => ({ ...base, color: 'var(--text-1)', fontSize: '13.5px' }),
+  // O react-select embute um cinza escuro no texto digitado; sem isto, no
+  // modo noturno a busca some contra o fundo.
+  input: base => ({ ...base, color: 'var(--text-1)' }),
   option: (base, state) => ({
     ...base,
-    backgroundColor: state.isSelected ? 'var(--primary)' : state.isFocused ? 'var(--primary-light)' : '#fff',
-    color: state.isSelected ? '#fff' : 'var(--text-1)',
+    backgroundColor: state.isSelected ? 'var(--primary)' : state.isFocused ? 'var(--primary-light)' : 'var(--surface)',
+    color: state.isSelected ? 'var(--on-primary)' : 'var(--text-1)',
     fontSize: '13.5px',
     fontFamily: 'DM Sans, sans-serif',
     cursor: 'pointer',
   }),
-  menu:       base => ({ ...base, zIndex: 9999, borderRadius: '8px', border: '1px solid var(--border)', boxShadow: '0 4px 12px rgba(0,0,0,.08)' }),
+  menu:       base => ({ ...base, backgroundColor: 'var(--surface)', zIndex: 9999, borderRadius: '8px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-md)' }),
   menuPortal: base => ({ ...base, zIndex: 9999 }),
   indicatorSeparator: () => ({ display: 'none' }),
 };
@@ -325,7 +328,7 @@ export function DeliveryForm({
 
         {/* Mensagem de erro de validação */}
         {formError && (
-          <div style={{ background: 'var(--danger-light)', border: '1px solid #FFC5C5', borderRadius: '8px', padding: '8px 12px', fontSize: '13px', color: 'var(--danger)', marginBottom: '12px' }}>
+          <div style={{ background: 'var(--danger-light)', border: '1px solid var(--danger-border)', borderRadius: '8px', padding: '8px 12px', fontSize: '13px', color: 'var(--danger)', marginBottom: '12px' }}>
             {formError}
           </div>
         )}

@@ -1,11 +1,11 @@
-/* index.css — base reset alinhado ao design system claro */
+/* index.css — base reset alinhado ao design system.
+   ATENÇÃO: este arquivo não é importado por ninguém (main.tsx carrega
+   custom.css e styles.css). Se voltar a ser usado, note que quem define
+   color-scheme são os blocos de tema em styles.css — fixar "light" aqui
+   quebraria o modo noturno. */
 
 *, *::before, *::after {
   box-sizing: border-box;
-}
-
-html {
-  color-scheme: light;
 }
 
 body {

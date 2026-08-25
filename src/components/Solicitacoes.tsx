@@ -224,7 +224,7 @@ export function Solicitacoes({ nomeUsuario }: { nomeUsuario: string }) {
                       <span style={{
                         width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0,
                         background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
-                        color: '#fff', fontWeight: 700, fontSize: '14px', letterSpacing: '.5px',
+                        color: 'var(--on-primary)', fontWeight: 700, fontSize: '14px', letterSpacing: '.5px',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}>
                         {iniciais(s.nomeSolicitante)}
@@ -258,7 +258,7 @@ export function Solicitacoes({ nomeUsuario }: { nomeUsuario: string }) {
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
                         <span style={{
-                          background: '#1e1b2e', color: 'var(--primary)',
+                          background: 'var(--accent)', color: 'var(--primary)',
                           borderRadius: '8px', padding: '5px 12px',
                           fontSize: '14px', fontWeight: 700, letterSpacing: '.2px',
                         }}>
@@ -419,14 +419,14 @@ export function Solicitacoes({ nomeUsuario }: { nomeUsuario: string }) {
         }
         .sol-tab:hover { color: var(--text-1); }
         .sol-tab.active {
-          background: #1e1b2e; color: #fff;
+          background: var(--accent); color: var(--on-dark-1);
           box-shadow: 0 2px 8px rgba(30,27,46,.25);
         }
         .sol-tab-badge {
           min-width: 19px; height: 19px; line-height: 19px; padding: 0 6px;
           border-radius: 999px; text-align: center;
           font-size: 11px; font-weight: 700;
-          background: var(--primary); color: #1e1b2e;
+          background: var(--primary); color: var(--on-primary);
         }
         .sol-card { transition: transform 160ms ease, box-shadow 160ms ease; }
         .sol-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(30,27,46,.10); }
@@ -437,7 +437,7 @@ export function Solicitacoes({ nomeUsuario }: { nomeUsuario: string }) {
         }
         .sol-btn:disabled { opacity: .55; cursor: default; }
         .sol-btn-aceitar {
-          background: var(--success); color: #fff; border: 1.5px solid var(--success);
+          background: var(--success); color: var(--on-success); border: 1.5px solid var(--success);
         }
         .sol-btn-aceitar:hover:not(:disabled) { filter: brightness(1.08); box-shadow: 0 4px 14px rgba(34,197,94,.30); }
         .sol-btn-recusar {

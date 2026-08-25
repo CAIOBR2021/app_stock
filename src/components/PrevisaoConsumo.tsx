@@ -18,11 +18,17 @@ interface PrevisaoProduto {
   urgencia: 'critico' | 'alerta' | 'atencao' | 'ok';
 }
 
+/**
+ * Escala de urgência em quatro degraus. No claro eram quatro famílias de
+ * pastéis; no escuro cada `bg` vira uma versão escura e dessaturada da própria
+ * cor, com o texto (`color`) na versão clara — por isso tudo passa por token.
+ * `iconBg` reaproveita a borda, que é o tom imediatamente mais forte que o bg.
+ */
 const URGENCIA_CONFIG = {
-  critico: { label: 'Crítico', color: '#DC2626', bg: '#FEF2F2', border: '#FECACA', iconBg: '#FEE2E2' },
-  alerta: { label: 'Alerta', color: '#EA580C', bg: '#FFF7ED', border: '#FED7AA', iconBg: '#FFEDD5' },
-  atencao: { label: 'Atenção', color: '#CA8A04', bg: '#FEFCE8', border: '#FDE68A', iconBg: '#FEF9C3' },
-  ok: { label: 'Normal', color: '#16A34A', bg: '#F0FDF4', border: '#BBF7D0', iconBg: '#DCFCE7' },
+  critico: { label: 'Crítico', color: 'var(--danger)', bg: 'var(--danger-light)', border: 'var(--danger-border)', iconBg: 'var(--danger-border)' },
+  alerta: { label: 'Alerta', color: 'var(--orange)', bg: 'var(--orange-light)', border: 'var(--orange-border)', iconBg: 'var(--orange-border)' },
+  atencao: { label: 'Atenção', color: 'var(--primary-text)', bg: 'var(--warning-light)', border: 'var(--primary-border)', iconBg: 'var(--primary-border)' },
+  ok: { label: 'Normal', color: 'var(--success-text)', bg: 'var(--success-light)', border: 'var(--success-border)', iconBg: 'var(--success-border)' },
 };
 
 function calcularUrgencia(diasParaAcabar: number | null, produto: Produto): PrevisaoProduto['urgencia'] {
@@ -174,7 +180,7 @@ export function PrevisaoConsumo({ produtos, movimentacoes }: Props) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             <div style={{
               width: '44px', height: '44px', borderRadius: '12px',
-              background: 'linear-gradient(135deg, #667eea, #764ba2)',
+              background: 'linear-gradient(135deg, var(--chat-1), var(--chat-2))',
               display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
               boxShadow: '0 4px 12px rgba(102,126,234,.25)',
             }}>
@@ -274,8 +280,8 @@ export function PrevisaoConsumo({ produtos, movimentacoes }: Props) {
           <button
             onClick={() => setAlertasOpen(!alertasOpen)}
             style={{
-              width: '100%', border: '1.5px solid #FECACA', borderRadius: alertasOpen ? '12px 12px 0 0' : '12px',
-              background: '#FEF2F2', padding: '12px 18px',
+              width: '100%', border: '1.5px solid var(--danger-border)', borderRadius: alertasOpen ? '12px 12px 0 0' : '12px',
+              background: 'var(--danger-light)', padding: '12px 18px',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               cursor: 'pointer', transition: 'all 200ms',
             }}
@@ -283,24 +289,24 @@ export function PrevisaoConsumo({ produtos, movimentacoes }: Props) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{
                 width: '30px', height: '30px', borderRadius: '8px',
-                background: '#FECACA', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#DC2626',
+                background: 'var(--danger-border)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'var(--danger)',
               }}>
                 <IconBell />
               </div>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: '#991B1B' }}>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--danger-text)' }}>
                 Alertas de Compra
               </span>
               <span style={{
                 fontSize: '11px', fontWeight: 700,
-                background: '#DC2626', color: '#fff',
+                background: 'var(--danger)', color: 'var(--on-danger)',
                 padding: '1px 8px', borderRadius: '10px', minWidth: '22px', textAlign: 'center',
               }}>
                 {alertasCompra.length}
               </span>
             </div>
             <div style={{
-              color: '#991B1B',
+              color: 'var(--danger-text)',
               transform: alertasOpen ? 'rotate(180deg)' : 'rotate(0)',
               transition: 'transform 200ms',
             }}>
@@ -310,8 +316,8 @@ export function PrevisaoConsumo({ produtos, movimentacoes }: Props) {
 
           {alertasOpen && (
             <div style={{
-              border: '1.5px solid #FECACA', borderTop: 'none',
-              borderRadius: '0 0 12px 12px', background: '#fff',
+              border: '1.5px solid var(--danger-border)', borderTop: 'none',
+              borderRadius: '0 0 12px 12px', background: 'var(--surface)',
               padding: '12px',
               maxHeight: '340px', overflowY: 'auto',
             }}>
@@ -326,7 +332,7 @@ export function PrevisaoConsumo({ produtos, movimentacoes }: Props) {
                     <div key={p.produto.id} style={{
                       display: 'flex', alignItems: 'center', gap: '12px',
                       padding: '10px 14px', borderRadius: '8px',
-                      border: `1px solid var(--border)`, background: 'var(--surface-1, #fff)',
+                      border: `1px solid var(--border)`, background: 'var(--surface)',
                       transition: 'background 150ms',
                     }}>
                       <div style={{
@@ -381,10 +387,10 @@ export function PrevisaoConsumo({ produtos, movimentacoes }: Props) {
               style={{
                 width: '100%', height: '34px', border: '1.5px solid var(--border)',
                 borderRadius: '8px', padding: '0 10px 0 32px', fontSize: '12.5px',
-                outline: 'none', background: 'var(--surface-1, #fff)',
+                outline: 'none', background: 'var(--surface)',
                 transition: 'border-color 200ms',
               }}
-              onFocus={e => e.target.style.borderColor = '#667eea'}
+              onFocus={e => e.target.style.borderColor = 'var(--primary)'}
               onBlur={e => e.target.style.borderColor = 'var(--border)'}
             />
           </div>
@@ -467,7 +473,7 @@ export function PrevisaoConsumo({ produtos, movimentacoes }: Props) {
                       <td style={{ textAlign: 'center' }}>
                         <span style={{
                           fontWeight: 700, fontSize: '14px',
-                          color: p.produto.quantidade === 0 ? '#DC2626' : 'var(--text-1)',
+                          color: p.produto.quantidade === 0 ? 'var(--danger)' : 'var(--text-1)',
                         }}>
                           {p.produto.quantidade}
                         </span>
@@ -496,9 +502,9 @@ export function PrevisaoConsumo({ produtos, movimentacoes }: Props) {
                       <td style={{ textAlign: 'center', padding: '8px 16px' }}>
                         {p.diasParaAcabar === 0 ? (
                           <span style={{
-                            fontSize: '12px', fontWeight: 700, color: '#DC2626',
-                            background: '#FEF2F2', padding: '4px 12px', borderRadius: '6px',
-                            border: '1px solid #FECACA',
+                            fontSize: '12px', fontWeight: 700, color: 'var(--danger)',
+                            background: 'var(--danger-light)', padding: '4px 12px', borderRadius: '6px',
+                            border: '1px solid var(--danger-border)',
                           }}>
                             Esgotado
                           </span>

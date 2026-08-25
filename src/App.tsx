@@ -9,13 +9,14 @@ import { PrevisaoConsumo } from './components/PrevisaoConsumo';
 import { ChatWidget } from './components/ChatWidget';
 import { VisitanteChat } from './components/VisitanteChat';
 import { Solicitacoes, useSolicitacoesPendentes } from './components/Solicitacoes';
-import './styles.css';
 
 import type { Produto, Movimentacao, Entrega, EntregaPayload, LoteMovimentacaoDados } from './types';
 import { PING_URL, ITEMS_PER_PAGE } from './constants';
 import { apiFetch, errorMessage } from './utils/api';
 import { isDelivered, normalizeEntrega, formatPhoneNumber, isCategoriaEPI, podeVerEPI, filtrarVisiveisPorPerfil } from './utils';
 import { useDebounce, useAppViewportHeight } from './hooks';
+import { useTema } from './theme';
+import { SeletorTema, BotaoTema } from './components/SeletorTema';
 import { ModalComponent, Paginacao, IdentificacaoModal } from './components/Shared';
 import { safeLocalStorageGet, safeLocalStorageSet } from './utils/storage';
 import {
@@ -237,6 +238,7 @@ const IconChevronDown = ({ up }: { up?: boolean }) => (
 
 export default function App() {
   useAppViewportHeight();
+  const { tema, efetivo: temaEfetivo, setTema, alternarTema } = useTema();
 
   const [editingEntrega, setEditingEntrega] = useState<Entrega | null>(null);
 
@@ -1142,33 +1144,38 @@ export default function App() {
       <div style={{ display: 'flex', flexDirection: 'column', height: 'var(--app-dvh, 100dvh)', background: 'var(--surface-2)' }}>
         <header style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          padding: '12px 20px', background: '#1e1b2e', flexShrink: 0,
+          padding: '12px 20px', background: 'var(--accent)', flexShrink: 0,
         }}>
           <img src={meuLogo} alt="Logo" style={{ height: '34px' }} />
-          <button
-            type="button"
-            onClick={() => setShowEditarNome(true)}
-            title="Alterar identificação"
-            style={{
-              display: 'flex', alignItems: 'center', gap: '10px',
-              background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-            }}
-          >
-            <span style={{ textAlign: 'right' }}>
-              <span style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>
-                {nomeUsuario || 'Identificar-me'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <BotaoTema efetivo={temaEfetivo} onToggle={alternarTema} />
+            <button
+              type="button"
+              onClick={() => setShowEditarNome(true)}
+              title="Alterar identificação"
+              style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+              }}
+            >
+              <span style={{ textAlign: 'right' }}>
+                <span style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--on-dark-1)', lineHeight: 1.2 }}>
+                  {nomeUsuario || 'Identificar-me'}
+                </span>
+                <span style={{ display: 'block', fontSize: '11px', color: 'var(--on-dark-2)' }}>Visitante</span>
               </span>
-              <span style={{ display: 'block', fontSize: '11px', color: 'rgba(255,255,255,.5)' }}>Visitante</span>
-            </span>
-            <span style={{
-              width: '36px', height: '36px', borderRadius: '50%',
-              background: '#F5A623', color: '#fff', border: '2px solid #C47D0E',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 700, fontSize: '13px', flexShrink: 0,
-            }}>
-              {(nomeUsuario.trim().charAt(0) || '?').toUpperCase()}
-            </span>
-          </button>
+              {/* Avatar âmbar sobre a barra escura: a barra é escura nos dois
+                  temas, então estas cores não acompanham o tema de propósito. */}
+              <span style={{
+                width: '36px', height: '36px', borderRadius: '50%',
+                background: 'var(--primary)', color: '#fff', border: '2px solid #C47D0E',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontWeight: 700, fontSize: '13px', flexShrink: 0,
+              }}>
+                {(nomeUsuario.trim().charAt(0) || '?').toUpperCase()}
+              </span>
+            </button>
+          </div>
         </header>
 
         <div style={{
@@ -1259,12 +1266,12 @@ export default function App() {
             >
               <Icon /> {label}
               {id === 'solicitacoes' && solicitacoesPendentesCount > 0 && (
-                <span style={{ fontSize: '10px', fontWeight: 700, background: 'var(--danger)', color: '#fff', minWidth: '18px', height: '18px', lineHeight: '18px', padding: '0 5px', borderRadius: 999, marginLeft: 'auto', textAlign: 'center' }}>
+                <span style={{ fontSize: '10px', fontWeight: 700, background: 'var(--danger)', color: 'var(--on-danger)', minWidth: '18px', height: '18px', lineHeight: '18px', padding: '0 5px', borderRadius: 999, marginLeft: 'auto', textAlign: 'center' }}>
                   {solicitacoesPendentesCount > 99 ? '99+' : solicitacoesPendentesCount}
                 </span>
               )}
               {(id === 'nota_fiscal' || id === 'previsao') && (
-                <span style={{ fontSize: '9px', fontWeight: 700, background: '#1e1b2e', color: '#f59e0b', border: '1px solid #f59e0b', padding: '3px 8px', borderRadius: 999, marginLeft: 'auto', letterSpacing: '.5px', textIndent: '.5px', textTransform: 'uppercase', lineHeight: 1, whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: '9px', fontWeight: 700, background: 'rgba(245, 166, 35, .12)', color: 'var(--primary)', border: '1px solid var(--primary)', padding: '3px 8px', borderRadius: 999, marginLeft: 'auto', letterSpacing: '.5px', textIndent: '.5px', textTransform: 'uppercase', lineHeight: 1, whiteSpace: 'nowrap' }}>
                   Novo
                 </span>
               )}
@@ -1274,6 +1281,7 @@ export default function App() {
 
         {/* ── PERFIL RODAPÉ ── */}
         <div className="sidebar-footer">
+          <SeletorTema tema={tema} onChange={setTema} />
           <button
             type="button"
             className="user-card"
@@ -1283,9 +1291,10 @@ export default function App() {
           >
             {/* Avatar com indicador de presença */}
             <span style={{ position: 'relative', flexShrink: 0 }}>
+              {/* Sobre a sidebar, escura nos dois temas: cores fixas de propósito */}
               <span style={{
                 width: '46px', height: '46px', borderRadius: '50%',
-                background: '#F5A623',
+                background: 'var(--primary)',
                 color: '#fff',
                 border: '2px solid #C47D0E',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -1305,12 +1314,12 @@ export default function App() {
               <span style={{
                 position: 'absolute', bottom: '1px', right: '1px',
                 width: '9px', height: '9px', borderRadius: '50%',
-                background: '#22C55E', border: '2px solid #1e1b2e',
+                background: '#22C55E', border: '2px solid var(--accent)',
               }} />
             </span>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', minWidth: 0, flex: 1 }}>
               <span style={{
-                fontSize: '16px', fontWeight: 700, color: '#FFFFFF', lineHeight: 1,
+                fontSize: '16px', fontWeight: 700, color: 'var(--on-dark-1)', lineHeight: 1,
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%',
                 letterSpacing: '0.1px',
               }}>
@@ -1319,18 +1328,18 @@ export default function App() {
               {/* Cargo com ícone */}
               <span style={{ display: 'flex', alignItems: 'center', gap: '4px', lineHeight: 1 }}>
                 {perfilUsuario === 'almoxarifado' && (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#F5A623', flexShrink: 0 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--primary)', flexShrink: 0 }}>
                     <path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
                   </svg>
                 )}
                 {perfilUsuario === 'seguranca' && (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'rgba(255,255,255,0.4)', flexShrink: 0 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--on-dark-3)', flexShrink: 0 }}>
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/>
                   </svg>
                 )}
                 <span style={{
                   fontSize: '13px', fontWeight: 500,
-                  color: perfilUsuario === 'almoxarifado' ? 'var(--primary)' : 'rgba(255,255,255,0.4)',
+                  color: perfilUsuario === 'almoxarifado' ? 'var(--primary)' : 'var(--on-dark-3)',
                   letterSpacing: '0.2px',
                 }}>
                   {perfilUsuario === 'almoxarifado' ? 'Almoxarifado' : perfilUsuario === 'seguranca' ? 'Seg. Trabalho' : 'Sem perfil'}
@@ -1345,6 +1354,7 @@ export default function App() {
       <div className="mobile-header d-lg-none d-flex justify-content-between align-items-center px-3">
         <img src={meuLogo} alt="Logo" style={{ height: '36px' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <BotaoTema efetivo={temaEfetivo} onToggle={alternarTema} />
           <div
             onClick={() => setShowLowStockModal(true)}
             style={{ cursor: 'pointer', position: 'relative', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -1392,6 +1402,9 @@ export default function App() {
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            {/* Atalho de tema também aqui: no desktop a sidebar (onde mora o
+                seletor completo) fica recolhida por padrão. */}
+            <BotaoTema efetivo={temaEfetivo} onToggle={alternarTema} />
             <div className="icon-btn" onClick={() => setShowLowStockModal(true)} title="Alertas de Estoque" style={{ cursor: 'pointer' }}>
               <span style={{ color: produtosAbaixoMinimo.length > 0 ? 'var(--danger)' : 'var(--text-3)' }}>
                 <IconBell active={produtosAbaixoMinimo.length > 0} />
@@ -1433,7 +1446,7 @@ export default function App() {
                     <IconSliders /> Filtros
                     {activeFilterCount > 0 && (
                       <span style={{
-                        background: 'var(--primary)', color: '#fff', fontSize: '11px', fontWeight: 700,
+                        background: 'var(--primary)', color: 'var(--on-primary)', fontSize: '11px', fontWeight: 700,
                         borderRadius: 999, minWidth: '18px', height: '18px', lineHeight: '18px',
                         padding: '0 5px', textAlign: 'center',
                       }}>
@@ -1563,7 +1576,7 @@ export default function App() {
               <div className="col-lg-8">
                 <div className="d-flex flex-column gap-3 mb-3">
                   <div className="d-flex align-items-center gap-2">
-                    <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid var(--border)', borderRadius: '8px', overflow: 'hidden', background: '#fff', maxWidth: '220px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid var(--border)', borderRadius: '8px', overflow: 'hidden', background: 'var(--surface)', maxWidth: '220px' }}>
                       <span style={{ padding: '0 10px', color: 'var(--text-3)', display: 'flex', alignItems: 'center' }}>
                         <IconCalendar />
                       </span>
@@ -1585,7 +1598,7 @@ export default function App() {
                       )}
                     </div>
                   </div>
-                  <div style={{ background: '#fff', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border)', display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ background: 'var(--surface)', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border)', display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div className="d-flex align-items-center gap-2 flex-wrap">
                       <span style={{ fontSize: '12px', fontWeight: 600, background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '999px', padding: '3px 10px', color: 'var(--text-2)' }}>
                         {selectedEntregaIds.length} selecionados
@@ -1672,9 +1685,9 @@ export default function App() {
             <Solicitacoes nomeUsuario={nomeUsuario} />
           </div>
         )}
-        <div style={{ marginTop: 'auto', padding: '20px 0', borderTop: '1px solid #E5E7EB', display: 'flex', justifyContent: 'center', alignItems: 'baseline', gap: '8px', width: '100%', textAlign: 'center' }}>
-          <span style={{ fontSize: '10px', color: '#9B97B2', letterSpacing: '0.5px', textTransform: 'uppercase', fontWeight: 500 }}>Desenvolvido por</span>
-          <span style={{ fontSize: '13px', fontWeight: 600, color: '#1e1b2e', letterSpacing: '0.2px' }}>Caio Vinícius de Carvalho Bezerra</span>
+        <div style={{ marginTop: 'auto', padding: '20px 0', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'center', alignItems: 'baseline', gap: '8px', width: '100%', textAlign: 'center' }}>
+          <span style={{ fontSize: '10px', color: 'var(--text-3)', letterSpacing: '0.5px', textTransform: 'uppercase', fontWeight: 500 }}>Desenvolvido por</span>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-1)', letterSpacing: '0.2px' }}>Caio Vinícius de Carvalho Bezerra</span>
         </div>
       </main>
 
@@ -1729,7 +1742,7 @@ export default function App() {
                 <span style={{ flex: 1, textAlign: 'left' }}>{label}</span>
                 {id === 'solicitacoes' ? (
                   solicitacoesPendentesCount > 0 && (
-                    <span className="more-sheet-badge" style={{ background: 'var(--danger)', color: '#fff', border: 'none' }}>
+                    <span className="more-sheet-badge" style={{ background: 'var(--danger)', color: 'var(--on-danger)', border: 'none' }}>
                       {solicitacoesPendentesCount > 99 ? '99+' : solicitacoesPendentesCount}
                     </span>
                   )

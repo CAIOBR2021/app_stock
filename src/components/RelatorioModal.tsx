@@ -32,22 +32,27 @@ interface RelatorioModalProps {
 const selectStyles: StylesConfig = {
   control: (base, state) => ({
     ...base,
-    backgroundColor: '#FAFAFA',
-    borderColor: state.isFocused ? '#1A1A2E' : '#EAECF0',
+    backgroundColor: 'var(--surface-2)',
+    borderColor: state.isFocused ? 'var(--text-1)' : 'var(--border)',
     borderWidth: '1.5px',
     minHeight: '40px',
     borderRadius: '10px',
     boxShadow: state.isFocused ? '0 0 0 3px rgba(26,26,46,.08)' : 'none',
     fontFamily: 'DM Sans, sans-serif',
     fontSize: '13.5px',
-    '&:hover': { borderColor: '#D0D5DD' },
+    '&:hover': { borderColor: 'var(--border-strong)' },
   }),
-  placeholder: (base) => ({ ...base, color: '#9BA3B2', fontSize: '13.5px' }),
-  singleValue:  (base) => ({ ...base, color: '#1A1A2E', fontSize: '13.5px' }),
+  placeholder: (base) => ({ ...base, color: 'var(--text-3)', fontSize: '13.5px' }),
+  singleValue:  (base) => ({ ...base, color: 'var(--text-1)', fontSize: '13.5px' }),
+  // O react-select embute um cinza escuro no texto digitado; sem isto, no
+  // modo noturno a busca some contra o fundo.
+  input: (base) => ({ ...base, color: 'var(--text-1)' }),
   option: (base, state) => ({
     ...base,
-    backgroundColor: state.isSelected ? '#1A1A2E' : state.isFocused ? '#F8F9FA' : '#fff',
-    color: state.isSelected ? '#fff' : '#1A1A2E',
+    // A opção marcada inverte (fundo = cor do texto) — no escuro isso
+    // continua funcionando porque os dois tokens trocam juntos.
+    backgroundColor: state.isSelected ? 'var(--text-1)' : state.isFocused ? 'var(--surface-2)' : 'var(--surface)',
+    color: state.isSelected ? 'var(--surface)' : 'var(--text-1)',
     fontSize: '13.5px',
     fontFamily: 'DM Sans, sans-serif',
     cursor: 'pointer',
@@ -55,10 +60,10 @@ const selectStyles: StylesConfig = {
     margin: '1px 4px',
     width: 'calc(100% - 8px)',
   }),
-  menu:               (base) => ({ ...base, zIndex: 9999, borderRadius: '10px', border: '1px solid #EAECF0', boxShadow: '0 8px 24px rgba(0,0,0,.10)', padding: '4px 0' }),
+  menu:               (base) => ({ ...base, backgroundColor: 'var(--surface)', zIndex: 9999, borderRadius: '10px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-md)', padding: '4px 0' }),
   menuPortal:         (base) => ({ ...base, zIndex: 10000 }),
   indicatorSeparator: ()    => ({ display: 'none' }),
-  dropdownIndicator:  (base) => ({ ...base, color: '#9BA3B2', padding: '0 10px' }),
+  dropdownIndicator:  (base) => ({ ...base, color: 'var(--text-3)', padding: '0 10px' }),
 };
 
 // ── TIPOS DE OPÇÃO ────────────────────────────────────────────────────────────
@@ -85,11 +90,11 @@ const btnCancelarStyle: React.CSSProperties = {
   height: '40px',
   padding: '0 18px',
   borderRadius: '10px',
-  border: '1.5px solid #EAECF0',
-  background: '#fff',
+  border: '1.5px solid var(--border)',
+  background: 'var(--surface)',
   fontSize: '13.5px',
   fontWeight: 500,
-  color: '#667085',
+  color: 'var(--text-2)',
   cursor: 'pointer',
   display: 'inline-flex',
   alignItems: 'center',
@@ -103,10 +108,10 @@ const btnGerarStyle: React.CSSProperties = {
   height: '40px',
   padding: '0 22px',
   borderRadius: '10px',
-  background: '#F5A623',
+  background: 'var(--primary)',
   fontSize: '13.5px',
   fontWeight: 700,
-  color: '#fff',
+  color: 'var(--on-primary)',
   cursor: 'pointer',
   display: 'inline-flex',
   alignItems: 'center',
@@ -153,7 +158,7 @@ export function RelatorioModal({ categorias, produtos, onGerar, onClose }: Relat
       descricao: 'Todos os produtos cadastrados',
       count: totalItens,
       countLabel: 'itens',
-      countStyle: { bg: '#F0FDF4', color: '#16A34A', border: '#BBF7D0' },
+      countStyle: { bg: 'var(--success-light)', color: 'var(--success-text)', border: 'var(--success-border)' },
     },
     {
       value: 'critico',
@@ -161,7 +166,7 @@ export function RelatorioModal({ categorias, produtos, onGerar, onClose }: Relat
       descricao: 'Quantidade ≤ estoque mínimo',
       count: totalCriticos,
       countLabel: 'críticos',
-      countStyle: { bg: '#FEF2F2', color: '#DC2626', border: '#FECACA' },
+      countStyle: { bg: 'var(--danger-light)', color: 'var(--danger)', border: 'var(--danger-border)' },
     },
     {
       value: 'prioritarios',
@@ -169,7 +174,7 @@ export function RelatorioModal({ categorias, produtos, onGerar, onClose }: Relat
       descricao: 'Marcados com flag de prioridade',
       count: totalPrioritarios,
       countLabel: 'itens',
-      countStyle: { bg: '#FFF7ED', color: '#EA580C', border: '#FED7AA' },
+      countStyle: { bg: 'var(--warning-light)', color: 'var(--primary-text)', border: 'var(--primary-border)' },
     },
   ];
 
@@ -183,7 +188,7 @@ export function RelatorioModal({ categorias, produtos, onGerar, onClose }: Relat
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0,
-        background: 'rgba(10,12,18,.72)',
+        background: 'var(--overlay)',
         zIndex: 9999,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: '16px',
@@ -192,9 +197,10 @@ export function RelatorioModal({ categorias, produtos, onGerar, onClose }: Relat
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: '#fff',
+          background: 'var(--surface)',
           borderRadius: '20px',
-          boxShadow: '0 32px 64px rgba(0,0,0,.22), 0 0 0 1px rgba(0,0,0,.06)',
+          boxShadow: 'var(--shadow-lg)',
+          border: '1px solid var(--border)',
           width: '100%', maxWidth: '420px',
           display: 'flex', flexDirection: 'column',
           overflow: 'hidden',
@@ -203,8 +209,8 @@ export function RelatorioModal({ categorias, produtos, onGerar, onClose }: Relat
         {/* ── Cabeçalho ── */}
         <div style={{ padding: '24px 24px 0', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#1A1A2E', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F5A623" strokeWidth="2">
+            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                 <polyline points="14 2 14 8 20 8"/>
                 <line x1="16" y1="13" x2="8" y2="13"/>
@@ -212,17 +218,17 @@ export function RelatorioModal({ categorias, produtos, onGerar, onClose }: Relat
               </svg>
             </div>
             <div>
-              <p style={{ fontSize: '15px', fontWeight: 700, color: '#1A1A2E', margin: 0, letterSpacing: '-.3px' }}>
+              <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-1)', margin: 0, letterSpacing: '-.3px' }}>
                 Gerar relatório
               </p>
-              <p style={{ fontSize: '12px', color: '#9BA3B2', margin: '2px 0 0' }}>
+              <p style={{ fontSize: '12px', color: 'var(--text-3)', margin: '2px 0 0' }}>
                 Selecione o escopo do relatório
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            style={{ all: 'unset', width: '30px', height: '30px', borderRadius: '8px', background: 'rgba(0,0,0,.04)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', flexShrink: 0, boxSizing: 'border-box' }}
+            style={{ all: 'unset', width: '30px', height: '30px', borderRadius: '8px', background: 'var(--surface-3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-3)', flexShrink: 0, boxSizing: 'border-box' }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -233,7 +239,7 @@ export function RelatorioModal({ categorias, produtos, onGerar, onClose }: Relat
         {/* ── Corpo ── */}
         <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '0' }}>
 
-          <p style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '.8px', textTransform: 'uppercase', color: '#9BA3B2', margin: '0 0 10px' }}>
+          <p style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '.8px', textTransform: 'uppercase', color: 'var(--text-3)', margin: '0 0 10px' }}>
             Tipo de estoque
           </p>
 
@@ -247,32 +253,34 @@ export function RelatorioModal({ categorias, produtos, onGerar, onClose }: Relat
                   style={{
                     display: 'flex', alignItems: 'center', gap: '12px',
                     padding: '13px 14px', borderRadius: '12px', cursor: 'pointer',
-                    border: active ? '1.5px solid #1A1A2E' : '1.5px solid #EAECF0',
-                    background: active ? '#fff' : '#FAFAFA',
-                    boxShadow: active ? '0 2px 8px rgba(26,26,46,.08)' : 'none',
+                    border: active ? '1.5px solid var(--text-1)' : '1.5px solid var(--border)',
+                    background: active ? 'var(--surface)' : 'var(--surface-2)',
+                    boxShadow: active ? 'var(--shadow-sm)' : 'none',
                     transition: 'all .15s',
                     position: 'relative', overflow: 'hidden',
                   }}
                 >
                   {active && (
-                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px', background: '#F5A623' }} />
+                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px', background: 'var(--primary)' }} />
                   )}
 
+                  {/* O rádio marcado inverte fundo e texto: os dois tokens
+                      trocam juntos, então o contraste se mantém nos dois temas. */}
                   <div style={{
                     width: '17px', height: '17px', borderRadius: '50%',
-                    border: active ? '2px solid #1A1A2E' : '2px solid #D0D5DD',
-                    background: active ? '#1A1A2E' : '#fff',
+                    border: active ? '2px solid var(--text-1)' : '2px solid var(--border-strong)',
+                    background: active ? 'var(--text-1)' : 'var(--surface)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     flexShrink: 0, transition: 'all .15s',
                   }}>
-                    {active && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#F5A623' }} />}
+                    {active && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary)' }} />}
                   </div>
 
                   <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '13.5px', fontWeight: 600, margin: 0, color: active ? '#1A1A2E' : '#344054' }}>
+                    <p style={{ fontSize: '13.5px', fontWeight: 600, margin: 0, color: active ? 'var(--text-1)' : 'var(--text-2)' }}>
                       {opt.label}
                     </p>
-                    <p style={{ fontSize: '11.5px', margin: '2px 0 0', color: '#9BA3B2' }}>
+                    <p style={{ fontSize: '11.5px', margin: '2px 0 0', color: 'var(--text-3)' }}>
                       {opt.descricao}
                     </p>
                   </div>
@@ -293,9 +301,9 @@ export function RelatorioModal({ categorias, produtos, onGerar, onClose }: Relat
             })}
           </div>
 
-          <div style={{ height: '1px', background: '#F2F4F7', margin: '0 0 16px' }} />
+          <div style={{ height: '1px', background: 'var(--border)', margin: '0 0 16px' }} />
 
-          <p style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '.8px', textTransform: 'uppercase', color: '#9BA3B2', margin: '0 0 8px' }}>
+          <p style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '.8px', textTransform: 'uppercase', color: 'var(--text-3)', margin: '0 0 8px' }}>
             Categoria
           </p>
           <Select
@@ -310,9 +318,11 @@ export function RelatorioModal({ categorias, produtos, onGerar, onClose }: Relat
             menuPosition="fixed"
           />
 
+          {/* Resumo em painel escuro nos dois temas — é a "prévia" do PDF,
+              que sai sempre no papel claro com cabeçalho navy. */}
           <div style={{ marginTop: '14px', background: 'linear-gradient(135deg, #1A1A2E 0%, #2D2D4E 100%)', borderRadius: '12px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(245,166,35,.15)', border: '1px solid rgba(245,166,35,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5A623" strokeWidth="2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                 <polyline points="14 2 14 8 20 8"/>
               </svg>
@@ -329,12 +339,12 @@ export function RelatorioModal({ categorias, produtos, onGerar, onClose }: Relat
         </div>
 
         {/* ── Rodapé ── */}
-        <div style={{ padding: '12px 24px 24px', display: 'flex', gap: '8px', justifyContent: 'flex-end', borderTop: '1px solid #F2F4F7' }}>
+        <div style={{ padding: '12px 24px 24px', display: 'flex', gap: '8px', justifyContent: 'flex-end', borderTop: '1px solid var(--border)' }}>
           <button onClick={onClose} style={btnCancelarStyle}>
             Cancelar
           </button>
           <button onClick={handleGerar} style={btnGerarStyle}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <polyline points="20 6 9 17 4 12"/>
             </svg>
             Gerar relatório

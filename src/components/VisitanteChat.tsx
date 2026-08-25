@@ -92,10 +92,10 @@ export function VisitanteChat() {
     <div style={{
       display: 'flex', flexDirection: 'column',
       height: '100%', minHeight: 0, flex: 1,
-      background: '#FAFAFA',
+      background: 'var(--surface-2)',
       borderRadius: '16px', overflow: 'hidden',
       border: '1px solid var(--border)',
-      boxShadow: '0 4px 24px rgba(0,0,0,.06)',
+      boxShadow: 'var(--shadow-md)',
     }}>
       {/* ── Header ── */}
       <div style={{
@@ -105,7 +105,7 @@ export function VisitanteChat() {
       }}>
         <div style={{
           width: '46px', height: '46px', borderRadius: '14px',
-          overflow: 'hidden', background: '#1a1650', flexShrink: 0,
+          overflow: 'hidden', background: 'var(--chat-deep)', flexShrink: 0,
           boxShadow: '0 4px 16px rgba(0,0,0,.25)',
         }}>
           <img src="/almoxarife-avatar.png" alt="O Almoxarife" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
@@ -146,7 +146,7 @@ export function VisitanteChat() {
             {msg.role === 'assistant' && (
               <div style={{
                 width: '30px', height: '30px', borderRadius: '10px',
-                overflow: 'hidden', background: '#1e1b4b', flexShrink: 0,
+                overflow: 'hidden', background: 'var(--chat-deep)', flexShrink: 0,
               }}>
                 <img src="/almoxarife-avatar.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
               </div>
@@ -155,19 +155,21 @@ export function VisitanteChat() {
               <div style={{
                 padding: '10px 14px',
                 borderRadius: msg.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                // O balão do usuário mantém o roxo da marca nos dois temas;
+                // o do assistente é uma superfície comum e acompanha o tema.
                 background: msg.role === 'user'
                   ? 'linear-gradient(135deg, #312e81, #4338ca)'
-                  : '#FFFFFF',
-                color: msg.role === 'user' ? '#fff' : '#1F2937',
+                  : 'var(--surface)',
+                color: msg.role === 'user' ? '#fff' : 'var(--text-1)',
                 fontSize: '13.5px', lineHeight: 1.6,
                 boxShadow: msg.role === 'user'
                   ? '0 2px 12px rgba(49,46,129,.3)'
-                  : '0 1px 3px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.04)',
+                  : 'var(--shadow-sm), 0 0 0 1px var(--border)',
                 whiteSpace: 'pre-wrap', wordBreak: 'break-word',
               }}>
                 {msg.text}
               </div>
-              <span style={{ fontSize: '10px', color: '#B0B0B0', marginTop: '4px' }}>
+              <span style={{ fontSize: '10px', color: 'var(--text-3)', marginTop: '4px' }}>
                 {formatTime(msg.timestamp)}
               </span>
             </div>
@@ -178,20 +180,20 @@ export function VisitanteChat() {
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
             <div style={{
               width: '30px', height: '30px', borderRadius: '10px',
-              overflow: 'hidden', background: '#1e1b4b', flexShrink: 0,
+              overflow: 'hidden', background: 'var(--chat-deep)', flexShrink: 0,
             }}>
               <img src="/almoxarife-avatar.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
             </div>
             <div style={{
               padding: '12px 18px', borderRadius: '16px 16px 16px 4px',
-              background: '#fff',
-              boxShadow: '0 1px 3px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.04)',
+              background: 'var(--surface)',
+              boxShadow: 'var(--shadow-sm), 0 0 0 1px var(--border)',
               display: 'flex', gap: '4px', alignItems: 'center',
             }}>
               {[0, 1, 2].map(i => (
                 <span key={i} style={{
                   width: '6px', height: '6px', borderRadius: '50%',
-                  background: '#4338ca',
+                  background: 'var(--chat-strong)',
                   animation: 'chatDot 1.4s infinite ease-in-out',
                   animationDelay: `${i * 0.16}s`,
                 }} />
@@ -203,7 +205,7 @@ export function VisitanteChat() {
         {showSuggestions && (
           <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '6px', paddingLeft: '38px', maxWidth: '440px' }}>
             <span style={{
-              fontSize: '10px', fontWeight: 600, color: '#9CA3AF',
+              fontSize: '10px', fontWeight: 600, color: 'var(--text-3)',
               textTransform: 'uppercase', letterSpacing: '.8px', marginBottom: '2px',
             }}>
               Sugestões
@@ -213,21 +215,21 @@ export function VisitanteChat() {
                 key={i}
                 onClick={() => sendMessage(s.text)}
                 style={{
-                  background: '#fff',
-                  border: '1px solid #E8E8ED',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
                   borderRadius: '12px', padding: '10px 14px',
-                  fontSize: '12.5px', color: '#4B5563', cursor: 'pointer',
+                  fontSize: '12.5px', color: 'var(--text-2)', cursor: 'pointer',
                   textAlign: 'left', transition: 'all 180ms ease',
                   display: 'flex', alignItems: 'center', gap: '10px',
                 }}
               >
                 <span style={{
                   width: '30px', height: '30px', borderRadius: '8px',
-                  background: '#F1F0FF', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: 'var(--chat-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '14px', flexShrink: 0,
                 }}>{s.icon}</span>
                 <div>
-                  <div style={{ fontSize: '11px', fontWeight: 600, color: '#6B7280', marginBottom: '1px' }}>{s.label}</div>
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-2)', marginBottom: '1px' }}>{s.label}</div>
                   <div style={{ fontSize: '12px', lineHeight: 1.3 }}>{s.text}</div>
                 </div>
               </button>
@@ -241,12 +243,12 @@ export function VisitanteChat() {
       {/* ── Input ── */}
       <div style={{
         padding: '12px 14px 14px', flexShrink: 0,
-        borderTop: '1px solid #EBEBEB', background: '#fff',
+        borderTop: '1px solid var(--border)', background: 'var(--surface)',
       }}>
         <div style={{
           display: 'flex', alignItems: 'center', gap: '8px',
-          background: '#F5F5F7', borderRadius: '16px',
-          border: inputFocused ? '1.5px solid #4338ca' : '1.5px solid transparent',
+          background: 'var(--surface-2)', borderRadius: '16px',
+          border: inputFocused ? '1.5px solid var(--chat-strong)' : '1.5px solid transparent',
           padding: '4px 4px 4px 16px',
           transition: 'border-color 200ms',
         }}>
@@ -268,7 +270,7 @@ export function VisitanteChat() {
             style={{
               flex: 1, height: '40px', border: 'none',
               padding: 0, fontSize: '13.5px', outline: 'none',
-              background: 'transparent', color: '#1F2937',
+              background: 'transparent', color: 'var(--text-1)',
               fontFamily: 'inherit',
             }}
           />
@@ -281,8 +283,8 @@ export function VisitanteChat() {
               cursor: input.trim() && !loading ? 'pointer' : 'default',
               background: input.trim() && !loading
                 ? 'linear-gradient(135deg, #312e81, #4338ca)'
-                : '#DDDDE3',
-              color: '#fff',
+                : 'var(--surface-3)',
+              color: input.trim() && !loading ? '#fff' : 'var(--text-3)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0, transition: 'all 200ms',
             }}

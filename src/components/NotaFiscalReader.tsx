@@ -202,7 +202,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
             {idx > 0 && (
               <div style={{
                 width: '60px', height: '2px',
-                background: currentStep > step.num - 1 ? 'linear-gradient(90deg, #667eea, #764ba2)' : 'var(--border)',
+                background: currentStep > step.num - 1 ? 'linear-gradient(90deg, var(--chat-1), var(--chat-2))' : 'var(--border)',
                 transition: 'background 0.3s',
               }} />
             )}
@@ -211,7 +211,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
                 width: '36px', height: '36px', borderRadius: '50%',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '13px', fontWeight: 700,
-                background: isComplete ? 'linear-gradient(135deg, #667eea, #764ba2)' : isActive ? 'linear-gradient(135deg, #667eea, #764ba2)' : 'var(--surface-2)',
+                background: isComplete ? 'linear-gradient(135deg, var(--chat-1), var(--chat-2))' : isActive ? 'linear-gradient(135deg, var(--chat-1), var(--chat-2))' : 'var(--surface-2)',
                 color: isActive ? '#fff' : 'var(--text-3)',
                 border: isActive ? 'none' : '2px solid var(--border)',
                 transition: 'all 0.3s',
@@ -473,7 +473,7 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             <div style={{
               width: '48px', height: '48px', borderRadius: '14px',
-              background: 'linear-gradient(135deg, #667eea, #764ba2)',
+              background: 'linear-gradient(135deg, var(--chat-1), var(--chat-2))',
               display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
               boxShadow: '0 4px 14px rgba(102,126,234,.25)',
             }}>
@@ -519,7 +519,7 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
                   border: 'none', cursor: 'pointer',
                   padding: '8px 20px', borderRadius: '7px',
                   fontSize: '13px', fontWeight: 700,
-                  background: ativo ? '#fff' : 'transparent',
+                  background: ativo ? 'var(--surface)' : 'transparent',
                   color: ativo ? 'var(--text-1)' : 'var(--text-3)',
                   boxShadow: ativo ? 'var(--shadow-sm)' : 'none',
                   transition: 'all 180ms',
@@ -544,8 +544,8 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
       {error && (
         <div style={{
           marginBottom: '20px', padding: '14px 18px',
-          background: '#FEE2E2', border: '1px solid #FECACA', borderRadius: 'var(--radius)',
-          fontSize: '13.5px', color: '#991B1B',
+          background: 'var(--danger-light)', border: '1px solid var(--danger-border)', borderRadius: 'var(--radius)',
+          fontSize: '13.5px', color: 'var(--danger-text)',
           display: 'flex', alignItems: 'center', gap: '10px',
         }}>
           <IconAlert /> {error}
@@ -576,7 +576,7 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
                   padding: file ? '24px' : '60px 32px',
                   textAlign: 'center',
                   cursor: 'pointer',
-                  background: dragging ? 'var(--primary-light)' : '#fff',
+                  background: dragging ? 'var(--primary-light)' : 'var(--surface)',
                   transition: 'all 200ms',
                   borderBottom: dragging ? '3px solid var(--primary)' : '3px solid transparent',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -626,9 +626,9 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
                   <>
                     <div style={{
                       width: '80px', height: '80px', borderRadius: '50%',
-                      background: 'linear-gradient(135deg, rgba(102,126,234,.08), rgba(118,75,162,.08))',
+                      background: 'linear-gradient(135deg, rgba(102,126,234,.12), rgba(118,75,162,.12))',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: '#667eea', marginBottom: '16px',
+                      color: 'var(--chat-1)', marginBottom: '16px',
                     }}>
                       <IconUpload />
                     </div>
@@ -684,11 +684,11 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
                     <>
                       <div style={{
                         width: '80px', height: '80px', borderRadius: '50%',
-                        background: 'linear-gradient(135deg, rgba(102,126,234,.1), rgba(118,75,162,.1))',
+                        background: 'linear-gradient(135deg, rgba(102,126,234,.14), rgba(118,75,162,.14))',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         marginBottom: '20px',
                       }}>
-                        <div className="spinner-border" style={{ color: '#667eea', width: '32px', height: '32px' }} role="status" />
+                        <div className="spinner-border" style={{ color: 'var(--chat-1)', width: '32px', height: '32px' }} role="status" />
                       </div>
                       <p style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-1)', margin: '0 0 6px' }}>
                         Analisando...
@@ -701,9 +701,9 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
                     <>
                       <div style={{
                         width: '80px', height: '80px', borderRadius: '50%',
-                        background: 'linear-gradient(135deg, rgba(102,126,234,.08), rgba(118,75,162,.08))',
+                        background: 'linear-gradient(135deg, rgba(102,126,234,.12), rgba(118,75,162,.12))',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: '#667eea', marginBottom: '20px',
+                        color: 'var(--chat-1)', marginBottom: '20px',
                       }}>
                         <IconSparkle />
                       </div>
@@ -723,7 +723,7 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
                           className="btn d-flex align-items-center gap-2"
                           onClick={handleAnalyze}
                           style={{
-                            background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                            background: 'linear-gradient(135deg, var(--chat-1), var(--chat-2))',
                             border: 'none', color: '#fff', height: '44px', padding: '0 28px',
                             borderRadius: '10px', fontSize: '14px', fontWeight: 700,
                             boxShadow: '0 4px 14px rgba(102,126,234,.3)',
@@ -814,24 +814,24 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
             </div>
             {isSaida && !nomeObra && (
               <div style={{
-                padding: '10px 20px', background: '#FEE2E2', borderTop: '1px solid #FECACA',
-                fontSize: '12.5px', color: '#991B1B', display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '10px 20px', background: 'var(--danger-light)', borderTop: '1px solid var(--danger-border)',
+                fontSize: '12.5px', color: 'var(--danger-text)', display: 'flex', alignItems: 'center', gap: '8px',
               }}>
                 <IconAlert /> Não identificamos a obra de destino no documento — preencha antes de importar.
               </div>
             )}
             {dataFutura && (
               <div style={{
-                padding: '10px 20px', background: '#FEE2E2', borderTop: '1px solid #FECACA',
-                fontSize: '12.5px', color: '#991B1B', display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '10px 20px', background: 'var(--danger-light)', borderTop: '1px solid var(--danger-border)',
+                fontSize: '12.5px', color: 'var(--danger-text)', display: 'flex', alignItems: 'center', gap: '8px',
               }}>
                 <IconAlert /> Data no futuro — corrija antes de importar. O saldo é atualizado no ato do lançamento, então uma data futura tira o registro dos relatórios por período.
               </div>
             )}
             {!dataFutura && dataCompetencia < hojeISO() && (
               <div style={{
-                padding: '10px 20px', background: '#EBF4FF', borderTop: '1px solid #BFD7FF',
-                fontSize: '12.5px', color: '#1971C2', display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '10px 20px', background: 'var(--info-light)', borderTop: '1px solid var(--info-border)',
+                fontSize: '12.5px', color: 'var(--info)', display: 'flex', alignItems: 'center', gap: '8px',
               }}>
                 <IconAlert />
                 {isSaida
@@ -844,7 +844,7 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
           {!isSaida && numeroNF && (
             <div className="row g-3" style={{ marginBottom: '20px' }}>
               {[
-                { label: 'Documento', value: numeroNF, color: '#1971C2', bg: '#EBF4FF', border: '#BFD7FF' },
+                { label: 'Documento', value: numeroNF, color: 'var(--info)', bg: 'var(--info-light)', border: 'var(--info-border)' },
               ].filter(c => c.value).map((card, idx) => (
                 <div className="col-6 col-lg-3" key={idx}>
                   <div style={{
@@ -867,8 +867,8 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
           {divergenciaConferencia && (
             <div style={{
               marginBottom: '20px', padding: '14px 18px',
-              background: '#FEF3DC', border: '1px solid #FAD898',
-              borderRadius: 'var(--radius)', fontSize: '13px', color: '#9A5A00',
+              background: 'var(--primary-light)', border: '1px solid var(--primary-border)',
+              borderRadius: 'var(--radius)', fontSize: '13px', color: 'var(--primary-text)',
               display: 'flex', alignItems: 'center', gap: '10px',
             }}>
               <IconAlert />
@@ -900,7 +900,7 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
                 </div>
                 {itensIgnorados > 0 && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#9A5A00' }} />
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary-text)' }} />
                     <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-1)' }}>
                       {itensIgnorados} ignorado(s)
                     </span>
@@ -942,7 +942,7 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
                 <div key={idx} style={{
                   padding: '16px 20px',
                   borderBottom: idx < itensExtraidos.length - 1 ? '1px solid var(--border)' : 'none',
-                  background: item.produtoIdMatch && item.incluir ? 'rgba(47,158,68,.02)' : 'transparent',
+                  background: item.produtoIdMatch && item.incluir ? 'var(--row-success)' : 'transparent',
                   opacity: item.incluir ? 1 : 0.55,
                   transition: 'background 200ms, opacity 200ms',
                 }}>
@@ -965,8 +965,8 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
                         </span>
                         {item.naoDarBaixa && (
                           <span style={{
-                            fontSize: '10px', fontWeight: 700, color: '#9A5A00',
-                            background: '#FEF3DC', border: '1px solid #FAD898',
+                            fontSize: '10px', fontWeight: 700, color: 'var(--primary-text)',
+                            background: 'var(--primary-light)', border: '1px solid var(--primary-border)',
                             padding: '2px 8px', borderRadius: '6px', flexShrink: 0,
                             textTransform: 'uppercase', letterSpacing: '.3px',
                           }}>
@@ -998,8 +998,8 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
                           marginTop: '6px', paddingLeft: '15px', display: 'flex', alignItems: 'center', gap: '6px',
                         }}>
                           <span style={{
-                            fontSize: '10.5px', fontWeight: 600, color: '#1971C2',
-                            background: '#EBF4FF', border: '1px solid #BFD7FF',
+                            fontSize: '10.5px', fontWeight: 600, color: 'var(--info)',
+                            background: 'var(--info-light)', border: '1px solid var(--info-border)',
                             padding: '2px 8px', borderRadius: '6px',
                             display: 'inline-flex', alignItems: 'center', gap: '4px',
                           }}>
@@ -1055,8 +1055,8 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
                           border: `1.5px solid ${item.produtoIdMatch ? 'var(--success)' : 'var(--border)'}`,
                           borderRadius: '8px',
                           background: item.produtoIdMatch
-                            ? 'rgba(47,158,68,.04)'
-                            : 'var(--surface-1, #fff)',
+                            ? 'var(--row-success)'
+                            : 'var(--surface)',
                           color: item.produtoIdMatch ? 'var(--text-1)' : 'var(--text-3)',
                           fontWeight: item.produtoIdMatch ? 600 : 400,
                           cursor: 'pointer',
@@ -1069,7 +1069,7 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
                         }}
                         value={item.produtoIdMatch || ''}
                         onChange={e => handleVincular(idx, e.target.value)}
-                        onFocus={e => { e.target.style.borderColor = '#667eea'; e.target.style.boxShadow = '0 0 0 3px rgba(102,126,234,.12)'; }}
+                        onFocus={e => { e.target.style.borderColor = 'var(--chat-1)'; e.target.style.boxShadow = '0 0 0 3px rgba(102,126,234,.12)'; }}
                         onBlur={e => { e.target.style.borderColor = item.produtoIdMatch ? 'var(--success)' : 'var(--border)'; e.target.style.boxShadow = 'none'; }}
                       >
                         <option value="">Selecionar produto...</option>
@@ -1138,8 +1138,8 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
           {itensSemVinculo > 0 && (
             <div style={{
               marginTop: '16px', padding: '14px 18px',
-              background: '#FEF3DC', border: '1px solid #FAD898',
-              borderRadius: 'var(--radius)', fontSize: '13px', color: '#9A5A00',
+              background: 'var(--primary-light)', border: '1px solid var(--primary-border)',
+              borderRadius: 'var(--radius)', fontSize: '13px', color: 'var(--primary-text)',
               display: 'flex', alignItems: 'center', gap: '10px',
             }}>
               <IconAlert />
@@ -1160,7 +1160,7 @@ export function NotaFiscalReader({ produtos, perfilUsuario, onImportar }: NotaFi
               style={{
                 height: '48px', padding: '0 32px', fontSize: '15px', fontWeight: 700,
                 borderRadius: '12px', background: 'var(--success)', border: 'none',
-                color: '#fff',
+                color: 'var(--on-success)',
                 opacity: importDesabilitado ? 0.4 : 1,
                 cursor: importDesabilitado ? 'not-allowed' : 'pointer',
                 boxShadow: importDesabilitado ? 'none' : '0 4px 14px rgba(47,158,68,.25)',

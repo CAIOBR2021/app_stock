@@ -53,7 +53,7 @@ export function ModalComponent({
     <div
       onClick={onClose}
       style={{
-        position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)',
+        position: 'fixed', inset: 0, background: 'var(--overlay)',
         zIndex: 9999, display: 'flex', alignItems: 'flex-start',
         justifyContent: 'center', padding: '16px', overflowY: 'auto',
       }}
@@ -61,16 +61,19 @@ export function ModalComponent({
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          background: '#fff', borderRadius: '14px',
-          boxShadow: '0 12px 32px rgba(0,0,0,.12)',
+          background: 'var(--surface)', borderRadius: '14px',
+          boxShadow: 'var(--shadow-lg)',
+          // No escuro a sombra some contra o fundo: é a borda que descola
+          // o modal do overlay.
+          border: '1px solid var(--border)',
           width: '100%', maxWidth: '520px', maxHeight: '90vh',
           display: 'flex', flexDirection: 'column',
           margin: 'auto', position: 'relative',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid #E2E5EC', flexShrink: 0 }}>
-          <h5 style={{ fontSize: '16px', fontWeight: 700, color: '#0F1117', margin: 0 }}>{title}</h5>
-          <button onClick={onClose} style={{ width: '28px', height: '28px', border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+          <h5 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-1)', margin: 0 }}>{title}</h5>
+          <button onClick={onClose} style={{ width: '28px', height: '28px', border: 'none', background: 'transparent', color: 'var(--text-3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -186,7 +189,7 @@ export function PasswordEntryModal({
       </div>
 
       {error && (
-        <div style={{ background: 'var(--danger-light)', border: '1px solid #FFC5C5', borderRadius: '8px', padding: '8px 12px', fontSize: '13px', color: 'var(--danger)', marginBottom: '12px' }}>
+        <div style={{ background: 'var(--danger-light)', border: '1px solid var(--danger-border)', borderRadius: '8px', padding: '8px 12px', fontSize: '13px', color: 'var(--danger)', marginBottom: '12px' }}>
           {error}
         </div>
       )}
@@ -247,13 +250,16 @@ const PERFIS_COM_SENHA = new Set(
   PERFIL_OPTIONS.filter(o => o.locked).map(o => o.value),
 );
 
-const DARK_BG = '#1A1A2E';
+/* O modal de identificação é escuro nos DOIS temas — é a tela de entrada, com
+   a mesma cara do menu lateral. Por isso as cores aqui são as do "cromo
+   escuro" (--accent + brancos translúcidos) e não os tokens de superfície. */
+const DARK_BG = 'var(--accent)';
 const DARK_BORDER = 'rgba(255,255,255,.14)';
 
 const darkSelectStyles: StylesConfig = {
   control: (_, state) => ({
     backgroundColor: 'rgba(255,255,255,.06)',
-    borderColor: state.isFocused ? '#F5A623' : DARK_BORDER,
+    borderColor: state.isFocused ? 'var(--primary)' : DARK_BORDER,
     borderWidth: '1.5px',
     borderStyle: 'solid',
     borderRadius: '12px',
@@ -288,7 +294,7 @@ const darkSelectStyles: StylesConfig = {
   menuPortal: (base) => ({ ...base, zIndex: 99999 }),
   option: (_, state) => ({
     backgroundColor: state.isSelected
-      ? '#F5A623'
+      ? 'var(--primary)'
       : state.isFocused
         ? 'rgba(245,166,35,.12)'
         : 'transparent',
@@ -638,7 +644,7 @@ export function Paginacao({
   const btnActive: React.CSSProperties = {
     ...btnBase,
     background: 'var(--primary)', borderColor: 'var(--primary)',
-    color: '#fff', fontWeight: 700,
+    color: 'var(--on-primary)', fontWeight: 700,
   };
 
   return (

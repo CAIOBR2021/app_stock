@@ -5,11 +5,28 @@
 
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
 
-/* ── TOKENS ─────────────────────────────────────────────── */
+/* ── TOKENS ─────────────────────────────────────────────────
+   Tema claro. O tema escuro redefine SÓ as cores, no bloco
+   [data-theme="dark"] mais abaixo — medidas, raios e tempos são
+   compartilhados e ficam aqui.
+
+   Regra da casa: nada de cor fixa em componente ou style inline.
+   Se faltar um token para o caso novo, crie-o aqui e no bloco
+   escuro; senão a tela nasce quebrada no modo noturno.
+   ──────────────────────────────────────────────────────────── */
 :root {
+  color-scheme: light;
+
   --primary: #F5A623;
+  /* No claro é o âmbar escurecido (hover / texto sobre tinta clara);
+     no escuro inverte para um âmbar MAIS claro, mantendo os dois papéis. */
   --primary-dark: #D4891A;
   --primary-light: #FEF3DC;
+  --primary-border: #FAD898;
+  /* Texto legível sobre --primary-light */
+  --primary-text: #9A5A00;
+  /* Texto sobre o preenchimento âmbar (botão primário, avatar) */
+  --on-primary: #FFFFFF;
   --accent: #1A1A2E;
   /* sidebar bg */
 
@@ -17,17 +34,68 @@
   --surface-2: #F7F8FA;
   --surface-3: #EEF0F4;
   --border: #E2E5EC;
+  /* Borda com mais presença: hover de botão, divisórias fortes */
+  --border-strong: #C4C9D8;
 
   --text-1: #0F1117;
   --text-2: #4A5068;
   --text-3: #8891AA;
+  /* Texto sobre fundos escuros fixos (sidebar, header do visitante) */
+  --on-dark-1: #FFFFFF;
+  --on-dark-2: rgba(255, 255, 255, .6);
+  --on-dark-3: rgba(255, 255, 255, .4);
 
   --danger: #E53E3E;
   --danger-light: #FFF5F5;
+  --danger-border: #FFC5C5;
+  --danger-text: #9B1C1C;
+  --danger-hover: #C53030;
+  /* Texto sobre o preenchimento vermelho (btn-danger) */
+  --on-danger: #FFFFFF;
   --warning: #F5A623;
   --warning-light: #FFFBF0;
   --success: #2F9E44;
   --success-light: #EBFBEE;
+  --success-border: #A3E6B5;
+  --success-text: #1E7A32;
+  /* Texto sobre o preenchimento verde */
+  --on-success: #FFFFFF;
+  --info: #1971C2;
+  --info-light: #EBF4FF;
+  --info-border: #BFD7FF;
+  /* Texto sobre o preenchimento azul */
+  --on-info: #FFFFFF;
+  /* Laranja: degrau intermediário entre o âmbar de "atenção" e o vermelho
+     de "crítico" na previsão de consumo */
+  --orange: #EA580C;
+  --orange-light: #FFF7ED;
+  --orange-border: #FED7AA;
+  /* Roxo: usado para "saldo inicial", que não é entrada nem saída */
+  --violet: #6741D9;
+  --violet-light: #E5E0FA;
+
+  /* Tintas de linha da tabela (hover e estados) */
+  --row-hover: rgba(245, 166, 35, .03);
+  --row-warning: rgba(245, 166, 35, .04);
+  --row-warning-hover: rgba(245, 166, 35, .08);
+  --row-danger: rgba(229, 62, 62, .03);
+  --row-danger-hover: rgba(229, 62, 62, .07);
+  --row-success: rgba(47, 158, 68, .04);
+  --danger-glow: rgba(229, 62, 62, .2);
+
+  /* Fundo dos modais e bottom sheets */
+  --overlay: rgba(0, 0, 0, .55);
+  /* Marca do trilho da sidebar recolhida */
+  --rail-mark: rgba(26, 26, 46, .18);
+
+  /* Marca do assistente (ChatWidget / VisitanteChat) */
+  --chat-1: #667EEA;
+  --chat-2: #764BA2;
+  --chat-deep: #1E1B4B;
+  --chat-deep-2: #312E81;
+  --chat-strong: #4338CA;
+  --chat-surface: #F1F0FF;
+  --chat-border: #E5E0FA;
 
   --sidebar-w: 240px;
   /* trilho fino que fica na borda quando a sidebar não está fixada */
@@ -45,6 +113,101 @@
   /* bottom nav height for mobile spacing */
   --bottom-nav-height: 64px;
   --header-height-mobile: 64px;
+}
+
+/* ── TEMA ESCURO — paleta "Grafite Neutro" ──────────────────
+   Cinza neutro puro: o âmbar da marca fica sendo o único acento
+   cromático, e vermelho/verde/azul só aparecem em status. É o que
+   mantém as tabelas legíveis numa tela cheia de números.
+
+   Três conversões que NÃO são só "inverter a luminosidade":
+
+   1. Cores saturadas clareiam. #2F9E44 e #E53E3E passam de 3:1 sobre
+      fundo escuro; sobem para #51CF66 / #FF6B6B.
+   2. As tintas (--*-light) deixam de ser pastéis e viram versões
+      escuras e dessaturadas da própria cor, com o texto na cor clara.
+   3. --primary-dark inverte de papel: continua sendo "o âmbar do
+      hover e do texto sobre tinta", só que agora mais claro que o
+      --primary, porque no escuro o destaque vem de clarear.
+
+   Para experimentar a paleta "Slate Azulado" no lugar desta, basta
+   trocar os seis neutros: surface-2 #0D1117 · surface #161B22 ·
+   surface-3 #21262D · border #30363D · text-1 #E6EDF3 ·
+   text-2 #9198A1 · text-3 #6E7681. O resto continua valendo.
+   ──────────────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --primary: #F5A623;
+  --primary-dark: #FFB945;
+  --primary-light: #33280F;
+  --primary-border: #5A4718;
+  --primary-text: #FFC24D;
+  --on-primary: #17130A;
+  --accent: #0D0E10;
+
+  --surface: #1B1D21;
+  --surface-2: #121316;
+  --surface-3: #24272C;
+  --border: #2F333A;
+  --border-strong: #414751;
+
+  --text-1: #ECEEF2;
+  --text-2: #A3AAB6;
+  /* Espelhar o #8891AA do claro daria 3.5:1 sobre --surface e reprovaria em
+     texto pequeno — e --text-3 é justamente quem pinta rótulo de formulário,
+     cabeçalho de tabela e legenda de card. #8A919C sobe para 5.2:1 e ainda
+     fica um degrau visível abaixo de --text-2. */
+  --text-3: #8A919C;
+
+  --danger: #FF6B6B;
+  --danger-light: #3A1D1D;
+  --danger-border: #5C2B2B;
+  --danger-text: #FF9B9B;
+  --danger-hover: #FF8585;
+  --on-danger: #2A0D0D;
+  --warning: #FFC24D;
+  --warning-light: #33280F;
+  --success: #51CF66;
+  --success-light: #16301E;
+  --success-border: #2A5636;
+  --success-text: #7BE08D;
+  --on-success: #0C2412;
+  --info: #6EB6FF;
+  --info-light: #10243A;
+  --info-border: #24405C;
+  --on-info: #06192B;
+  --orange: #FF9A57;
+  --orange-light: #331F10;
+  --orange-border: #5C361C;
+  --violet: #B0A0FF;
+  --violet-light: #241F3D;
+
+  /* No escuro a tinta de 3% some: as linhas precisam de mais corpo */
+  --row-hover: rgba(245, 166, 35, .07);
+  --row-warning: rgba(245, 166, 35, .06);
+  --row-warning-hover: rgba(245, 166, 35, .12);
+  --row-danger: rgba(255, 107, 107, .06);
+  --row-danger-hover: rgba(255, 107, 107, .12);
+  --row-success: rgba(81, 207, 102, .08);
+  --danger-glow: rgba(255, 107, 107, .25);
+
+  --overlay: rgba(0, 0, 0, .72);
+  --rail-mark: rgba(255, 255, 255, .22);
+
+  --chat-1: #7C8FF0;
+  --chat-2: #9A6FC4;
+  --chat-deep: #16162B;
+  --chat-deep-2: #232150;
+  --chat-strong: #8B9BF5;
+  --chat-surface: #1C1B2B;
+  --chat-border: #32304F;
+
+  /* Sombra não se enxerga sobre preto: quem separa os planos é a
+     borda, então a sombra fica só como profundidade sutil. */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, .4), 0 1px 2px rgba(0, 0, 0, .3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, .5), 0 2px 4px rgba(0, 0, 0, .35);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, .6);
 }
 
 /* ── RESET ───────────────────────────────────────────────── */
@@ -394,7 +557,7 @@ body {
     height: 48px;
     margin-top: -24px;
     border-radius: 999px;
-    background: rgba(26, 26, 46, .18);
+    background: var(--rail-mark);
     transition: background var(--sidebar-ease), height var(--sidebar-ease), margin-top var(--sidebar-ease);
   }
 
@@ -546,8 +709,8 @@ body {
 }
 
 .metric-card--total .metric-card-icon {
-  background: #EBF4FF;
-  color: #1971C2;
+  background: var(--info-light);
+  color: var(--info);
 }
 
 .metric-card--total .metric-card-value {
@@ -615,7 +778,7 @@ body {
 .form-control:focus,
 .form-select:focus {
   border-color: var(--primary);
-  background: #fff;
+  background: var(--surface);
   box-shadow: 0 0 0 3px rgba(245, 166, 35, .12);
 }
 
@@ -682,7 +845,7 @@ body {
 .toggle-chip.active-warning {
   border-color: var(--warning);
   background: var(--warning-light);
-  color: #9A5A00;
+  color: var(--primary-text);
 }
 
 .toggle-chip.active-warning .dot {
@@ -692,7 +855,7 @@ body {
 .toggle-chip.active-danger {
   border-color: var(--danger);
   background: var(--danger-light);
-  color: #9B1C1C;
+  color: var(--danger-text);
 }
 
 .toggle-chip.active-danger .dot {
@@ -751,7 +914,7 @@ body {
 .btn-primary {
   background: var(--primary);
   border-color: var(--primary);
-  color: #fff;
+  color: var(--on-primary);
 }
 
 .btn-primary:hover {
@@ -759,7 +922,7 @@ body {
   border-color: var(--primary-dark);
   box-shadow: 0 4px 12px rgba(245, 166, 35, .35);
   transform: translateY(-1px);
-  color: #fff;
+  color: var(--on-primary);
 }
 
 .btn-primary:active {
@@ -774,13 +937,13 @@ body {
 .btn-danger {
   background: var(--danger);
   border-color: var(--danger);
-  color: #fff;
+  color: var(--on-danger);
 }
 
 .btn-danger:hover {
-  background: #c53030;
-  border-color: #c53030;
-  color: #fff;
+  background: var(--danger-hover);
+  border-color: var(--danger-hover);
+  color: var(--on-danger);
 }
 
 /* Secondary */
@@ -825,7 +988,7 @@ body {
   top: -4px;
   right: -4px;
   background: var(--danger);
-  color: #fff;
+  color: var(--on-danger);
   font-size: 10px;
   font-weight: 700;
   padding: 0 4px;
@@ -833,7 +996,8 @@ body {
   min-width: 16px;
   text-align: center;
   line-height: 16px;
-  border: 2px solid #fff;
+  /* anel que separa o contador do ícone atrás dele */
+  border: 2px solid var(--surface);
   font-family: 'DM Sans', sans-serif;
 }
 
@@ -912,26 +1076,26 @@ table.table tbody tr:last-child td {
 }
 
 table.table tbody tr:hover td {
-  background: rgba(245, 166, 35, .03);
+  background: var(--row-hover);
 }
 
 /* Warning / danger rows */
 table.table tbody tr.table-warning,
 table.table tbody tr.row-warning {
-  background: rgba(245, 166, 35, .04);
+  background: var(--row-warning);
 }
 
 table.table tbody tr.table-warning:hover td,
 table.table tbody tr.row-warning:hover td {
-  background: rgba(245, 166, 35, .08);
+  background: var(--row-warning-hover);
 }
 
 table.table tbody tr.row-danger {
-  background: rgba(229, 62, 62, .03);
+  background: var(--row-danger);
 }
 
 table.table tbody tr.row-danger:hover td {
-  background: rgba(229, 62, 62, .07);
+  background: var(--row-danger-hover);
 }
 
 /* SKU monospace */
@@ -1058,7 +1222,7 @@ table.table tbody tr.row-danger:hover td {
 .stock-dot--red,
 .dot-crit {
   background: var(--danger);
-  box-shadow: 0 0 0 3px rgba(229, 62, 62, .2);
+  box-shadow: 0 0 0 3px var(--danger-glow);
 }
 
 .stock-dot--yellow,
@@ -1129,9 +1293,9 @@ table.table tbody tr.row-danger:hover td {
 }
 
 .btn-movimentar:hover {
-  background: #EBF4FF;
-  color: #1971C2;
-  border-color: #BFD7FF;
+  background: var(--info-light);
+  color: var(--info);
+  border-color: var(--info-border);
 }
 
 .btn-editar {
@@ -1143,7 +1307,7 @@ table.table tbody tr.row-danger:hover td {
 .btn-editar:hover {
   background: var(--primary-light);
   color: var(--primary-dark);
-  border-color: #FAD898;
+  border-color: var(--primary-border);
 }
 
 .btn-excluir {
@@ -1155,7 +1319,7 @@ table.table tbody tr.row-danger:hover td {
 .btn-excluir:hover {
   background: var(--danger-light);
   color: var(--danger);
-  border-color: #FFC5C5;
+  border-color: var(--danger-border);
 }
 
 /* ── FLAG / PRIORITY ─────────────────────────────────────── */
@@ -1224,7 +1388,7 @@ table.table tbody tr.row-danger:hover td {
 .pag-btn.active {
   background: var(--primary);
   border-color: var(--primary);
-  color: #fff;
+  color: var(--on-primary);
   box-shadow: none;
 }
 
@@ -1244,7 +1408,7 @@ table.table tbody tr.row-danger:hover td {
 .ds-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, .55);
+  background: var(--overlay);
   z-index: 9999;
   display: flex !important;
   align-items: flex-start !important;
@@ -1354,7 +1518,7 @@ table.table tbody tr.row-danger:hover td {
 /* ── TOTAL VALUE BADGE ───────────────────────────────────── */
 .total-value-badge {
   background: var(--primary-light) !important;
-  border-color: #FAD898 !important;
+  border-color: var(--primary-border) !important;
   color: var(--primary-dark) !important;
   font-family: 'DM Mono', monospace;
   font-size: 12px;
@@ -1391,26 +1555,26 @@ table.table tbody tr.row-danger:hover td {
 }
 
 .alert-info {
-  background: #EBF4FF;
-  border-color: #BFD7FF;
-  color: #1971C2;
+  background: var(--info-light);
+  border-color: var(--info-border);
+  color: var(--info);
 }
 
 .alert-danger {
   background: var(--danger-light);
-  border-color: #FFC5C5;
+  border-color: var(--danger-border);
   color: var(--danger);
 }
 
 .alert-warning {
   background: var(--warning-light);
-  border-color: #FAD898;
+  border-color: var(--primary-border);
   color: var(--primary-dark);
 }
 
 .alert-success {
   background: var(--success-light);
-  border-color: #A3E6B5;
+  border-color: var(--success-border);
   color: var(--success);
 }
 
@@ -1463,7 +1627,7 @@ table.table tbody tr.row-danger:hover td {
 .more-sheet-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, .45);
+  background: var(--overlay);
   /* acima do FAB do chat (9999) */
   z-index: 10000;
   animation: sheetFade .2s ease both;

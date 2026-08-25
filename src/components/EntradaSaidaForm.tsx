@@ -22,16 +22,21 @@ const selectStyles: StylesConfig = {
   }),
   placeholder: base => ({ ...base, color: 'var(--text-3)', fontSize: '13.5px' }),
   singleValue: base => ({ ...base, color: 'var(--text-1)', fontSize: '13.5px' }),
+  // O react-select embute um cinza escuro no texto digitado; sem isto, no
+  // modo noturno a busca some contra o fundo.
+  input: base => ({ ...base, color: 'var(--text-1)' }),
   option: (base, state) => ({
     ...base,
-    backgroundColor: state.isSelected ? 'var(--primary)' : state.isFocused ? 'var(--primary-light)' : '#fff',
-    color: state.isSelected ? '#fff' : 'var(--text-1)',
+    backgroundColor: state.isSelected ? 'var(--primary)' : state.isFocused ? 'var(--primary-light)' : 'var(--surface)',
+    color: state.isSelected ? 'var(--on-primary)' : 'var(--text-1)',
     fontSize: '13.5px',
     fontFamily: 'DM Sans, sans-serif',
     cursor: 'pointer',
     padding: '10px 16px',
   }),
-  menu: base => ({ ...base, zIndex: 9999, borderRadius: '12px', border: 'none', boxShadow: '0 12px 40px rgba(0,0,0,.12)' }),
+  // Sem borda no claro (a sombra bastava); no escuro a borda é o que separa
+  // o menu do conteúdo atrás dele.
+  menu: base => ({ ...base, backgroundColor: 'var(--surface)', zIndex: 9999, borderRadius: '12px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-lg)' }),
   menuPortal: base => ({ ...base, zIndex: 9999 }),
   indicatorSeparator: () => ({ display: 'none' }),
 };
@@ -223,10 +228,18 @@ export function EntradaSaidaForm({ produtos, onSubmit, perfilUsuario }: EntradaS
   const tipoLabel       = tipo === 'entrada' ? 'Entrada' : tipo === 'saida' ? 'Saída' : 'Ajuste';
   const quantidadeLabel = tipo === 'ajuste' ? 'Nova Qtd.' : 'Qtd.';
 
+  /**
+   * Paleta por tipo de movimentação. `on` é o texto sobre o preenchimento
+   * cheio: no modo noturno as cores de status clareiam, e o branco que
+   * funcionava sobre o verde/vermelho escuros deixa de ter contraste.
+   *
+   * O degradê virou cor chapada — os dois tons de origem eram vizinhos
+   * (#2F9E44 → #38B249) e não havia como derivá-los de um token só.
+   */
   const tipoConfig = {
-    entrada: { color: '#2F9E44', bg: '#F0FDF4', border: '#BBF7D0', activeBg: 'linear-gradient(135deg, #2F9E44, #38B249)', dot: '#2F9E44' },
-    saida:   { color: '#E53E3E', bg: '#FFF5F5', border: '#FED7D7', activeBg: 'linear-gradient(135deg, #E53E3E, #F56565)', dot: '#E53E3E' },
-    ajuste:  { color: '#1971C2', bg: '#EBF4FF', border: '#BFD7FF', activeBg: 'linear-gradient(135deg, #1971C2, #3B8DE0)', dot: '#1971C2' },
+    entrada: { color: 'var(--success)', bg: 'var(--success-light)', border: 'var(--success-border)', activeBg: 'var(--success)', dot: 'var(--success)', on: 'var(--on-success)' },
+    saida:   { color: 'var(--danger)',  bg: 'var(--danger-light)',  border: 'var(--danger-border)',  activeBg: 'var(--danger)',  dot: 'var(--danger)',  on: 'var(--on-danger)' },
+    ajuste:  { color: 'var(--info)',    bg: 'var(--info-light)',    border: 'var(--info-border)',    activeBg: 'var(--info)',    dot: 'var(--info)',    on: 'var(--on-info)' },
   };
 
   const currentConfig = tipoConfig[tipo];
@@ -291,7 +304,7 @@ export function EntradaSaidaForm({ produtos, onSubmit, perfilUsuario }: EntradaS
                     fontWeight: 600,
                     borderRadius: '9px',
                     border: 'none',
-                    background: isActive ? '#fff' : 'transparent',
+                    background: isActive ? 'var(--surface)' : 'transparent',
                     color: isActive ? config.color : 'var(--text-3)',
                     cursor: isDisabled ? 'not-allowed' : 'pointer',
                     opacity: isDisabled ? 0.4 : 1,
@@ -308,9 +321,9 @@ export function EntradaSaidaForm({ produtos, onSubmit, perfilUsuario }: EntradaS
 
           {tipo === 'ajuste' && (
             <div style={{
-              marginBottom: '20px', padding: '12px 16px', background: '#EBF4FF',
-              border: '1px solid #BFD7FF', borderRadius: '12px', fontSize: '12.5px',
-              color: '#1971C2', display: 'flex', alignItems: 'center', gap: '8px',
+              marginBottom: '20px', padding: '12px 16px', background: 'var(--info-light)',
+              border: '1px solid var(--info-border)', borderRadius: '12px', fontSize: '12.5px',
+              color: 'var(--info)', display: 'flex', alignItems: 'center', gap: '8px',
             }}>
               <IconInfo />
               O ajuste define a <strong style={{ marginLeft: 3, marginRight: 3 }}>nova quantidade absoluta</strong> do estoque.
@@ -329,7 +342,7 @@ export function EntradaSaidaForm({ produtos, onSubmit, perfilUsuario }: EntradaS
                 value={ordemCompra}
                 onChange={e => setOrdemCompra(e.target.value)}
                 style={inputBaseStyle}
-                onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.background = '#fff'; }}
+                onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.background = 'var(--surface)'; }}
                 onBlur={e => { e.target.style.borderColor = 'transparent'; e.target.style.background = 'var(--surface-2)'; }}
               />
             </div>
@@ -343,7 +356,7 @@ export function EntradaSaidaForm({ produtos, onSubmit, perfilUsuario }: EntradaS
                 value={nomeObra}
                 onChange={e => setNomeObra(e.target.value)}
                 style={inputBaseStyle}
-                onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.background = '#fff'; }}
+                onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.background = 'var(--surface)'; }}
                 onBlur={e => { e.target.style.borderColor = 'transparent'; e.target.style.background = 'var(--surface-2)'; }}
               />
             </div>
@@ -355,7 +368,7 @@ export function EntradaSaidaForm({ produtos, onSubmit, perfilUsuario }: EntradaS
                 Competência
                 {isRetroativa && (
                   <span style={{
-                    fontSize: '9px', background: '#FEF3DC', color: '#9A5A00',
+                    fontSize: '9px', background: 'var(--primary-light)', color: 'var(--primary-text)',
                     padding: '2px 6px', borderRadius: 999, fontWeight: 700,
                     textTransform: 'uppercase', letterSpacing: '.3px',
                   }}>
@@ -372,7 +385,7 @@ export function EntradaSaidaForm({ produtos, onSubmit, perfilUsuario }: EntradaS
                   if (e.target.value < hojeISO() && tipo === 'ajuste') handleTipoChange('saida');
                 }}
                 style={inputBaseStyle}
-                onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.background = '#fff'; }}
+                onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.background = 'var(--surface)'; }}
                 onBlur={e => { e.target.style.borderColor = 'transparent'; e.target.style.background = 'var(--surface-2)'; }}
               />
             </div>
@@ -380,9 +393,9 @@ export function EntradaSaidaForm({ produtos, onSubmit, perfilUsuario }: EntradaS
 
           {isRetroativa && (
             <div style={{
-              marginTop: '14px', padding: '12px 16px', background: '#FEF3DC',
-              border: '1px solid #FAD898', borderRadius: '12px', fontSize: '13px',
-              color: '#9A5A00', display: 'flex', alignItems: 'flex-start', gap: '10px',
+              marginTop: '14px', padding: '12px 16px', background: 'var(--primary-light)',
+              border: '1px solid var(--primary-border)', borderRadius: '12px', fontSize: '13px',
+              color: 'var(--primary-text)', display: 'flex', alignItems: 'flex-start', gap: '10px',
             }}>
               <span style={{ flexShrink: 0, marginTop: 1 }}><IconInfo /></span>
               <div>
@@ -410,7 +423,7 @@ export function EntradaSaidaForm({ produtos, onSubmit, perfilUsuario }: EntradaS
                 value={busca}
                 onChange={e => setBusca(e.target.value)}
                 style={{ ...inputBaseStyle, paddingLeft: '40px' }}
-                onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.background = '#fff'; }}
+                onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.background = 'var(--surface)'; }}
                 onBlur={e => { e.target.style.borderColor = 'transparent'; e.target.style.background = 'var(--surface-2)'; }}
               />
             </div>
@@ -508,13 +521,13 @@ export function EntradaSaidaForm({ produtos, onSubmit, perfilUsuario }: EntradaS
                     <div style={{
                       width: '20px', height: '20px', borderRadius: '6px', flexShrink: 0,
                       border: isSelected ? 'none' : '2px solid var(--border)',
-                      background: isSelected ? currentConfig.dot : '#fff',
+                      background: isSelected ? currentConfig.dot : 'var(--surface)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       transition: 'all 200ms cubic-bezier(.4,0,.2,1)',
                       boxShadow: isSelected ? `0 2px 6px ${currentConfig.dot}40` : 'none',
                     }}>
                       {isSelected && (
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" width="12" height="12">
+                        <svg viewBox="0 0 24 24" fill="none" stroke={currentConfig.on} strokeWidth="3" width="12" height="12">
                           <polyline points="20 6 9 17 4 12"/>
                         </svg>
                       )}
@@ -538,7 +551,7 @@ export function EntradaSaidaForm({ produtos, onSubmit, perfilUsuario }: EntradaS
                         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                           <span style={{
                             width: '6px', height: '6px', borderRadius: '50%',
-                            background: p.quantidade > 0 ? '#2F9E44' : '#E53E3E',
+                            background: p.quantidade > 0 ? 'var(--success)' : 'var(--danger)',
                             display: 'inline-block',
                           }} />
                           <strong style={{ color: 'var(--text-2)', fontWeight: 600 }}>{p.quantidade}</strong> {p.unidade}
@@ -555,7 +568,7 @@ export function EntradaSaidaForm({ produtos, onSubmit, perfilUsuario }: EntradaS
                       onClick={e => e.stopPropagation()}
                     >
                       {tipo === 'entrada' && (
-                        <div style={{ display: 'flex', alignItems: 'center', width: '140px', background: '#fff', borderRadius: '10px', border: '1.5px solid var(--border)', overflow: 'hidden' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', width: '140px', background: 'var(--surface)', borderRadius: '10px', border: '1.5px solid var(--border)', overflow: 'hidden' }}>
                           <span style={{
                             padding: '0 10px', height: '36px', display: 'flex', alignItems: 'center',
                             fontSize: '12px', color: 'var(--text-3)', fontWeight: 600,
@@ -576,15 +589,15 @@ export function EntradaSaidaForm({ produtos, onSubmit, perfilUsuario }: EntradaS
                       )}
                       <div style={{
                         display: 'flex', alignItems: 'center', width: '150px',
-                        background: '#fff', borderRadius: '10px',
-                        border: `1.5px solid ${tipo === 'ajuste' ? '#BFD7FF' : 'var(--border)'}`,
+                        background: 'var(--surface)', borderRadius: '10px',
+                        border: `1.5px solid ${tipo === 'ajuste' ? 'var(--info-border)' : 'var(--border)'}`,
                         overflow: 'hidden',
                       }}>
                         {tipo === 'ajuste' && (
                           <span style={{
                             padding: '0 8px', height: '36px', display: 'flex', alignItems: 'center',
-                            fontSize: '10.5px', color: '#1971C2', fontWeight: 700, whiteSpace: 'nowrap',
-                            background: '#EBF4FF', borderRight: '1px solid #BFD7FF',
+                            fontSize: '10.5px', color: 'var(--info)', fontWeight: 700, whiteSpace: 'nowrap',
+                            background: 'var(--info-light)', borderRight: '1px solid var(--info-border)',
                           }}>
                             {quantidadeLabel}
                           </span>
@@ -608,9 +621,9 @@ export function EntradaSaidaForm({ produtos, onSubmit, perfilUsuario }: EntradaS
                         <span style={{
                           padding: '0 10px', height: '36px', display: 'flex', alignItems: 'center',
                           fontSize: '11px', fontWeight: 600, whiteSpace: 'nowrap',
-                          color: tipo === 'ajuste' ? '#1971C2' : 'var(--text-3)',
-                          background: tipo === 'ajuste' ? '#EBF4FF' : 'var(--surface-2)',
-                          borderLeft: `1px solid ${tipo === 'ajuste' ? '#BFD7FF' : 'var(--border)'}`,
+                          color: tipo === 'ajuste' ? 'var(--info)' : 'var(--text-3)',
+                          background: tipo === 'ajuste' ? 'var(--info-light)' : 'var(--surface-2)',
+                          borderLeft: `1px solid ${tipo === 'ajuste' ? 'var(--info-border)' : 'var(--border)'}`,
                         }}>
                           {p.unidade}
                         </span>
@@ -650,7 +663,7 @@ export function EntradaSaidaForm({ produtos, onSubmit, perfilUsuario }: EntradaS
               <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{
                   width: '24px', height: '24px', borderRadius: '8px',
-                  background: currentConfig.dot, color: '#fff',
+                  background: currentConfig.dot, color: currentConfig.on,
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '12px', fontWeight: 700,
                 }}>
@@ -678,7 +691,7 @@ export function EntradaSaidaForm({ produtos, onSubmit, perfilUsuario }: EntradaS
               borderRadius: '12px',
               border: 'none',
               background: totalSelecionados === 0 ? 'var(--surface-3)' : currentConfig.activeBg,
-              color: totalSelecionados === 0 ? 'var(--text-3)' : '#fff',
+              color: totalSelecionados === 0 ? 'var(--text-3)' : currentConfig.on,
               cursor: totalSelecionados === 0 ? 'not-allowed' : 'pointer',
               transition: 'all 200ms ease',
               boxShadow: totalSelecionados > 0 ? '0 4px 16px rgba(0,0,0,.15)' : 'none',

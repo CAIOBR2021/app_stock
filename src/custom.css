@@ -40,14 +40,14 @@
 .btn-action:hover:not(:disabled) {
   background-color: var(--surface-3);
   color: var(--text-1);
-  border-color: #C4C9D8;
+  border-color: var(--border-strong);
 }
 
 /* Hover — Editar (âmbar, coerente com a marca) */
 .btn-action-edit:hover:not(:disabled) {
   background-color: var(--primary-light);
   color: var(--primary-dark);
-  border-color: #FAD898;
+  border-color: var(--primary-border);
 }
 
 /* Hover — Excluir (vermelho semântico) */
@@ -55,7 +55,7 @@
 .btn-action.del:hover:not(:disabled) {
   background-color: var(--danger-light);
   color: var(--danger);
-  border-color: #FFC5C5;
+  border-color: var(--danger-border);
 }
 
 /* Desabilitado */
@@ -92,7 +92,7 @@
 .ds-modal-overlay {
   position: fixed !important;
   inset: 0 !important;
-  background: rgba(0, 0, 0, .55) !important;
+  background: var(--overlay) !important;
   z-index: 9999 !important;
   display: flex !important;
   align-items: flex-start !important;
@@ -132,7 +132,7 @@
   border-radius: 12px !important;
   background: var(--primary) !important;
   border: none !important;
-  color: #fff !important;
+  color: var(--on-primary) !important;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -159,7 +159,7 @@ button.btn-primary,
 a.btn-primary {
   background-color: var(--primary) !important;
   border-color: var(--primary) !important;
-  color: #fff !important;
+  color: var(--on-primary) !important;
 }
 
 .btn-primary:hover {
@@ -178,7 +178,7 @@ a.btn-primary {
 .page-item.active .page-link {
   background-color: var(--primary) !important;
   border-color: var(--primary) !important;
-  color: #fff !important;
+  color: var(--on-primary) !important;
 }
 
 /* Checkbox accent */
