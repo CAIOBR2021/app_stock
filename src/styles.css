@@ -628,6 +628,22 @@ body {
   z-index: 50;
 }
 
+/* O header vive dentro do .main-content, que no desktop é recuado pela largura
+   do trilho da sidebar — sem isto o fundo e a borda inferior parariam a 16px da
+   borda da janela, deixando um entalhe no canto superior esquerdo. A extensão só
+   aparece sobre o trilho: com a sidebar aberta ou fixada ela a cobre (z-index
+   100 contra os 50 do header). */
+.page-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: -1px;
+  right: 100%;
+  width: 100vw;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
 .page-title {
   font-size: 20px;
   font-weight: 700;
