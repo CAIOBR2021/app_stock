@@ -1,6 +1,15 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import meuLogo from './assets/logo.svg';
+/**
+ * Duas versões da marca, não uma com filtro.
+ *
+ * `logoEscuro` (letra branca) é a usada na maior parte do app, porque a
+ * sidebar e o cabeçalho do visitante são escuros nos DOIS temas. `logoClaro`
+ * (letra grafite) só entra no header mobile, que é o único lugar onde a
+ * marca fica sobre --surface e portanto muda de cor junto com o tema.
+ */
+import logoClaro from './assets/logo-claro.png';
+import logoEscuro from './assets/logo-escuro.png';
 import { DeliveryForm } from './components/DeliveryForm';
 import { DeliveryTable } from './components/DeliveryTable';
 import { EntradaSaidaForm } from './components/EntradaSaidaForm';
@@ -1146,7 +1155,7 @@ export default function App() {
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           padding: '12px 20px', background: 'var(--accent)', flexShrink: 0,
         }}>
-          <img src={meuLogo} alt="Logo" style={{ height: '34px' }} />
+          <img src={logoEscuro} alt="Portal de Suprimentos" style={{ height: '34px' }} />
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <BotaoTema efetivo={temaEfetivo} onToggle={alternarTema} />
             <button
@@ -1230,7 +1239,7 @@ export default function App() {
       {/* ── SIDEBAR ── */}
       <aside className="sidebar">
         <div className="sidebar-logo-area">
-          <img src={meuLogo} alt="Logo" className="sidebar-logo" />
+          <img src={logoEscuro} alt="Portal de Suprimentos" className="sidebar-logo" />
           <button
             type="button"
             className="sidebar-pin-btn"
@@ -1352,7 +1361,13 @@ export default function App() {
 
       {/* ── MOBILE HEADER ── */}
       <div className="mobile-header d-lg-none d-flex justify-content-between align-items-center px-3">
-        <img src={meuLogo} alt="Logo" style={{ height: '36px' }} />
+        {/* Único ponto onde a marca fica sobre --surface, que troca de cor
+            junto com o tema — aqui a versão acompanha. */}
+        <img
+          src={temaEfetivo === 'escuro' ? logoEscuro : logoClaro}
+          alt="Portal de Suprimentos"
+          style={{ height: '36px' }}
+        />
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <BotaoTema efetivo={temaEfetivo} onToggle={alternarTema} />
           <div
@@ -1503,7 +1518,7 @@ export default function App() {
                 <div className="d-flex align-items-center gap-3">
                   <ValorTotalEstoque allProdutos={produtosVisiveis} />
                 </div>
-                <div className="d-flex gap-2">
+                <div className="d-flex align-items-center gap-2">
                   <Relatorios produtos={produtosVisiveis} perfilUsuario={perfilUsuario} />
                   <BotaoNovoProduto onCreate={addProduto} categorias={categorias} locais={locaisArmazenamento} allProdutos={produtosVisiveis} />
                 </div>

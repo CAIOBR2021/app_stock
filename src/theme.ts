@@ -46,6 +46,14 @@ function aplicarEfetivo(efetivo: 'claro' | 'escuro'): void {
   const valor = efetivo === 'escuro' ? 'dark' : 'light';
   raiz.setAttribute('data-theme', valor);
   raiz.setAttribute('data-bs-theme', valor);
+
+  // Devolve ao CSS o fundo da raiz. O script de boot do index.html grava um
+  // background-color inline no <html> para não piscar branco antes do CSS
+  // chegar; se ele ficasse, congelaria a cor do tema INICIAL e apareceria uma
+  // faixa da cor antiga em toda área que o <body> não cobre — a calha da barra
+  // de rolagem, o overscroll. Sem esse inline, o fundo do body se propaga
+  // para o canvas, que é o comportamento correto.
+  raiz.style.removeProperty('background-color');
 }
 
 /** Versão que aceita a preferência crua (inclusive 'sistema'). */

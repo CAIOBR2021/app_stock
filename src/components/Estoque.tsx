@@ -487,8 +487,11 @@ export function Relatorios({ produtos, perfilUsuario }: { produtos: Produto[]; p
 
   return (
     <>
+      {/* Sem btn-sm: fica na mesma altura (38px) do "Novo Produto" ao lado e
+          dos campos de filtro acima. Com o tamanho pequeno os dois botões
+          alinhavam pelo topo e sobrava um degrau de 6px nas bases. */}
       <button
-        className="btn btn-ghost btn-sm d-flex align-items-center gap-2"
+        className="btn btn-ghost d-flex align-items-center gap-2"
         onClick={() => setShowModal(true)}
         disabled={loading}
       >

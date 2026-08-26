@@ -111,7 +111,8 @@
       "PowerShell(foreach \\($u in @\\(\"https://app-portal-suprimentos.vercel.app\",\"https://portal-suprimentos.vercel.app\",\"https://app-stock-koyeb.vercel.app\"\\)\\) { try { $r = Invoke-WebRequest -Uri $u -Method Head -MaximumRedirection 0 -SkipHttpErrorCheck -TimeoutSec 20; \"$u -> $\\($r.StatusCode\\)\" } catch { \"$u -> ERRO: $\\($_.Exception.Message\\)\" } })",
       "PowerShell(foreach \\($n in @\\(\"app-portal-suprimentos\",\"portal-suprimentos-app\",\"portal-de-suprimentos\",\"suprimentos-portal\",\"portal-suprimentos-estoque\",\"meu-portal-suprimentos\"\\)\\) { $u = \"https://$n.vercel.app\"; try { $r = Invoke-WebRequest -Uri $u -Method Head -MaximumRedirection 0 -SkipHttpErrorCheck -TimeoutSec 15; $s = if \\($r.StatusCode -eq 404\\) { \"LIVRE\" } else { \"OCUPADO \\($\\($r.StatusCode\\)\\)\" }; \"{0,-30} {1}\" -f $n, $s } catch { \"{0,-30} ERRO\" -f $n } })",
       "PowerShell(Get-ChildItem -Recurse -File \"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_FRONT_END_VERCEL-main\\\\src\" | Select-Object -ExpandProperty FullName | ForEach-Object { $_.Replace\\(\"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_FRONT_END_VERCEL-main\\\\\", \"\"\\) })",
-      "PowerShell($root=\"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_FRONT_END_VERCEL-main\"; Get-Content \"$root\\\\package.json\"; Write-Output \"---INDEX.HTML---\"; Get-Content \"$root\\\\index.html\")"
+      "PowerShell($root=\"D:\\\\DADOS\\\\Desktop\\\\Controle de estoque\\\\ESTOQUE_FRONT_END_VERCEL-main\"; Get-Content \"$root\\\\package.json\"; Write-Output \"---INDEX.HTML---\"; Get-Content \"$root\\\\index.html\")",
+      "PowerShell(& \"C:\\\\Users\\\\USER\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--DADOS-Desktop-Controle-de-estoque-ESTOQUE-FRONT-END-VERCEL-main\\\\311d5892-3555-4eea-a35f-ca76bb3a65b8\\\\scratchpad\\\\logo.ps1\")"
     ]
   }
 }

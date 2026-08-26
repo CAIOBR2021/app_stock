@@ -782,6 +782,127 @@ body {
   box-shadow: 0 0 0 3px rgba(245, 166, 35, .12);
 }
 
+/* ── SELECT NATIVO: a lista de opções ────────────────────────
+   O <select> fechado sempre foi nosso, mas a lista que abre é desenhada
+   pelo navegador — daí o painel branco com realce azul do sistema, que
+   destoa do resto do app e ignora o tema escuro.
+
+   São duas camadas, de propósito: a de baixo funciona em qualquer
+   navegador que respeite cor em <option> (Chromium e Firefox no Windows
+   e no Linux); a de cima só entra onde `appearance: base-select` existe.
+   Onde nenhuma pegar, o `color-scheme` dos blocos de tema ainda garante
+   que o popup nativo venha escuro no modo noturno — feio, mas nunca
+   branco no escuro.
+   ──────────────────────────────────────────────────────────── */
+
+/* Camada 1 — pinta cada opção. O realce da linha sob o cursor continua
+   sendo o azul do sistema operacional; isso aqui não alcança. */
+select option {
+  background-color: var(--surface);
+  color: var(--text-1);
+}
+
+/* Camada 2 — `appearance: base-select` (Chrome/Edge 135+). O popup vira
+   um elemento CSS comum: painel, raio, sombra e estados de cada opção
+   passam a sair dos tokens. As cores são as mesmas dos dropdowns do
+   react-select usados no resto do app, para os dois tipos de select
+   abrirem igual. */
+@supports (appearance: base-select) {
+
+  .form-select,
+  .form-select::picker(select) {
+    appearance: base-select;
+  }
+
+  /* base-select redesenha o botão a partir do zero: o que o design
+     system pede volta a ser declarado aqui.
+
+     O `display: flex` não é enfeite: o `.form-select` do Bootstrap impõe
+     `display: block`, e aí o texto e a seta empilham em duas linhas em
+     vez de dividirem a linha — a seta caía para baixo e vazava dos 38px. */
+  .form-select {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    height: 38px;
+    padding: 0 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-2);
+    color: var(--text-1);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13.5px;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    cursor: pointer;
+  }
+
+
+  .form-select:focus {
+    border-color: var(--primary);
+    background: var(--surface);
+    box-shadow: 0 0 0 3px rgba(245, 166, 35, .12);
+  }
+
+  /* O painel */
+  .form-select::picker(select) {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    padding: 4px;
+    margin-top: 4px;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+
+  .form-select option {
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-1);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13.5px;
+    cursor: pointer;
+  }
+
+  .form-select option:hover,
+  .form-select option:focus {
+    background: var(--primary-light);
+    color: var(--primary-text);
+  }
+
+  .form-select option:checked {
+    background: var(--primary);
+    color: var(--on-primary);
+    font-weight: 600;
+  }
+
+  /* base-select insere um ✓ na opção marcada. O preenchimento âmbar já
+     diz qual é, e o ✓ ainda empurraria o texto — mesma decisão dos
+     selects do react-select, que também não mostram marca. */
+  .form-select option::checkmark {
+    display: none;
+  }
+
+  /* base-select traz uma seta que o `.form-select` não tinha (o
+     `appearance: none` somado ao atalho `background` apagava a do
+     Bootstrap). Ela fica escondida porque não cabe: os filtros moram em
+     colunas `col-lg-2` de ~119px, e a seta come ~17px que o rótulo já
+     usa — "Todos os locais" transbordava. Encurtar o rótulo não é
+     opção: o Chrome desenha a opção selecionada num box anônimo, sem
+     seletor público, então não há como aplicar reticências nele.
+
+     Para reativá-la, troque o `display: none` por
+     `color: var(--text-3); flex-shrink: 0` e dê mais largura às colunas
+     de Localização e Ordenar por em App.tsx. */
+  .form-select::picker-icon {
+    display: none;
+  }
+}
+
 .form-label {
   font-size: 11px;
   font-weight: 600;
