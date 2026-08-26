@@ -1875,6 +1875,26 @@ table.table tbody tr.row-danger:hover td {
   border-bottom: 1px solid var(--border);
 }
 
+/* ── Efeito de vidro nos headers ──────────────────────────
+   Fundo translúcido + desfoque do conteúdo que rola por baixo.
+   Os 90% de opacidade são propositais: --text-3 (que pinta a data no
+   header) foi calibrado para 4,5:1 sobre --surface, e com menos opacidade
+   o fundo efetivo passa a variar com o scroll — os badges, a barra de
+   nível e o botão de novo produto passariam por baixo do texto.
+   Precisa vir depois de .mobile-header para vencer o background sólido
+   dela; onde não houver backdrop-filter, o color-mix é descartado junto e
+   ambos os headers seguem sólidos. */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+
+  .page-header,
+  .page-header::before,
+  .mobile-header {
+    background: color-mix(in srgb, var(--surface) 90%, transparent);
+    -webkit-backdrop-filter: blur(12px) saturate(1.4);
+    backdrop-filter: blur(12px) saturate(1.4);
+  }
+}
+
 /* ── CARD (product card mobile) ──────────────────────────── */
 .product-card {
   background: var(--surface);
