@@ -1,0 +1,23 @@
+:root { color-scheme: dark; }
+html, body { margin: 0; height: 100%; background: #02060a; overflow: hidden; font-family: Georgia, 'Times New Roman', serif; color: #e8d9b8; }
+canvas#gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+canvas#hud { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+#ui { position: fixed; inset: 0; pointer-events: none; }
+.screen { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; background: rgba(2, 6, 10, 0.92); transition: opacity 0.6s; }
+.screen.hidden { opacity: 0; pointer-events: none; }
+.screen h1 { font-size: 64px; letter-spacing: 0.35em; font-weight: normal; margin: 0 0 8px; color: #f2c56b; text-shadow: 0 0 24px rgba(242, 197, 107, 0.55); }
+.screen h2 { font-size: 22px; letter-spacing: 0.3em; font-weight: normal; margin: 0 0 40px; color: #8aa2b4; }
+.screen p { max-width: 560px; text-align: center; line-height: 1.6; color: #b8c2c9; margin: 6px 0; }
+.screen .btn { pointer-events: auto; cursor: pointer; margin-top: 18px; padding: 12px 40px; border: 1px solid #f2c56b; background: transparent; color: #f2c56b; font: inherit; font-size: 20px; letter-spacing: 0.25em; text-transform: uppercase; }
+.screen .btn:hover { background: rgba(242, 197, 107, 0.15); }
+.screen .controls { margin-top: 28px; font-size: 14px; color: #7f8c96; line-height: 1.8; text-align: center; }
+.screen .controls b { color: #d9c9a3; font-weight: normal; }
+.page { background: #f0e2c2; color: #2a2116; max-width: 520px; padding: 42px 48px; font-size: 18px; line-height: 1.55; box-shadow: 0 0 60px rgba(242, 197, 107, 0.25); transform: rotate(-1deg); }
+.page h3 { margin: 0 0 14px; font-weight: normal; font-size: 14px; letter-spacing: 0.3em; text-transform: uppercase; color: #6d5a3a; }
+.page .hint { margin-top: 24px; font-size: 13px; color: #6d5a3a; text-align: center; }
+#actcard { position: absolute; left: 0; right: 0; bottom: 18%; text-align: center; pointer-events: none; opacity: 0; transition: opacity 1.2s; }
+#actcard .act { font-size: 14px; letter-spacing: 0.5em; color: #8aa2b4; }
+#actcard .title { font-size: 44px; letter-spacing: 0.3em; color: #f2c56b; text-shadow: 0 0 30px rgba(242,197,107,0.5); }
+#actcard.show { opacity: 1; }
+.stats { margin-top: 20px; font-size: 16px; color: #b8c2c9; line-height: 1.9; }
+.stats span { color: #f2c56b; }
