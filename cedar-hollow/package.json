@@ -8,8 +8,7 @@
     "start": "vite --host",
     "build": "vite build",
     "preview": "vite preview --host",
-    "typecheck": "tsc --noEmit",
-    "game": "npm --prefix cedar-hollow run dev"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "three": "^0.170.0"
